@@ -38,9 +38,9 @@ Type `./mgs --help` to see the list of basic flags.
 
 ---
 
-## 🎙️ Advanced Phoneme Synthesis (The Real Stuff)
+## Advanced Phoneme Synthesis (The Nerd Stuff)
 
-Okay, the "simple" description above is technically true, but if you want to actually **make speech** instead of just noise, you need to use the **Phoneme Mode**. 
+Okay, the "simple" description above is technically true, but if you want to actually **specify speech** instead of just... AAAAA, you need to use the **Phoneme Mode**. 
 
 Under the hood, `mg1.c` contains a full Klatt-style formant synthesizer with:
 *   **40+ Built-in Phonemes**: Vowels (`a`, `e`, `i`, `o`, `u`), consonants (`s`, `z`, `sh`, `th`), nasals (`m`, `n`, `ng`), and diphthongs (`ai`, `au`).
