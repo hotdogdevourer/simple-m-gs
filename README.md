@@ -51,20 +51,21 @@ You don't just type English sentences. You create a **Phoneme Specification File
 Create a file called `speech.txt`.
 
 ```text
+sil 100
 h 100
 e 100
 l 100
 o 100
 w 100
-# For "HELLO"
 sil 100
+# For "HELLO"
 e 100
 v 100
 er 50
 y 100
-w 50
+w 100
 a 200
-n 100
+n 50
 sil 100
 # For "EVERYONE"
 ```
