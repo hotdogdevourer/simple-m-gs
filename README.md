@@ -72,9 +72,6 @@ sil 100
 **Key Syntax Details:**
 *   **Phoneme Name**: Use standard ARPABET-like keys (`ae`, `ih`, `sh`, `dh`, etc.). See the source code `g_phoneme_db` for the full list of 40+ supported sounds.
 *   **Duration**: Time in milliseconds.
-*   **Pitch Contour**: Optional. Format `time_percent:frequency_hz`. You can add multiple points to create complex intonation (questions, sarcasm, singing).
-    *   Example: `0:100 50:150 100:100` creates a rise-and-fall tone.
-*   **Formant Overrides**: Optional. Format `frequency/bandwidth`. Allows you to morph the vocal tract shape manually if the preset isn't quite right.
 
 #### 2. Running the Synthesizer
 
