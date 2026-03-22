@@ -54,22 +54,24 @@ You don't just type English sentences. You create a **Phoneme Specification File
 
 #### 1. The Phoneme File Format
 
-Create a file called `speech.txt`. The syntax allows you to chain phonemes, set durations, and even draw pitch curves.
+Create a file called `speech.txt`.
 
 ```text
-# Simple M-GS Phoneme Script
-# Format: PHONEME DURATION_MS [PITCH_CONTOUR] [FORMANT_OVERRIDES]
-
-# Say "Hello"
-h   80
-eh  120  0:110 100:130      # 'eh' sound, pitch rises from 110Hz to 130Hz over duration
-l   100
-oh  150  0:130 100:110      # 'oh' sound, pitch falls back down
-
-# Add some emotion with jitter/shimmer via global flags later, 
-# or override specific formants inline:
-w   80   0:110              # 'w' sound
-aa  200  0:110 50:140 100:110  # 'aa' with a pitch wiggle
+h 100
+e 100
+l 100
+o 200
+w 400
+# For "HELLO"
+e 100
+v 200
+r 100
+y 200
+w 100
+a 200
+n 100
+sil 100
+# For "EVERYONE"
 ```
 
 **Key Syntax Details:**
@@ -81,7 +83,7 @@ aa  200  0:110 50:140 100:110  # 'aa' with a pitch wiggle
 
 #### 2. Running the Synthesizer
 
-Once your script is ready, run the engine in phoneme mode:
+Once your script is ready, run the engine in phoneme mode using the `--phoneme` flag:
 
 ```bash
 # Generate speech from your script
@@ -104,7 +106,7 @@ When using phoneme mode, these flags change how the physics are simulated:
     *   `impulsive`: Sharp, click-like pulses (good for robotic effects).
 *   `--synthesis MODE`: Choose how formant filters are arranged.
     *   `cascade` (Default): Formants are in series. More natural for vowels, standard Klatt model.
-    *   `parallel`: Formants are mixed independently. Better for nasal sounds and fricatives.
+    *   `parallel`: Formants are mixed independently. Better for nasal sounds and fricatives, but doesn't sound as good.
 *   `--no-lip-radiation`: Disables the high-pass filter that simulates sound radiation from the lips. Turns the voice into a muffled, internal sound.
 
 ## Examples
@@ -117,5 +119,4 @@ Check out the `examples/` directory to hear the difference between the voice typ
 
 ## License
 
-MIT License. Check the LICENSE file in the project root for more licensing information.
-Just.. credit me please. Not forcing though.
+MIT License. Do whatever you want with it. Just credit me if you can, though it's not required.
