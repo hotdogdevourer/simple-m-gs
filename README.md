@@ -71,7 +71,7 @@ sil 100
 ```
 
 **Key Syntax Details:**
-*   **Phoneme Name**: Use standard ARPABET-like keys (`ae`, `ih`, `sh`, `dh`, etc.). See the source code `g_phoneme_db` for the full list of 40+ supported sounds.
+*   **Phoneme Name**: Use standard ARPABET-like keys (`ae`, `ih`, `sh`, `dh`, etc.). See the source code `g_phoneme_db` for the full list of supported sounds.
 *   **Duration**: Time in milliseconds.
 
 #### 2. Running the Synthesizer
