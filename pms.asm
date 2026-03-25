@@ -1,4 +1,4 @@
-	.file	"mgs.c"
+	.file	"pms.c"
 	.text
 	.p2align 4
 	.def	nxtok;	.scl	3;	.type	32;	.endef
@@ -136,7 +136,7 @@ phon_pitch:
 	.ascii "Klatt-Style Formant Speech Synthesizer\12\0"
 	.align 8
 .LC4:
-	.ascii "Usage: formant_synth [OPTIONS] [OUTPUT_FILE]\12\0"
+	.ascii "Usage: pms [OPTIONS] [OUTPUT_FILE]\12\0"
 	.align 8
 .LC5:
 	.ascii "Mode Selection (mutually exclusive):\0"
@@ -151,12 +151,12 @@ phon_pitch:
 	.ascii "  --phoneme FILE           Load simple phoneme sequence from file\0"
 	.align 8
 .LC9:
-	.ascii "  --demo VOICE_TYPE        Demo mode (natural|breathy|impulsive)\12\0"
+	.ascii "  --demo VOICE_TYPE        Demo mode (natural|whisper|impulsive)\12\0"
 .LC10:
 	.ascii "Global Parameters:\0"
 	.align 8
 .LC11:
-	.ascii "  --sample-rate SR         Sample rate (16000|22050|44100|48000, default: 22050)\0"
+	.ascii "  --sample-rate SR         Sample rate (16000|22050|44100|48000|88200|96000|176400|192000, default: 22050)\0"
 	.align 8
 .LC12:
 	.ascii "  --duration SEC           Duration in seconds (default: 2.0)\0"
@@ -168,80 +168,83 @@ phon_pitch:
 	.ascii "  --synthesis MODE         Synthesis mode (cascade|parallel, default: cascade)\0"
 	.align 8
 .LC15:
-	.ascii "  --amplitude LEVEL        Output amplitude 0.0-1.0 (default: 0.8)\12\0"
+	.ascii "  --amplitude LEVEL        Output amplitude 0.0-1.0 (default: 0.8)\0"
+	.align 8
 .LC16:
+	.ascii "  --formants INT           Amount of formants to use, 1-%d\12\12\0"
+.LC17:
 	.ascii "Voice Parameters:\0"
 	.align 8
-.LC17:
-	.ascii "  --voice TYPE             Voice type (natural|breathy|impulsive)\0"
-	.align 8
 .LC18:
-	.ascii "  --voicing-amp AMP        Voicing amplitude (default: 0.7)\0"
+	.ascii "  --voice TYPE             Voice type (natural|whisper|impulsive)\0"
 	.align 8
 .LC19:
-	.ascii "  --aspiration-amp AMP     Aspiration amplitude (default: 0.3)\0"
+	.ascii "  --voicing-amp AMP        Voicing amplitude (default: 0.7)\0"
 	.align 8
 .LC20:
-	.ascii "  --frication-amp AMP      Frication amplitude (default: 0.0)\12\0"
+	.ascii "  --aspiration-amp AMP     Aspiration amplitude (default: 0.3)\0"
+	.align 8
 .LC21:
+	.ascii "  --frication-amp AMP      Frication amplitude (default: 0.0)\12\0"
+.LC22:
 	.ascii "Pitch Control:\0"
 	.align 8
-.LC22:
+.LC23:
 	.ascii "  --vibrato-depth HZ       Vibrato depth (default: 0.0)\0"
 	.align 8
-.LC23:
+.LC24:
 	.ascii "  --vibrato-rate HZ        Vibrato rate (default: 5.0)\0"
 	.align 8
-.LC24:
+.LC25:
 	.ascii "  --jitter PERCENT         Pitch jitter (default: 1.0)\0"
 	.align 8
-.LC25:
+.LC26:
 	.ascii "  --shimmer PERCENT        Amplitude shimmer (default: 2.0)\0"
 	.align 8
-.LC26:
+.LC27:
 	.ascii "  --pitch-contour FILE     Load F0 contour from file (time_ms f0_hz per line)\12\0"
 	.align 8
-.LC27:
+.LC28:
 	.ascii "Formant Parameters (demo mode only):\0"
 	.align 8
-.LC28:
+.LC29:
 	.ascii "  --f1-10 HZ               Formant 1-10 frequencies\0"
 	.align 8
-.LC29:
+.LC30:
 	.ascii "  --bw1-10 HZ              Formant 1-10 bandwidths\0"
 	.align 8
-.LC30:
-	.ascii "  --bw6-10 HZ              Set bandwidths 6-10 to same value\12\0"
 .LC31:
+	.ascii "  --bw6-10 HZ              Set bandwidths 6-10 to same value\12\0"
+.LC32:
 	.ascii "Aspiration / Frication:\0"
 	.align 8
-.LC32:
+.LC33:
 	.ascii "  --aspiration-cutoff HZ   High-pass cutoff for aspiration noise (default: 500)\0"
 	.align 8
-.LC33:
+.LC34:
 	.ascii "  --frication-center HZ    Centre frequency of frication noise (default: 4000)\0"
 	.align 8
-.LC34:
-	.ascii "  --frication-bandwidth HZ Bandwidth of frication noise (default: 2000)\12\0"
 .LC35:
+	.ascii "  --frication-bandwidth HZ Bandwidth of frication noise (default: 2000)\12\0"
+.LC36:
 	.ascii "Output Options:\0"
 	.align 8
-.LC36:
+.LC37:
 	.ascii "  --output FILE            Output filename (default: output.wav)\0"
 	.align 8
-.LC37:
+.LC38:
 	.ascii "  --output-format FORMAT   wav16|wav32|raw16|raw32 (default: wav16)\0"
 	.align 8
-.LC38:
+.LC39:
 	.ascii "  --normalize              Enable loudness normalization (default: enabled)\0"
 	.align 8
-.LC39:
+.LC40:
 	.ascii "  --no-lip-radiation       Disable lip radiation filter\0"
 	.align 8
-.LC40:
+.LC41:
 	.ascii "  --verbose                Print debug information\0"
 	.align 8
-.LC41:
+.LC42:
 	.ascii "  --help                   Display this help message\0"
 	.text
 	.p2align 4
@@ -277,8 +280,9 @@ print_help:
 	call	puts
 	leaq	.LC15(%rip), %rcx
 	call	puts
+	movl	$10, %edx
 	leaq	.LC16(%rip), %rcx
-	call	puts
+	call	printf
 	leaq	.LC17(%rip), %rcx
 	call	puts
 	leaq	.LC18(%rip), %rcx
@@ -328,6 +332,8 @@ print_help:
 	leaq	.LC40(%rip), %rcx
 	call	puts
 	leaq	.LC41(%rip), %rcx
+	call	puts
+	leaq	.LC42(%rip), %rcx
 	addq	$40, %rsp
 	jmp	puts
 	.seh_endproc
@@ -360,6 +366,7 @@ match_fi_arg:
 	jbe	.L59
 .L58:
 	xorl	%eax, %eax
+.L55:
 	addq	$56, %rsp
 	popq	%rbx
 	popq	%rsi
@@ -368,34 +375,32 @@ match_fi_arg:
 	.p2align 3
 .L59:
 	call	atoi
-	leal	-1(%rax), %edx
-	cmpl	$9, %edx
-	ja	.L58
-	addq	$56, %rsp
-	popq	%rbx
-	popq	%rsi
-	ret
+	testl	%eax, %eax
+	jle	.L58
+	cmpl	%eax, FORMANTS(%rip)
+	jl	.L58
+	jmp	.L55
 	.seh_endproc
 	.section .rdata,"dr"
-.LC43:
+.LC44:
 	.ascii "r\0"
 	.align 8
-.LC44:
+.LC45:
 	.ascii "Error: cannot open spec '%s': %s\12\0"
-.LC46:
-	.ascii "SAMPLE_RATE\0"
 .LC47:
-	.ascii "SYNTHESIS_MODE\0"
+	.ascii "SAMPLE_RATE\0"
 .LC48:
-	.ascii "parallel\0"
+	.ascii "SYNTHESIS_MODE\0"
 .LC49:
+	.ascii "parallel\0"
+.LC50:
 	.ascii "DURATION\0"
-.LC51:
-	.ascii "NORMALIZE\0"
 .LC52:
+	.ascii "NORMALIZE\0"
+.LC53:
 	.ascii "LIP_RADIATION\0"
 	.align 8
-.LC53:
+.LC54:
 	.ascii "Warning: spec file too many frames; truncating at %d\12\0"
 .LC56:
 	.ascii "Warning: line %d incomplete\12\0"
@@ -412,7 +417,7 @@ match_fi_arg:
 spec_parse:
 	pushq	%r15
 	.seh_pushreg	%r15
-	movl	$8264, %eax
+	movl	$8280, %eax
 	pushq	%r14
 	.seh_pushreg	%r14
 	pushq	%r13
@@ -429,22 +434,24 @@ spec_parse:
 	.seh_pushreg	%rbx
 	call	___chkstk_ms
 	subq	%rax, %rsp
-	.seh_stackalloc	8264
+	.seh_stackalloc	8280
+	movaps	%xmm6, 8256(%rsp)
+	.seh_savexmm	%xmm6, 8256
 	.seh_endprologue
 	movq	%rdx, %r13
-	movq	%rcx, 8336(%rsp)
-	leaq	.LC43(%rip), %rdx
+	movq	%rcx, 8352(%rsp)
+	leaq	.LC44(%rip), %rdx
 	call	fopen
 	testq	%rax, %rax
 	movq	%rax, %r12
-	je	.L123
+	je	.L142
 	movl	$148, %edx
 	movl	$8192, %ecx
 	call	calloc
 	testq	%rax, %rax
 	movq	%rax, 0(%r13)
-	je	.L124
-	movq	.LC45(%rip), %rax
+	je	.L143
+	movq	.LC46(%rip), %rax
 	movq	$0, 16(%r13)
 	xorl	%ebx, %ebx
 	movq	__imp__strnicmp(%rip), %rbp
@@ -459,195 +466,171 @@ spec_parse:
 	testq	%rax, %rax
 	je	.L79
 	movzbl	64(%rsp), %eax
-	leaq	64(%rsp), %r14
+	leaq	64(%rsp), %r15
 	addl	$1, %ebx
-	cmpb	$9, %al
-	je	.L113
 	cmpb	$32, %al
-	jne	.L65
+	jne	.L141
 	.p2align 4
 	.p2align 4,,10
 	.p2align 3
-.L113:
-	movzbl	1(%r14), %eax
-	addq	$1, %r14
+.L127:
+	movzbl	1(%r15), %eax
+	addq	$1, %r15
 	cmpb	$32, %al
-	je	.L113
+	je	.L127
+.L141:
 	cmpb	$9, %al
-	je	.L113
-.L65:
+	je	.L127
 	cmpb	$35, %al
 	ja	.L68
 	movabsq	$34359747585, %rdx
 	btq	%rax, %rdx
 	jc	.L64
 .L68:
-	leaq	.LC46(%rip), %rdx
-	movl	$11, %r8d
-	movq	%r14, %rcx
-	call	*%rbp
-	testl	%eax, %eax
-	je	.L125
 	leaq	.LC47(%rip), %rdx
+	movl	$11, %r8d
+	movq	%r15, %rcx
+	call	*%rbp
+	testl	%eax, %eax
+	je	.L144
+	leaq	.LC48(%rip), %rdx
 	movl	$14, %r8d
-	movq	%r14, %rcx
+	movq	%r15, %rcx
 	call	*%rbp
 	testl	%eax, %eax
-	je	.L126
-	leaq	.LC49(%rip), %rdx
+	je	.L145
+	leaq	.LC50(%rip), %rdx
 	movl	$8, %r8d
-	movq	%r14, %rcx
+	movq	%r15, %rcx
 	call	*%rbp
 	testl	%eax, %eax
-	je	.L127
-	leaq	.LC51(%rip), %rdx
-	movl	$9, %r8d
-	movq	%r14, %rcx
-	call	*%rbp
-	testl	%eax, %eax
-	je	.L64
+	je	.L146
 	leaq	.LC52(%rip), %rdx
-	movl	$13, %r8d
-	movq	%r14, %rcx
+	movl	$9, %r8d
+	movq	%r15, %rcx
 	call	*%rbp
 	testl	%eax, %eax
 	je	.L64
-	movl	8(%r13), %eax
+	leaq	.LC53(%rip), %rdx
+	movl	$13, %r8d
+	movq	%r15, %rcx
+	call	*%rbp
+	testl	%eax, %eax
+	je	.L64
+	movslq	8(%r13), %rax
 	cmpl	$8191, %eax
-	jg	.L128
-	movslq	%eax, %r15
-	movl	$37, %ecx
+	jg	.L147
+	imulq	$148, %rax, %rdx
+	movq	0(%r13), %r8
 	xorl	%eax, %eax
-	movss	.LC42(%rip), %xmm0
-	imulq	$148, %r15, %r15
-	movq	%r14, 56(%rsp)
-	addq	0(%r13), %r15
-	shufps	$0, %xmm0, %xmm0
-	movq	%r15, %rdi
+	movl	$37, %ecx
+	leaq	(%r8,%rdx), %r14
+	movq	%r14, %rdi
 	rep stosl
-	movq	.LC54(%rip), %rax
-	leaq	56(%rsp), %rdi
-	movl	$0x3f800000, 140(%r15)
-	movups	%xmm0, 100(%r15)
-	movq	%rdi, %rcx
-	movups	%xmm0, 116(%r15)
-	movq	%rax, 132(%r15)
-	call	nxtok
-	testq	%rax, %rax
-	je	.L129
-	leaq	4(%r15), %r14
-	movq	%rax, %rcx
-	call	atof
-	leaq	44(%r15), %rax
-	cvtsd2ss	%xmm0, %xmm0
-	movq	%rax, 40(%rsp)
-	movss	%xmm0, (%r15)
-	.p2align 4,,10
-	.p2align 3
+	movl	FORMANTS(%rip), %eax
+	testl	%eax, %eax
+	jle	.L138
+	leal	-1(%rax), %ecx
+	cmpl	$2, %ecx
+	jbe	.L107
+	movl	%eax, %ecx
+	movss	.LC43(%rip), %xmm0
+	shrl	$2, %ecx
+	subl	$1, %ecx
+	shufps	$0, %xmm0, %xmm0
+	movups	%xmm0, 104(%r8,%rdx)
+	je	.L82
+	movups	%xmm0, 120(%r8,%rdx)
 .L82:
+	testb	$3, %al
+	je	.L138
+	movl	%eax, %edx
+	andl	$-4, %edx
+.L81:
+	movss	.LC43(%rip), %xmm6
+	leal	1(%rdx), %r8d
+	movslq	%edx, %rcx
+	cmpl	%eax, %r8d
+	movss	%xmm6, 104(%r14,%rcx,4)
+	jge	.L80
+	addl	$2, %edx
+	movss	%xmm6, 108(%r14,%rcx,4)
+	cmpl	%edx, %eax
+	jle	.L80
+	movss	%xmm6, 112(%r14,%rcx,4)
+.L80:
+	leaq	56(%rsp), %rdi
+	movss	%xmm6, 100(%r14)
 	movq	%rdi, %rcx
+	movq	%r15, 56(%rsp)
 	call	nxtok
 	testq	%rax, %rax
-	je	.L81
+	je	.L148
 	movq	%rax, %rcx
 	call	atof
-	movq	%rdi, %rcx
+	cmpl	$0, FORMANTS(%rip)
 	cvtsd2ss	%xmm0, %xmm0
 	movss	%xmm0, (%r14)
-	call	nxtok
-	testq	%rax, %rax
-	je	.L81
-	movq	%rax, %rcx
-	addq	$4, %r14
-	call	atof
-	cvtsd2ss	%xmm0, %xmm0
-	movss	%xmm0, 36(%r14)
-	cmpq	%r14, 40(%rsp)
-	jne	.L82
-	movq	%rdi, %rcx
-	call	nxtok
-	testq	%rax, %rax
-	je	.L122
-	movq	%rax, %rcx
-	call	atof
-	movq	%rdi, %rcx
-	cvtsd2ss	%xmm0, %xmm0
-	movss	%xmm0, 84(%r15)
-	call	nxtok
-	testq	%rax, %rax
-	je	.L122
-	movq	%rax, %rcx
-	call	atof
-	movq	%rdi, %rcx
-	cvtsd2ss	%xmm0, %xmm0
-	movss	%xmm0, 88(%r15)
-	call	nxtok
-	testq	%rax, %rax
-	je	.L122
-	movq	%rax, %rcx
-	call	atof
-	movq	%rdi, %rcx
-	cvtsd2ss	%xmm0, %xmm0
-	movss	%xmm0, 92(%r15)
-	call	nxtok
-	testq	%rax, %rax
-	je	.L122
-	movq	%rax, %rcx
-	call	atof
-	movq	%rdi, %rcx
-	cvtsd2ss	%xmm0, %xmm0
-	movss	%xmm0, 96(%r15)
-	call	nxtok
-	testq	%rax, %rax
-	je	.L122
-	movq	%rax, %rcx
-	call	atof
-	movss	.LC58(%rip), %xmm1
-	cvtsd2ss	%xmm0, %xmm0
-	comiss	%xmm0, %xmm1
-	ja	.L130
-.L90:
-	movss	%xmm0, 100(%r15)
-	xorl	%r14d, %r14d
-.L93:
-	movq	%rdi, %rcx
-	call	nxtok
-	testq	%rax, %rax
-	je	.L92
-	movq	%rax, %rcx
-	call	atof
-	cvtsd2ss	%xmm0, %xmm0
-	movss	%xmm0, 104(%r15,%r14,4)
-	addq	$1, %r14
-	cmpq	$10, %r14
-	jne	.L93
-.L94:
-	movl	$1, 144(%r15)
-	jmp	.L85
+	jle	.L85
+	xorl	%r15d, %r15d
+	jmp	.L87
 	.p2align 4,,10
 	.p2align 3
-.L125:
-	leaq	12(%r14), %rcx
+.L149:
+	movq	%rax, %rcx
+	call	atof
+	movq	%rdi, %rcx
+	cvtsd2ss	%xmm0, %xmm0
+	movss	%xmm0, 4(%r14,%r15,4)
+	call	nxtok
+	testq	%rax, %rax
+	je	.L86
+	movq	%rax, %rcx
+	call	atof
+	cvtsd2ss	%xmm0, %xmm0
+	movss	%xmm0, 44(%r14,%r15,4)
+	addq	$1, %r15
+	cmpl	%r15d, FORMANTS(%rip)
+	jle	.L85
+.L87:
+	movq	%rdi, %rcx
+	call	nxtok
+	testq	%rax, %rax
+	jne	.L149
+.L86:
+	movl	$2, %ecx
+	call	*__imp___acrt_iob_func(%rip)
+	leaq	.LC57(%rip), %rdx
+	movl	%ebx, %r8d
+	movq	%rax, %rcx
+	call	fprintf
+	jmp	.L64
+	.p2align 4,,10
+	.p2align 3
+.L144:
+	leaq	12(%r15), %rcx
 	call	atoi
 	movl	%eax, 12(%r13)
 	jmp	.L64
-.L126:
-	movzbl	15(%r14), %eax
-	leaq	15(%r14), %rcx
+.L145:
+	movzbl	15(%r15), %eax
+	leaq	15(%r15), %rcx
+	cmpb	$9, %al
+	je	.L128
 	cmpb	$32, %al
-	jne	.L120
+	jne	.L72
 	.p2align 4
 	.p2align 4,,10
 	.p2align 3
-.L114:
+.L128:
 	movzbl	1(%rcx), %eax
 	addq	$1, %rcx
 	cmpb	$32, %al
-	je	.L114
-.L120:
+	je	.L128
 	cmpb	$9, %al
-	je	.L114
-	leaq	.LC48(%rip), %rdx
+	je	.L128
+.L72:
+	leaq	.LC49(%rip), %rdx
 	movl	$8, %r8d
 	call	*%rbp
 	testl	%eax, %eax
@@ -655,18 +638,18 @@ spec_parse:
 	movzbl	%al, %eax
 	movl	%eax, 16(%r13)
 	jmp	.L64
-.L127:
-	leaq	9(%r14), %rcx
+.L146:
+	leaq	9(%r15), %rcx
 	call	atof
 	cvtsd2ss	%xmm0, %xmm0
-	mulss	.LC50(%rip), %xmm0
+	mulss	.LC51(%rip), %xmm0
 	movss	%xmm0, 20(%r13)
 	jmp	.L64
-.L128:
+.L147:
 	movl	$2, %ecx
 	call	*__imp___acrt_iob_func(%rip)
 	movl	$8192, %r8d
-	leaq	.LC53(%rip), %rdx
+	leaq	.LC54(%rip), %rdx
 	movq	%rax, %rcx
 	call	fprintf
 .L79:
@@ -674,14 +657,15 @@ spec_parse:
 	call	fclose
 	movslq	8(%r13), %rax
 	testl	%eax, %eax
-	je	.L131
+	je	.L150
 	pxor	%xmm0, %xmm0
 	comiss	20(%r13), %xmm0
-	jnb	.L97
-.L99:
+	jnb	.L103
+.L105:
 	xorl	%eax, %eax
 .L60:
-	addq	$8264, %rsp
+	movaps	8256(%rsp), %xmm6
+	addq	$8280, %rsp
 	popq	%rbx
 	popq	%rsi
 	popq	%rdi
@@ -691,25 +675,100 @@ spec_parse:
 	popq	%r14
 	popq	%r15
 	ret
-.L97:
+.L103:
 	subq	$1, %rax
 	movss	.LC2(%rip), %xmm0
 	imulq	$148, %rax, %rax
 	addq	0(%r13), %rax
 	addss	(%rax), %xmm0
 	movss	%xmm0, 20(%r13)
+	jmp	.L105
+.L85:
+	movq	%rdi, %rcx
+	call	nxtok
+	testq	%rax, %rax
+	je	.L140
+	movq	%rax, %rcx
+	call	atof
+	movq	%rdi, %rcx
+	cvtsd2ss	%xmm0, %xmm0
+	movss	%xmm0, 84(%r14)
+	call	nxtok
+	testq	%rax, %rax
+	je	.L140
+	movq	%rax, %rcx
+	call	atof
+	movq	%rdi, %rcx
+	cvtsd2ss	%xmm0, %xmm0
+	movss	%xmm0, 88(%r14)
+	call	nxtok
+	testq	%rax, %rax
+	je	.L140
+	movq	%rax, %rcx
+	call	atof
+	movq	%rdi, %rcx
+	cvtsd2ss	%xmm0, %xmm0
+	movss	%xmm0, 92(%r14)
+	call	nxtok
+	testq	%rax, %rax
+	je	.L140
+	movq	%rax, %rcx
+	call	atof
+	movq	%rdi, %rcx
+	cvtsd2ss	%xmm0, %xmm0
+	movss	%xmm0, 96(%r14)
+	call	nxtok
+	testq	%rax, %rax
+	je	.L140
+	movq	%rax, %rcx
+	call	atof
+	movss	.LC58(%rip), %xmm1
+	cvtsd2ss	%xmm0, %xmm0
+	comiss	%xmm0, %xmm1
+	ja	.L151
+.L95:
+	cmpl	$0, FORMANTS(%rip)
+	movss	%xmm0, 100(%r14)
+	jle	.L90
+	leaq	104(%r14), %rax
+	xorl	%r15d, %r15d
+	movq	%rax, 40(%rsp)
 	jmp	.L99
-.L122:
+.L152:
+	movq	%rax, %rcx
+	addl	$1, %r15d
+	call	atof
+	movq	40(%rsp), %rax
+	cvtsd2ss	%xmm0, %xmm0
+	addq	$4, %rax
+	movss	%xmm0, -4(%rax)
+	cmpl	%r15d, FORMANTS(%rip)
+	movq	%rax, 40(%rsp)
+	jle	.L100
+.L99:
+	movq	%rdi, %rcx
+	call	nxtok
+	testq	%rax, %rax
+	jne	.L152
+	testl	%r15d, %r15d
+	je	.L90
+.L100:
+	movl	$1, 144(%r14)
+	jmp	.L90
+.L140:
 	movl	$2, %ecx
 	call	*__imp___acrt_iob_func(%rip)
 	leaq	.LC56(%rip), %rdx
 	movl	%ebx, %r8d
 	movq	%rax, %rcx
 	call	fprintf
-.L85:
+.L90:
 	addl	$1, 8(%r13)
 	jmp	.L64
-.L129:
+.L138:
+	movss	.LC43(%rip), %xmm6
+	jmp	.L80
+.L148:
 	movl	$2, %ecx
 	call	*__imp___acrt_iob_func(%rip)
 	leaq	.LC56(%rip), %rdx
@@ -717,47 +776,38 @@ spec_parse:
 	movq	%rax, %rcx
 	call	fprintf
 	jmp	.L64
-.L81:
+.L151:
+	movaps	%xmm6, %xmm0
+	jmp	.L95
+.L107:
+	xorl	%edx, %edx
+	jmp	.L81
+.L150:
 	movl	$2, %ecx
 	call	*__imp___acrt_iob_func(%rip)
-	leaq	.LC57(%rip), %rdx
-	movl	%ebx, %r8d
+	movq	8352(%rsp), %r8
+	leaq	.LC59(%rip), %rdx
 	movq	%rax, %rcx
 	call	fprintf
-	jmp	.L64
-.L130:
-	movss	.LC42(%rip), %xmm0
-	jmp	.L90
-.L92:
-	testl	%r14d, %r14d
-	je	.L85
-	jmp	.L94
-.L123:
+.L62:
+	movl	$-1, %eax
+	jmp	.L60
+.L143:
+	movq	%r12, %rcx
+	call	fclose
+	jmp	.L62
+.L142:
 	call	*__imp__errno(%rip)
 	movl	(%rax), %ecx
 	call	strerror
 	movl	$2, %ecx
 	movq	%rax, %rbx
 	call	*__imp___acrt_iob_func(%rip)
-	movq	8336(%rsp), %r8
+	movq	8352(%rsp), %r8
 	movq	%rbx, %r9
-	leaq	.LC44(%rip), %rdx
+	leaq	.LC45(%rip), %rdx
 	movq	%rax, %rcx
 	call	fprintf
-.L62:
-	movl	$-1, %eax
-	jmp	.L60
-.L131:
-	movl	$2, %ecx
-	call	*__imp___acrt_iob_func(%rip)
-	movq	8336(%rsp), %r8
-	leaq	.LC59(%rip), %rdx
-	movq	%rax, %rcx
-	call	fprintf
-	jmp	.L62
-.L124:
-	movq	%r12, %rcx
-	call	fclose
 	jmp	.L62
 	.seh_endproc
 	.p2align 4
@@ -793,20 +843,20 @@ w32:
 .LC68:
 	.ascii "Warning: too many phonemes; truncating at %d\12\0"
 .LC70:
-	.ascii "t\0"
+	.ascii "p\0"
 .LC71:
-	.ascii "k\0"
+	.ascii "t\0"
 .LC72:
-	.ascii "b\0"
+	.ascii "k\0"
 .LC73:
-	.ascii "d\0"
+	.ascii "b\0"
 .LC74:
+	.ascii "d\0"
+.LC75:
 	.ascii "g\0"
 	.align 8
-.LC75:
+.LC77:
 	.ascii "Error: no phonemes parsed from '%s'\12\0"
-.LC76:
-	.ascii "p\0"
 	.text
 	.p2align 4
 	.def	phoneme_parse;	.scl	3;	.type	32;	.endef
@@ -814,7 +864,7 @@ w32:
 phoneme_parse:
 	pushq	%r15
 	.seh_pushreg	%r15
-	movl	$4280, %eax
+	movl	$4328, %eax
 	pushq	%r14
 	.seh_pushreg	%r14
 	pushq	%r13
@@ -831,313 +881,345 @@ phoneme_parse:
 	.seh_pushreg	%rbx
 	call	___chkstk_ms
 	subq	%rax, %rsp
-	.seh_stackalloc	4280
-	movaps	%xmm6, 4256(%rsp)
-	.seh_savexmm	%xmm6, 4256
+	.seh_stackalloc	4328
+	movaps	%xmm6, 4304(%rsp)
+	.seh_savexmm	%xmm6, 4304
 	.seh_endprologue
-	movq	%rdx, %rbp
-	movq	%rcx, %r13
-	leaq	.LC43(%rip), %rdx
+	movq	%rdx, %r15
+	movq	%rcx, %rbx
+	leaq	.LC44(%rip), %rdx
 	call	fopen
 	testq	%rax, %rax
 	movq	%rax, %r14
-	je	.L241
+	je	.L285
 	movl	$8100, %edx
 	movl	$1024, %ecx
 	call	calloc
 	testq	%rax, %rax
-	movq	%rax, 0(%rbp)
-	je	.L242
-	movq	.LC45(%rip), %rax
-	leaq	160(%rsp), %rbx
-	movl	$6385769, 24(%rbp)
-	movq	__imp__strnicmp(%rip), %rdi
-	movq	%rbx, 32(%rsp)
+	movq	%rax, (%r15)
+	je	.L286
+	movq	.LC46(%rip), %rax
+	movl	$6385769, 24(%r15)
+	movq	__imp__strnicmp(%rip), %r12
 	movss	.LC60(%rip), %xmm6
-	movq	%rax, 8(%rbp)
+	movq	%rax, 8(%r15)
 	movabsq	$4575657221408423936, %rax
-	movq	%rax, 16(%rbp)
-	leaq	24(%rbp), %rax
-	movq	%rax, 56(%rsp)
+	movq	%rax, 16(%r15)
+	leaq	24(%r15), %rax
+	movq	%rax, 40(%rsp)
 	.p2align 4,,10
 	.p2align 3
-.L138:
-	movq	32(%rsp), %rcx
+.L159:
+	leaq	208(%rsp), %rcx
 	movq	%r14, %r8
 	movl	$4096, %edx
 	call	fgets
 	testq	%rax, %rax
-	je	.L155
-	movzbl	160(%rsp), %eax
-	movq	32(%rsp), %r12
+	je	.L176
+	movzbl	208(%rsp), %eax
+	leaq	208(%rsp), %rsi
 	cmpb	$32, %al
-	jne	.L240
+	jne	.L284
 	.p2align 4
 	.p2align 4,,10
 	.p2align 3
-.L215:
-	movzbl	1(%r12), %eax
-	addq	$1, %r12
+.L257:
+	movzbl	1(%rsi), %eax
+	addq	$1, %rsi
 	cmpb	$32, %al
-	je	.L215
-.L240:
+	je	.L257
+.L284:
 	cmpb	$9, %al
-	je	.L215
+	je	.L257
 	cmpb	$35, %al
-	ja	.L140
+	ja	.L161
 	movabsq	$34359747585, %rdx
 	btq	%rax, %rdx
-	jc	.L138
-.L140:
-	leaq	.LC46(%rip), %rdx
-	movl	$11, %r8d
-	movq	%r12, %rcx
-	call	*%rdi
-	testl	%eax, %eax
-	je	.L243
+	jc	.L159
+.L161:
 	leaq	.LC47(%rip), %rdx
-	movl	$14, %r8d
-	movq	%r12, %rcx
-	call	*%rdi
+	movl	$11, %r8d
+	movq	%rsi, %rcx
+	call	*%r12
 	testl	%eax, %eax
-	je	.L244
+	je	.L287
+	leaq	.LC48(%rip), %rdx
+	movl	$14, %r8d
+	movq	%rsi, %rcx
+	call	*%r12
+	testl	%eax, %eax
+	je	.L288
 	leaq	.LC63(%rip), %rdx
 	movl	$5, %r8d
-	movq	%r12, %rcx
-	call	*%rdi
+	movq	%rsi, %rcx
+	call	*%r12
 	testl	%eax, %eax
-	je	.L245
+	je	.L289
 	leaq	.LC65(%rip), %rdx
 	movl	$11, %r8d
-	movq	%r12, %rcx
-	call	*%rdi
+	movq	%rsi, %rcx
+	call	*%r12
 	testl	%eax, %eax
-	je	.L246
+	je	.L290
 	leaq	.LC67(%rip), %rdx
 	movl	$10, %r8d
-	movq	%r12, %rcx
-	call	*%rdi
-	testl	%eax, %eax
-	je	.L138
-	movl	8(%rbp), %eax
-	cmpl	$1023, %eax
-	jg	.L247
-	movslq	%eax, %rsi
-	xorl	%edx, %edx
-	movl	$8100, %r8d
-	imulq	$8100, %rsi, %rsi
-	addq	0(%rbp), %rsi
-	leaq	88(%rsp), %rbx
 	movq	%rsi, %rcx
+	call	*%r12
+	testl	%eax, %eax
+	je	.L159
+	movslq	8(%r15), %rax
+	cmpl	$1023, %eax
+	jg	.L291
+	movq	%rax, 56(%rsp)
+	imulq	$8100, %rax, %rax
+	movq	(%r15), %rdx
+	movl	$8100, %r8d
+	movq	%rdx, 48(%rsp)
+	leaq	(%rdx,%rax), %rbp
+	xorl	%edx, %edx
+	movq	%rax, 64(%rsp)
+	movq	%rbp, %rcx
 	call	memset
-	movq	%rbx, %rcx
-	movq	%r12, 88(%rsp)
-	movq	%rbx, 40(%rsp)
+	movq	%rsi, 88(%rsp)
+	leaq	88(%rsp), %rsi
+	movq	%rsi, %rcx
+	movq	%rsi, 32(%rsp)
 	call	nxtok
 	testq	%rax, %rax
-	je	.L138
+	je	.L159
 	movl	$15, %r8d
 	movq	%rax, %rdx
-	movq	%rsi, %rcx
+	movq	%rbp, %rcx
 	call	strncpy
-	movq	%rbx, %rcx
+	movq	%rsi, %rcx
 	call	nxtok
 	testq	%rax, %rax
-	je	.L138
+	je	.L159
 	movq	%rax, %rcx
 	call	atof
 	cvtsd2ss	%xmm0, %xmm0
-	movss	%xmm0, 16(%rsi)
-	movss	20(%rbp), %xmm1
+	movss	%xmm0, 16(%rbp)
+	movss	20(%r15), %xmm1
 	comiss	.LC69(%rip), %xmm1
-	ja	.L248
-.L157:
-	leaq	g_phoneme_db(%rip), %r15
-	leaq	4292(%r15), %rbx
-	jmp	.L160
+	ja	.L292
+.L178:
+	movq	%rbx, 4400(%rsp)
+	movq	__imp__stricmp(%rip), %r13
+	leaq	g_phoneme_db(%rip), %rbx
+	jmp	.L181
 	.p2align 4,,10
 	.p2align 3
-.L250:
-	leaq	116(%r15), %r15
-	cmpq	%rbx, %r15
-	je	.L249
-.L160:
-	movq	%rsi, %rdx
-	movq	%r15, %rcx
-	movq	%r15, %r12
-	call	*__imp__stricmp(%rip)
+.L294:
+	leaq	4292+g_phoneme_db(%rip), %rax
+	addq	$116, %rbx
+	cmpq	%rbx, %rax
+	je	.L293
+.L181:
+	movq	%rbp, %rdx
+	movq	%rbx, %rcx
+	call	*%r13
 	testl	%eax, %eax
-	jne	.L250
-	movss	20(%r15), %xmm0
-	leaq	.LC76(%rip), %rdx
-	movq	%rsi, %rcx
-	movss	%xmm0, 280(%rsi)
-	movss	60(%r15), %xmm0
-	movss	%xmm0, 320(%rsi)
-	movss	24(%r15), %xmm0
-	movss	%xmm0, 284(%rsi)
-	movss	64(%r15), %xmm0
-	movss	%xmm0, 324(%rsi)
-	movss	28(%r15), %xmm0
-	movss	%xmm0, 288(%rsi)
-	movss	68(%r15), %xmm0
-	movss	%xmm0, 328(%rsi)
-	movss	32(%r15), %xmm0
-	movss	%xmm0, 292(%rsi)
-	movss	72(%r15), %xmm0
-	movss	%xmm0, 332(%rsi)
-	movss	36(%r15), %xmm0
-	movss	%xmm0, 296(%rsi)
-	movss	76(%r15), %xmm0
-	movss	%xmm0, 336(%rsi)
-	movss	40(%r15), %xmm0
-	movss	%xmm0, 300(%rsi)
-	movss	80(%r15), %xmm0
-	movss	%xmm0, 340(%rsi)
-	movss	44(%r15), %xmm0
-	movss	%xmm0, 304(%rsi)
-	movss	84(%r15), %xmm0
-	movss	%xmm0, 344(%rsi)
-	movss	48(%r15), %xmm0
-	movss	%xmm0, 308(%rsi)
-	movss	88(%r15), %xmm0
-	movss	%xmm0, 348(%rsi)
-	movss	52(%r15), %xmm0
-	movss	%xmm0, 312(%rsi)
-	movss	92(%r15), %xmm0
-	movss	%xmm0, 352(%rsi)
-	movss	56(%r15), %xmm0
-	movss	%xmm0, 316(%rsi)
-	movss	96(%r15), %xmm0
-	movss	%xmm0, 356(%rsi)
-	movss	100(%r15), %xmm0
-	movss	%xmm0, 8084(%rsi)
-	movss	104(%r15), %xmm0
-	movss	%xmm0, 8088(%rsi)
-	movss	108(%r15), %xmm0
-	movss	%xmm0, 8092(%rsi)
-	call	*__imp__stricmp(%rip)
+	jne	.L294
+	movl	FORMANTS(%rip), %edx
+	movq	%rbx, 72(%rsp)
+	movq	%rbx, %rsi
+	movq	4400(%rsp), %rbx
+	testl	%edx, %edx
+	jle	.L189
+	cmpl	$1, %edx
+	je	.L218
+	movq	48(%rsp), %rcx
+	leaq	20(%rsi), %r11
+	movq	64(%rsp), %r9
+	leaq	280(%rcx,%r9), %r8
+	leaq	320(%rcx,%r9), %r10
+	leaq	296(%rcx,%r9), %r9
+	cmpq	%r9, %r11
+	leaq	76(%rsi), %r9
+	setnb	%r11b
+	cmpq	%r9, %r8
+	setnb	%r9b
+	orb	%r11b, %r9b
+	je	.L218
+	leaq	-24(%r10), %r9
+	subq	%rsi, %r9
+	cmpq	$48, %r9
+	jbe	.L218
+	leal	-1(%rdx), %r11d
+	movl	%edx, %r9d
+	cmpl	$2, %r11d
+	jbe	.L219
+	shrl	$2, %r9d
+	xorl	%eax, %eax
+	salq	$4, %r9
+.L187:
+	movups	20(%rsi,%rax), %xmm0
+	movups	%xmm0, (%r8,%rax)
+	movups	60(%rsi,%rax), %xmm0
+	movups	%xmm0, (%r10,%rax)
+	addq	$16, %rax
+	cmpq	%r9, %rax
+	jne	.L187
+	movl	%edx, %eax
+	andl	$-4, %eax
+	cmpl	%eax, %edx
+	movl	%eax, %r8d
+	je	.L189
+	subl	%eax, %edx
+	cmpl	$1, %edx
+	movl	%edx, %r9d
+	je	.L191
+.L186:
+	leaq	5(%r8), %r10
+	movq	48(%rsp), %rcx
+	imulq	$2025, 56(%rsp), %rdx
+	testb	$1, %r9b
+	leaq	70(%r8,%rdx), %rdx
+	movq	(%rsi,%r10,4), %r8
+	movq	%r8, (%rcx,%rdx,4)
+	movq	40(%rsi,%r10,4), %r8
+	movq	%r8, 40(%rcx,%rdx,4)
+	je	.L189
+	movl	%r9d, %edx
+	andl	$-2, %edx
+	addl	%edx, %eax
+.L191:
+	cltq
+	movss	20(%rsi,%rax,4), %xmm0
+	movss	%xmm0, 280(%rbp,%rax,4)
+	movss	60(%rsi,%rax,4), %xmm0
+	movss	%xmm0, 320(%rbp,%rax,4)
+.L189:
+	movss	100(%rsi), %xmm0
+	leaq	.LC70(%rip), %rdx
+	movq	%rbp, %rcx
+	movss	%xmm0, 8084(%rbp)
+	movss	104(%rsi), %xmm0
+	movss	%xmm0, 8088(%rbp)
+	movss	108(%rsi), %xmm0
+	movss	%xmm0, 8092(%rbp)
+	call	*%r13
 	testl	%eax, %eax
-	jne	.L251
-.L163:
-	movl	$1, 8096(%rsi)
-.L182:
-	leaq	96(%rsp), %rax
-	xorl	%ecx, %ecx
-	movl	%ecx, 52(%rsp)
-	movq	%rax, 64(%rsp)
+	jne	.L295
+.L183:
+	movl	$1, 8096(%rbp)
+.L200:
+	leaq	144(%rsp), %rax
+	xorl	%r13d, %r13d
+	movq	%rbx, 4400(%rsp)
+	movq	%rax, 48(%rsp)
 	.p2align 4,,10
 	.p2align 3
-.L167:
-	movq	40(%rsp), %rcx
+.L199:
+	movq	32(%rsp), %rcx
 	call	nxtok
 	testq	%rax, %rax
 	movq	%rax, %rbx
-	je	.L252
+	je	.L296
 	movl	$58, %edx
 	movq	%rbx, %rcx
 	call	strchr
 	movl	$47, %edx
 	movq	%rbx, %rcx
-	movq	%rax, %r15
+	movq	%rax, %rsi
 	call	strchr
-	testq	%r15, %r15
-	je	.L168
+	testq	%rsi, %rsi
+	je	.L202
 	testq	%rax, %rax
-	je	.L253
-.L231:
-	cmpl	$9, 52(%rsp)
-	jg	.L167
+	je	.L297
+.L203:
+	cmpl	%r13d, FORMANTS(%rip)
+	jle	.L199
 	movq	%rbx, %rdx
-	movq	64(%rsp), %rbx
+	movq	48(%rsp), %rbx
 	movl	$63, %r8d
 	movq	%rbx, %rcx
 	call	strncpy
 	movq	%rbx, %rcx
 	movl	$47, %edx
-	movb	$0, 159(%rsp)
+	movb	$0, 207(%rsp)
 	call	strchr
 	testq	%rax, %rax
 	movq	%rax, %rbx
-	je	.L254
-	movq	64(%rsp), %rcx
+	je	.L298
+	movq	48(%rsp), %rcx
 	movb	$0, (%rax)
+	movslq	%r13d, %rsi
 	call	atof
-	movslq	52(%rsp), %r15
 	leaq	1(%rbx), %rcx
 	cvtsd2ss	%xmm0, %xmm0
-	movss	%xmm0, 280(%rsi,%r15,4)
+	movss	%xmm0, 280(%rbp,%rsi,4)
 	call	atof
 	cvtsd2ss	%xmm0, %xmm0
-.L175:
-	addl	$1, 52(%rsp)
-	movss	%xmm0, 320(%rsi,%r15,4)
-	jmp	.L167
+.L208:
+	movss	%xmm0, 320(%rbp,%rsi,4)
+	addl	$1, %r13d
+	jmp	.L199
 	.p2align 4,,10
 	.p2align 3
-.L243:
-	leaq	12(%r12), %rcx
+.L287:
+	leaq	12(%rsi), %rcx
 	call	atoi
-	movl	%eax, 12(%rbp)
-	jmp	.L138
-.L244:
-	movzbl	15(%r12), %eax
-	leaq	15(%r12), %rcx
+	movl	%eax, 12(%r15)
+	jmp	.L159
+.L288:
+	movzbl	15(%rsi), %eax
+	leaq	15(%rsi), %rcx
 	cmpb	$32, %al
-	jne	.L238
+	jne	.L282
 	.p2align 4
 	.p2align 4,,10
 	.p2align 3
-.L216:
+.L258:
 	movzbl	1(%rcx), %eax
 	addq	$1, %rcx
 	cmpb	$32, %al
-	je	.L216
-.L238:
+	je	.L258
+.L282:
 	cmpb	$9, %al
-	je	.L216
-	leaq	.LC48(%rip), %rdx
+	je	.L258
+	leaq	.LC49(%rip), %rdx
 	movl	$8, %r8d
-	call	*%rdi
+	call	*%r12
 	testl	%eax, %eax
 	sete	%al
 	movzbl	%al, %eax
-	movl	%eax, 16(%rbp)
-	jmp	.L138
-.L245:
-	leaq	6(%r12), %rcx
+	movl	%eax, 16(%r15)
+	jmp	.L159
+.L289:
+	leaq	6(%rsi), %rcx
 	call	atof
 	pxor	%xmm1, %xmm1
 	movaps	%xmm6, %xmm2
 	cvtsd2ss	%xmm0, %xmm1
 	comiss	%xmm1, %xmm6
-	ja	.L148
+	ja	.L169
 	movss	.LC64(%rip), %xmm2
 	movaps	%xmm2, %xmm0
 	cmpltss	%xmm1, %xmm0
 	andps	%xmm0, %xmm2
 	andnps	%xmm1, %xmm0
 	orps	%xmm0, %xmm2
-.L148:
-	movss	%xmm2, 20(%rbp)
-	jmp	.L138
-.L247:
+.L169:
+	movss	%xmm2, 20(%r15)
+	jmp	.L159
+.L291:
 	movl	$2, %ecx
 	call	*__imp___acrt_iob_func(%rip)
 	movl	$1024, %r8d
 	leaq	.LC68(%rip), %rdx
 	movq	%rax, %rcx
 	call	fprintf
-.L155:
+.L176:
 	movq	%r14, %rcx
 	call	fclose
-	movl	8(%rbp), %eax
+	movl	8(%r15), %eax
 	testl	%eax, %eax
-	je	.L255
+	je	.L299
 	xorl	%eax, %eax
-.L133:
-	movaps	4256(%rsp), %xmm6
-	addq	$4280, %rsp
+.L154:
+	movaps	4304(%rsp), %xmm6
+	addq	$4328, %rsp
 	popq	%rbx
 	popq	%rsi
 	popq	%rdi
@@ -1147,168 +1229,201 @@ phoneme_parse:
 	popq	%r14
 	popq	%r15
 	ret
-.L246:
-	movzbl	12(%r12), %eax
-	leaq	12(%r12), %rcx
+.L290:
+	movzbl	12(%rsi), %eax
+	leaq	12(%rsi), %rcx
 	cmpb	$32, %al
-	jne	.L239
+	jne	.L283
 	.p2align 4
 	.p2align 4,,10
 	.p2align 3
-.L217:
+.L259:
 	movzbl	1(%rcx), %eax
 	addq	$1, %rcx
 	cmpb	$32, %al
-	je	.L217
-.L239:
+	je	.L259
+.L283:
 	cmpb	$9, %al
-	je	.L217
-	movq	56(%rsp), %r8
+	je	.L259
+	movq	40(%rsp), %r8
 	leaq	.LC66(%rip), %rdx
 	call	sscanf
-	jmp	.L138
-.L168:
+	jmp	.L159
+.L202:
 	testq	%rax, %rax
-	je	.L167
-	jmp	.L231
-.L253:
-	movl	276(%rsi), %r15d
-	cmpl	$31, %r15d
-	jg	.L167
-	leal	1(%r15), %eax
+	je	.L199
+	jmp	.L203
+.L297:
+	movl	276(%rbp), %esi
+	cmpl	$31, %esi
+	jg	.L199
+	leal	1(%rsi), %eax
 	movl	$63, %r8d
 	movq	%rbx, %rdx
-	leaq	96(%rsp), %rcx
-	movl	%eax, 276(%rsi)
+	leaq	144(%rsp), %rcx
+	movl	%eax, 276(%rbp)
 	call	strncpy
-	leaq	96(%rsp), %rcx
 	movl	$58, %edx
-	movb	$0, 159(%rsp)
+	movb	$0, 207(%rsp)
+	leaq	144(%rsp), %rcx
 	call	strchr
 	testq	%rax, %rax
-	je	.L167
+	je	.L199
 	movb	$0, (%rax)
-	leaq	96(%rsp), %rcx
-	movq	%rax, 72(%rsp)
+	leaq	144(%rsp), %rcx
+	movq	%rax, 56(%rsp)
 	call	atof
-	movq	72(%rsp), %rax
-	movslq	%r15d, %r9
+	movq	56(%rsp), %rax
+	movslq	%esi, %r9
 	leaq	2(%r9), %rbx
 	cvtsd2ss	%xmm0, %xmm0
-	movss	%xmm0, 4(%rsi,%rbx,8)
+	movss	%xmm0, 4(%rbp,%rbx,8)
 	leaq	1(%rax), %rcx
 	call	atof
 	cvtsd2ss	%xmm0, %xmm0
-	movss	%xmm0, 8(%rsi,%rbx,8)
-	jmp	.L167
-.L252:
-	cmpl	$0, 276(%rsi)
-	jne	.L177
-	testq	%r12, %r12
-	je	.L184
-	movss	112(%r12), %xmm0
+	movss	%xmm0, 8(%rbp,%rbx,8)
+	jmp	.L199
+.L296:
+	cmpl	$0, 276(%rbp)
+	movq	4400(%rsp), %rbx
+	jne	.L210
+	movq	72(%rsp), %rax
+	testq	%rax, %rax
+	je	.L220
+	movss	112(%rax), %xmm0
 	pxor	%xmm1, %xmm1
 	comiss	%xmm1, %xmm0
-	jbe	.L184
-.L178:
-	movl	$0x00000000, 20(%rsi)
-	movss	%xmm0, 24(%rsi)
-	movl	$0x42c80000, 28(%rsi)
-	movss	%xmm0, 32(%rsi)
-	movl	$2, 276(%rsi)
-.L177:
-	addl	$1, 8(%rbp)
-	jmp	.L138
-.L248:
+	jbe	.L220
+.L211:
+	movl	$0x00000000, 20(%rbp)
+	movss	%xmm0, 24(%rbp)
+	movl	$0x42c80000, 28(%rbp)
+	movss	%xmm0, 32(%rbp)
+	movl	$2, 276(%rbp)
+.L210:
+	addl	$1, 8(%r15)
+	jmp	.L159
+.L292:
 	divss	%xmm1, %xmm0
-	movss	%xmm0, 16(%rsi)
-	jmp	.L157
-.L251:
-	leaq	.LC70(%rip), %rdx
-	movq	%rsi, %rcx
-	call	*__imp__stricmp(%rip)
-	testl	%eax, %eax
-	je	.L163
-	leaq	.LC71(%rip), %rdx
-	movq	%rsi, %rcx
-	call	*__imp__stricmp(%rip)
-	testl	%eax, %eax
-	je	.L163
-	leaq	.LC72(%rip), %rdx
-	movq	%rsi, %rcx
-	call	*__imp__stricmp(%rip)
-	testl	%eax, %eax
-	jne	.L164
-.L165:
-	movl	$2, 8096(%rsi)
-	jmp	.L182
-.L249:
-	movaps	.LC77(%rip), %xmm0
-	xorl	%r12d, %r12d
-	movq	.LC82(%rip), %rax
-	movups	%xmm0, 280(%rsi)
-	movaps	.LC78(%rip), %xmm0
-	movups	%xmm0, 296(%rsi)
-	movaps	.LC79(%rip), %xmm0
-	movq	%rax, 8084(%rsi)
-	movups	%xmm0, 312(%rsi)
-	movaps	.LC80(%rip), %xmm0
-	movups	%xmm0, 328(%rsi)
-	movaps	.LC81(%rip), %xmm0
-	movups	%xmm0, 344(%rsi)
-	jmp	.L182
-.L184:
-	movss	.LC0(%rip), %xmm0
+	movss	%xmm0, 16(%rbp)
 	jmp	.L178
-.L254:
-	movq	64(%rsp), %rcx
+.L295:
+	leaq	.LC71(%rip), %rdx
+	movq	%rbp, %rcx
+	call	*%r13
+	testl	%eax, %eax
+	je	.L183
+	leaq	.LC72(%rip), %rdx
+	movq	%rbp, %rcx
+	call	*%r13
+	testl	%eax, %eax
+	je	.L183
+	leaq	.LC73(%rip), %rdx
+	movq	%rbp, %rcx
+	call	*%r13
+	testl	%eax, %eax
+	jne	.L196
+.L197:
+	movl	$2, 8096(%rbp)
+	jmp	.L200
+.L293:
+	movq	.LC80(%rip), %rdx
+	movaps	.LC78(%rip), %xmm0
+	movl	FORMANTS(%rip), %eax
+	movaps	%xmm0, 96(%rsp)
+	movaps	.LC79(%rip), %xmm0
+	movq	%rdx, 128(%rsp)
+	movq	.LC83(%rip), %rdx
+	movaps	%xmm0, 112(%rsp)
+	movaps	.LC81(%rip), %xmm0
+	testl	%eax, %eax
+	movq	4400(%rsp), %rbx
+	movaps	%xmm0, 144(%rsp)
+	movaps	.LC82(%rip), %xmm0
+	movq	%rdx, 176(%rsp)
+	movaps	%xmm0, 160(%rsp)
+	jle	.L201
+	leaq	0(,%rax,4), %rsi
+	leaq	280(%rbp), %rcx
+	movq	%rsi, %r8
+	leaq	96(%rsp), %rdx
+	call	memcpy
+	leaq	320(%rbp), %rcx
+	movq	%rsi, %r8
+	leaq	144(%rsp), %rdx
+	call	memcpy
+.L201:
+	movq	.LC76(%rip), %rax
+	xorl	%edx, %edx
+	movq	%rdx, 72(%rsp)
+	movq	%rax, 8084(%rbp)
+	jmp	.L200
+.L220:
+	movss	.LC0(%rip), %xmm0
+	jmp	.L211
+.L298:
+	movq	48(%rsp), %rcx
+	movslq	%r13d, %rsi
 	call	atof
-	movslq	52(%rsp), %r15
 	cvtsd2ss	%xmm0, %xmm0
-	movss	%xmm0, 280(%rsi,%r15,4)
+	movss	%xmm0, 280(%rbp,%rsi,4)
 	movss	.LC61(%rip), %xmm0
-	jmp	.L175
-.L241:
+	jmp	.L208
+.L218:
+	xorl	%eax, %eax
+.L193:
+	movss	20(%rsi,%rax,4), %xmm0
+	movss	%xmm0, 280(%rbp,%rax,4)
+	movss	60(%rsi,%rax,4), %xmm0
+	movss	%xmm0, 320(%rbp,%rax,4)
+	addq	$1, %rax
+	cmpl	%eax, %edx
+	jg	.L193
+	jmp	.L189
+.L219:
+	xorl	%r8d, %r8d
+	jmp	.L186
+.L285:
 	call	*__imp__errno(%rip)
 	movl	(%rax), %ecx
 	call	strerror
 	movl	$2, %ecx
-	movq	%rax, %rbx
+	movq	%rax, %rsi
 	call	*__imp___acrt_iob_func(%rip)
-	movq	%rbx, %r9
-	movq	%r13, %r8
+	movq	%rsi, %r9
+	movq	%rbx, %r8
 	leaq	.LC62(%rip), %rdx
 	movq	%rax, %rcx
 	call	fprintf
-.L135:
+.L156:
 	movl	$-1, %eax
-	jmp	.L133
-.L164:
-	leaq	.LC73(%rip), %rdx
-	movq	%rsi, %rcx
-	call	*__imp__stricmp(%rip)
-	testl	%eax, %eax
-	je	.L165
-	leaq	.LC74(%rip), %rdx
-	movq	%rsi, %rcx
-	call	*__imp__stricmp(%rip)
-	testl	%eax, %eax
-	je	.L165
-	xorl	%edx, %edx
-	movl	%edx, 8096(%rsi)
-	jmp	.L182
-.L255:
+	jmp	.L154
+.L299:
 	movl	$2, %ecx
 	call	*__imp___acrt_iob_func(%rip)
-	leaq	.LC75(%rip), %rdx
-	movq	%r13, %r8
+	leaq	.LC77(%rip), %rdx
+	movq	%rbx, %r8
 	movq	%rax, %rcx
 	call	fprintf
-	jmp	.L135
-.L242:
+	jmp	.L156
+.L286:
 	movq	%r14, %rcx
 	call	fclose
-	jmp	.L135
+	jmp	.L156
+.L196:
+	leaq	.LC74(%rip), %rdx
+	movq	%rbp, %rcx
+	call	*%r13
+	testl	%eax, %eax
+	je	.L197
+	leaq	.LC75(%rip), %rdx
+	movq	%rbp, %rcx
+	call	*%r13
+	testl	%eax, %eax
+	je	.L197
+	xorl	%ecx, %ecx
+	movl	%ecx, 8096(%rbp)
+	jmp	.L200
 	.seh_endproc
 	.p2align 4
 	.def	contour_f0.part.0;	.scl	3;	.type	32;	.endef
@@ -1318,49 +1433,49 @@ contour_f0.part.0:
 	movslq	%edx, %rax
 	leaq	-8(%rcx,%rax,8), %r8
 	comiss	(%r8), %xmm2
-	jnb	.L257
+	jnb	.L301
 	cmpl	$1, %edx
-	je	.L257
+	je	.L301
 	leal	-2(%rdx), %eax
 	leaq	8(%rcx,%rax,8), %rax
 	.p2align 4,,10
 	.p2align 3
-.L263:
+.L307:
 	movss	(%rcx), %xmm0
 	comiss	%xmm0, %xmm2
-	jb	.L258
+	jb	.L302
 	movss	8(%rcx), %xmm1
 	comiss	%xmm2, %xmm1
-	jnb	.L271
-.L258:
+	jnb	.L315
+.L302:
 	addq	$8, %rcx
 	cmpq	%rcx, %rax
-	jne	.L263
-.L257:
+	jne	.L307
+.L301:
 	movss	4(%r8), %xmm3
-.L256:
+.L300:
 	movaps	%xmm3, %xmm0
 	ret
 	.p2align 4,,10
 	.p2align 3
-.L271:
+.L315:
 	comiss	%xmm1, %xmm0
 	movss	4(%rcx), %xmm3
-	jnb	.L256
+	jnb	.L300
 	subss	%xmm0, %xmm1
 	movss	12(%rcx), %xmm4
 	subss	%xmm0, %xmm2
 	divss	%xmm1, %xmm2
 	pxor	%xmm1, %xmm1
 	comiss	%xmm2, %xmm1
-	ja	.L262
-	movss	.LC42(%rip), %xmm0
+	ja	.L306
+	movss	.LC43(%rip), %xmm0
 	movaps	%xmm0, %xmm1
 	cmpltss	%xmm2, %xmm1
 	andps	%xmm1, %xmm0
 	andnps	%xmm2, %xmm1
 	orps	%xmm0, %xmm1
-.L262:
+.L306:
 	subss	%xmm3, %xmm4
 	movaps	%xmm4, %xmm0
 	mulss	%xmm1, %xmm0
@@ -1369,28 +1484,32 @@ contour_f0.part.0:
 	ret
 	.seh_endproc
 	.section .rdata,"dr"
-.LC85:
-	.ascii "demo\0"
 .LC86:
-	.ascii "spec\0"
+	.ascii "demo\0"
 .LC87:
-	.ascii "phoneme\0"
+	.ascii "spec\0"
 .LC88:
-	.ascii "cascade\0"
+	.ascii "phoneme\0"
 .LC89:
-	.ascii "natural\0"
+	.ascii "cascade\0"
 .LC90:
-	.ascii "breathy\0"
+	.ascii "natural\0"
 .LC91:
+	.ascii "whisper\0"
+.LC92:
 	.ascii "impulsive\0"
-.LC113:
+.LC112:
 	.ascii "--help\0"
-.LC114:
+.LC113:
 	.ascii "--version\0"
+	.align 8
+.LC114:
+	.ascii "R.I.B-DDMMYYYY (R meaning Release, I meaning 1 character version identification, and B meaning bugfix, DD meaning 2 digit day, MM meaning 2 digit month and YYYY meaning 4 digit year.)\0"
 .LC115:
-	.ascii "1.0.0\0"
+	.ascii "2.~.5-23032026\0"
+	.align 8
 .LC116:
-	.ascii "formant_synth version %s\12\0"
+	.ascii "poor man's synthesizer version %s version format %s\12\0"
 .LC117:
 	.ascii "--spec\0"
 .LC118:
@@ -1455,81 +1574,86 @@ contour_f0.part.0:
 .LC148:
 	.ascii "--bw6-10\0"
 .LC149:
-	.ascii "--aspiration-cutoff\0"
+	.ascii "--formants\0"
 .LC150:
-	.ascii "--frication-center\0"
+	.ascii "--aspiration-cutoff\0"
 .LC151:
-	.ascii "--frication-bandwidth\0"
+	.ascii "--frication-center\0"
 .LC152:
-	.ascii "--output\0"
+	.ascii "--frication-bandwidth\0"
 .LC153:
-	.ascii "--output-format\0"
+	.ascii "--output\0"
 .LC154:
-	.ascii "wav16\0"
+	.ascii "--output-format\0"
 .LC155:
-	.ascii "wav32\0"
+	.ascii "wav16\0"
 .LC156:
-	.ascii "raw16\0"
+	.ascii "wav32\0"
 .LC157:
+	.ascii "raw16\0"
+.LC158:
 	.ascii "raw32\0"
 	.align 8
-.LC158:
-	.ascii "Error: unknown output format '%s'\12\0"
 .LC159:
-	.ascii "--normalize\0"
+	.ascii "Error: unknown output format '%s'\12\0"
 .LC160:
-	.ascii "--no-normalize\0"
+	.ascii "--normalize\0"
 .LC161:
-	.ascii "--no-lip-radiation\0"
+	.ascii "--no-normalize\0"
 .LC162:
+	.ascii "--no-lip-radiation\0"
+.LC163:
 	.ascii "--verbose\0"
 	.align 8
-.LC163:
+.LC164:
 	.ascii "Warning: unknown argument '%s' (ignored)\12\0"
 	.align 8
 .LC165:
-	.ascii "=== Formant Synthesizer v%s ===\12\0"
-.LC166:
-	.ascii "Mode      : %s\12\0"
+	.ascii "ERROR: FORMANTS (%d) must be between 1 and MAX_FORMANTS (%d)\12\0"
+	.align 8
 .LC167:
-	.ascii "Filters   : %s\12\0"
+	.ascii "Poor Man's Synthesizer v%s version format %s\12\0"
 .LC168:
-	.ascii "Voice     : %s\12\0"
+	.ascii "Mode      : %s\12\0"
 .LC169:
-	.ascii "Sample-rt : %d Hz\12\0"
+	.ascii "Filters   : %s\12\0"
 .LC170:
-	.ascii "Duration  : %.2f s\12\0"
+	.ascii "Voice     : %s\12\0"
 .LC171:
+	.ascii "Sample-rt : %d Hz\12\0"
+.LC172:
+	.ascii "Duration  : %.2f s\12\0"
+.LC173:
 	.ascii "F0        : %.1f Hz\12\0"
 	.align 8
-.LC172:
+.LC174:
 	.ascii "Voicing   : %.2f   Asp: %.2f   Fric: %.2f\12\0"
 	.align 8
-.LC173:
+.LC175:
 	.ascii "Vibrato   : %.1f Hz depth @ %.1f Hz rate\12\0"
 	.align 8
-.LC174:
+.LC176:
 	.ascii "Jitter    : %.1f%%  Shimmer: %.1f%%\12\0"
-.LC175:
+.LC177:
 	.ascii "Formants  :\0"
 	.align 8
-.LC176:
+.LC178:
 	.ascii "  F%2d : %6.0f Hz  BW %4.0f Hz  Gain %.2f\12\0"
-.LC177:
+.LC179:
 	.ascii "Output    : %s\12\0"
 	.align 8
-.LC178:
+.LC180:
 	.ascii "===================================\0"
-.LC179:
+.LC181:
 	.ascii "Synthesising...\0"
 	.align 8
-.LC181:
+.LC183:
 	.ascii "Error: out of memory (%d samples)\12\0"
-.LC182:
-	.ascii "Error: synthesis failed\12\0"
 .LC184:
+	.ascii "Error: synthesis failed\12\0"
+.LC186:
 	.ascii "sil\0"
-.LC185:
+.LC187:
 	.ascii "_\0"
 	.align 8
 .LC215:
@@ -1565,259 +1689,314 @@ main:
 	.seh_pushreg	%rsi
 	pushq	%rbx
 	.seh_pushreg	%rbx
-	subq	$2488, %rsp
-	.seh_stackalloc	2488
-	movaps	%xmm6, 2320(%rsp)
-	.seh_savexmm	%xmm6, 2320
-	movaps	%xmm7, 2336(%rsp)
-	.seh_savexmm	%xmm7, 2336
-	movaps	%xmm8, 2352(%rsp)
-	.seh_savexmm	%xmm8, 2352
-	movaps	%xmm9, 2368(%rsp)
-	.seh_savexmm	%xmm9, 2368
-	movaps	%xmm10, 2384(%rsp)
-	.seh_savexmm	%xmm10, 2384
-	movaps	%xmm11, 2400(%rsp)
-	.seh_savexmm	%xmm11, 2400
-	movaps	%xmm12, 2416(%rsp)
-	.seh_savexmm	%xmm12, 2416
-	movaps	%xmm13, 2432(%rsp)
-	.seh_savexmm	%xmm13, 2432
-	movaps	%xmm14, 2448(%rsp)
-	.seh_savexmm	%xmm14, 2448
-	movaps	%xmm15, 2464(%rsp)
-	.seh_savexmm	%xmm15, 2464
+	subq	$2568, %rsp
+	.seh_stackalloc	2568
+	movaps	%xmm6, 2400(%rsp)
+	.seh_savexmm	%xmm6, 2400
+	movaps	%xmm7, 2416(%rsp)
+	.seh_savexmm	%xmm7, 2416
+	movaps	%xmm8, 2432(%rsp)
+	.seh_savexmm	%xmm8, 2432
+	movaps	%xmm9, 2448(%rsp)
+	.seh_savexmm	%xmm9, 2448
+	movaps	%xmm10, 2464(%rsp)
+	.seh_savexmm	%xmm10, 2464
+	movaps	%xmm11, 2480(%rsp)
+	.seh_savexmm	%xmm11, 2480
+	movaps	%xmm12, 2496(%rsp)
+	.seh_savexmm	%xmm12, 2496
+	movaps	%xmm13, 2512(%rsp)
+	.seh_savexmm	%xmm13, 2512
+	movaps	%xmm14, 2528(%rsp)
+	.seh_savexmm	%xmm14, 2528
+	movaps	%xmm15, 2544(%rsp)
+	.seh_savexmm	%xmm15, 2544
 	.seh_endprologue
 	movl	%ecx, %esi
 	movq	%rdx, %rdi
 	call	__main
-	leaq	720(%rsp), %rax
+	leaq	800(%rsp), %rax
 	xorl	%edx, %edx
 	movl	$1600, %r8d
 	movq	%rax, %rcx
 	movq	%rax, 64(%rsp)
 	call	memset
-	movq	.LC99(%rip), %rax
-	cmpl	$1, %esi
-	movl	$22050, 732(%rsp)
-	movss	.LC42(%rip), %xmm6
-	movaps	.LC100(%rip), %xmm0
-	movss	%xmm6, 788(%rsp)
-	movaps	%xmm6, %xmm7
-	movq	%rax, 1108(%rsp)
-	movq	.LC101(%rip), %rax
-	shufps	$0, %xmm7, %xmm7
-	movlps	%xmm7, 1068(%rsp)
-	movaps	%xmm6, %xmm7
-	shufps	$0, %xmm7, %xmm7
-	movlps	%xmm0, 1124(%rsp)
-	movhps	%xmm0, 1132(%rsp)
-	movq	%rax, 1140(%rsp)
-	movq	.LC102(%rip), %rax
-	movss	%xmm6, 820(%rsp)
-	movss	%xmm6, 852(%rsp)
-	movhps	%xmm7, 1076(%rsp)
-	movq	%rax, 2292(%rsp)
-	movabsq	$8587929587188790639, %rax
-	movq	%rax, 1232(%rsp)
-	movq	.LC103(%rip), %rax
-	movl	$7758199, 1239(%rsp)
-	movss	%xmm6, 884(%rsp)
-	movq	%rax, 736(%rsp)
-	movabsq	$4913145719546498253, %rax
-	movq	%rax, 744(%rsp)
-	movabsq	$4575657222530138112, %rax
-	movq	%rax, 752(%rsp)
-	movq	.LC104(%rip), %rax
-	movq	%rax, 780(%rsp)
-	movq	.LC105(%rip), %rax
+	movaps	.LC101(%rip), %xmm0
+	movabsq	$4611686018427409954, %rax
 	movq	%rax, 812(%rsp)
-	movq	.LC106(%rip), %rax
-	movq	%rax, 844(%rsp)
-	movq	.LC107(%rip), %rax
-	movq	%rax, 876(%rsp)
-	movq	.LC108(%rip), %rax
-	movq	%rax, 908(%rsp)
-	movq	.LC109(%rip), %rax
-	movss	%xmm6, 916(%rsp)
-	movss	%xmm6, 948(%rsp)
-	movss	%xmm6, 980(%rsp)
-	movq	%rax, 940(%rsp)
-	movq	.LC110(%rip), %rax
-	movlps	%xmm7, 1084(%rsp)
-	movlps	%xmm7, 1092(%rsp)
-	movss	%xmm6, 1012(%rsp)
-	movq	%rax, 972(%rsp)
-	movq	.LC111(%rip), %rax
-	movss	%xmm6, 1044(%rsp)
-	movlps	%xmm7, 1100(%rsp)
-	movq	%rax, 1004(%rsp)
-	movq	.LC112(%rip), %rax
-	movq	%rax, 1036(%rsp)
-	jle	.L1272
-	movq	$0, 368(%rsp)
+	movabsq	$4561245704582856704, %rax
+	movq	%rax, 820(%rsp)
+	movq	.LC100(%rip), %rax
+	movlps	%xmm0, 1204(%rsp)
+	movhps	%xmm0, 1212(%rsp)
+	movaps	.LC78(%rip), %xmm0
+	movq	%rax, 1188(%rsp)
+	movq	.LC102(%rip), %rax
+	movaps	%xmm0, 352(%rsp)
+	movaps	.LC79(%rip), %xmm0
+	movaps	%xmm0, 368(%rsp)
+	movaps	.LC81(%rip), %xmm0
+	movq	%rax, 1220(%rsp)
+	movq	.LC103(%rip), %rax
+	movaps	%xmm0, 400(%rsp)
+	movaps	.LC82(%rip), %xmm0
+	movaps	%xmm0, 416(%rsp)
+	movq	%rax, 2372(%rsp)
+	movabsq	$8587929587188790639, %rax
+	movq	%rax, 1312(%rsp)
+	movq	.LC80(%rip), %rax
+	movl	$7758199, 1319(%rsp)
+	movq	%rax, 384(%rsp)
+	movq	.LC83(%rip), %rax
+	movq	%rax, 432(%rsp)
+	movl	FORMANTS(%rip), %eax
+	testl	%eax, %eax
+	jle	.L317
+	leal	-1(%rax), %edx
+	cmpl	$2, %edx
+	jbe	.L1024
+	movq	.LC104(%rip), %rdx
+	movss	.LC43(%rip), %xmm6
+	movss	%xmm6, 836(%rsp)
+	movaps	%xmm6, %xmm0
+	movq	%rdx, 828(%rsp)
+	movq	.LC105(%rip), %rdx
+	shufps	$0, %xmm0, %xmm0
+	movss	%xmm6, 868(%rsp)
+	movss	%xmm6, 900(%rsp)
+	movss	%xmm6, 932(%rsp)
+	movq	%rdx, 860(%rsp)
+	movq	.LC106(%rip), %rdx
+	movlps	%xmm0, 1148(%rsp)
+	movhps	%xmm0, 1156(%rsp)
+	movq	%rdx, 892(%rsp)
+	movq	.LC107(%rip), %rdx
+	movq	%rdx, 924(%rsp)
+	movl	%eax, %edx
+	shrl	$2, %edx
+	cmpl	$1, %edx
+	jne	.L1690
+.L319:
+	movl	%eax, %edx
+	andl	$-4, %edx
+	testb	$3, %al
+	je	.L317
+.L318:
+	movslq	%edx, %rcx
+	movss	400(%rsp,%rcx,4), %xmm1
+	movq	%rcx, %r8
+	movss	352(%rsp,%rcx,4), %xmm0
+	salq	$5, %r8
+	movss	%xmm6, 836(%rsp,%r8)
+	unpcklps	%xmm1, %xmm0
+	movlps	%xmm0, 828(%rsp,%r8)
+	movss	%xmm6, 1148(%rsp,%rcx,4)
+	leal	1(%rdx), %ecx
+	cmpl	%ecx, %eax
+	jle	.L317
+	movslq	%ecx, %rcx
+	addl	$2, %edx
+	movss	400(%rsp,%rcx,4), %xmm1
+	movq	%rcx, %r8
+	movss	352(%rsp,%rcx,4), %xmm0
+	salq	$5, %r8
+	cmpl	%edx, %eax
+	movss	%xmm6, 836(%rsp,%r8)
+	unpcklps	%xmm1, %xmm0
+	movlps	%xmm0, 828(%rsp,%r8)
+	movss	%xmm6, 1148(%rsp,%rcx,4)
+	jle	.L317
+	movslq	%edx, %rdx
+	movss	400(%rsp,%rdx,4), %xmm1
+	movq	%rdx, %rax
+	movss	352(%rsp,%rdx,4), %xmm0
+	salq	$5, %rax
+	movss	%xmm6, 836(%rsp,%rax)
+	unpcklps	%xmm1, %xmm0
+	movlps	%xmm0, 828(%rsp,%rax)
+	movss	%xmm6, 1148(%rsp,%rdx,4)
+.L317:
+	cmpl	$1, %esi
+	jle	.L1691
+	movq	$0, 448(%rsp)
 	xorl	%ebp, %ebp
 	movl	$1, %r13d
-	movq	$0, 376(%rsp)
-	movq	$0, 384(%rsp)
-	movq	$0, 392(%rsp)
-	movq	$0, 400(%rsp)
-	movq	$0, 416(%rsp)
-	movq	$0, 424(%rsp)
-	movq	$0, 432(%rsp)
-	movq	$0, 440(%rsp)
-	movq	$0, 448(%rsp)
-	jmp	.L378
+	movq	$0, 456(%rsp)
+	movq	$0, 464(%rsp)
+	movq	$0, 472(%rsp)
+	movq	$0, 480(%rsp)
+	movq	$0, 496(%rsp)
+	movq	$0, 504(%rsp)
+	movq	$0, 512(%rsp)
+	movq	$0, 520(%rsp)
+	movq	$0, 528(%rsp)
+	jmp	.L431
 	.p2align 4,,10
 	.p2align 3
-.L1275:
+.L1694:
 	leaq	.LC118(%rip), %rdx
 	movq	%r12, %rcx
 	call	strcmp
 	testl	%eax, %eax
-	je	.L279
+	je	.L327
 	leaq	.LC121(%rip), %rdx
 	movq	%r12, %rcx
 	call	strcmp
 	testl	%eax, %eax
-	jne	.L285
+	jne	.L333
 	cmpl	%ebx, %esi
-	jle	.L1245
+	jle	.L1659
 	testl	%ebp, %ebp
-	je	.L287
-	cmpl	$2, 720(%rsp)
-	jne	.L288
-.L287:
-	movl	$2, 720(%rsp)
+	je	.L335
+	cmpl	$2, 800(%rsp)
+	jne	.L336
+.L335:
+	movl	$2, 800(%rsp)
 	.p2align 4,,10
 	.p2align 3
-.L1244:
+.L1658:
 	movslq	%ebx, %rax
 	movl	$511, %r8d
 	movq	(%rdi,%rax,8), %rdx
-	leaq	1744(%rsp), %rcx
+	leaq	1824(%rsp), %rcx
 	call	strncpy
-.L289:
+.L337:
 	movl	$1, %ebp
-.L284:
+.L332:
 	leal	1(%rbx), %r13d
 	cmpl	%r13d, %esi
-	jle	.L1273
-.L378:
-	leaq	.LC113(%rip), %rdx
+	jle	.L1692
+.L431:
+	leaq	.LC112(%rip), %rdx
 	movslq	%r13d, %r14
 	movq	(%rdi,%r14,8), %r12
 	movq	%r12, %rcx
 	call	strcmp
 	testl	%eax, %eax
-	je	.L275
+	je	.L323
 	cmpb	$45, (%r12)
-	jne	.L277
+	jne	.L325
 	cmpb	$104, 1(%r12)
-	jne	.L277
+	jne	.L325
 	cmpb	$0, 2(%r12)
-	je	.L275
-.L277:
-	leaq	.LC114(%rip), %rdx
+	je	.L323
+.L325:
+	leaq	.LC113(%rip), %rdx
 	movq	%r12, %rcx
 	call	strcmp
 	testl	%eax, %eax
-	je	.L1274
+	je	.L1693
 	leaq	.LC117(%rip), %rdx
 	movq	%r12, %rcx
 	call	strcmp
 	leal	1(%r13), %ebx
 	testl	%eax, %eax
-	jne	.L1275
-.L279:
+	jne	.L1694
+.L327:
 	cmpl	%ebx, %esi
-	jle	.L1245
+	jle	.L1659
 	testl	%ebp, %ebp
-	je	.L283
-	cmpl	$1, 720(%rsp)
-	jne	.L288
-.L283:
-	movl	$1, 720(%rsp)
-	jmp	.L1244
+	je	.L331
+	cmpl	$1, 800(%rsp)
+	jne	.L336
+.L331:
+	movl	$1, 800(%rsp)
+	jmp	.L1658
 	.p2align 4,,10
 	.p2align 3
-.L285:
+.L333:
 	leaq	.LC122(%rip), %rdx
 	movq	%r12, %rcx
 	call	strcmp
 	testl	%eax, %eax
-	jne	.L290
+	jne	.L338
 	cmpl	%ebx, %esi
-	jle	.L1245
+	jle	.L1659
 	testl	%ebp, %ebp
-	je	.L292
-	cmpl	$0, 720(%rsp)
-	jne	.L288
-.L292:
-	movq	8(%rdi,%r14,8), %rbp
-	xorl	%eax, %eax
+	je	.L340
+	cmpl	$0, 800(%rsp)
+	jne	.L336
+.L340:
+	leaq	2336(%rsp), %rcx
+	movslq	%ebx, %rax
+	xorl	%r8d, %r8d
+	movq	(%rdi,%rax,8), %rbp
+	movl	%r8d, 800(%rsp)
 	movl	$31, %r8d
-	leaq	2256(%rsp), %rcx
-	movl	%eax, 720(%rsp)
 	movq	%rbp, %rdx
 	call	strncpy
 	movq	__imp__stricmp(%rip), %r12
-	leaq	.LC89(%rip), %rdx
-	movq	%rbp, %rcx
-	call	*%r12
-	testl	%eax, %eax
-	je	.L1276
 	leaq	.LC90(%rip), %rdx
 	movq	%rbp, %rcx
 	call	*%r12
 	testl	%eax, %eax
-	jne	.L294
-	movl	$1, 728(%rsp)
-	jmp	.L289
-.L290:
+	je	.L1695
+	leaq	.LC91(%rip), %rdx
+	movq	%rbp, %rcx
+	call	*%r12
+	testl	%eax, %eax
+	jne	.L342
+	movl	$1, 808(%rsp)
+	jmp	.L337
+.L1690:
+	movq	.LC108(%rip), %rdx
+	movss	%xmm6, 964(%rsp)
+	movss	%xmm6, 996(%rsp)
+	movss	%xmm6, 1028(%rsp)
+	movss	%xmm6, 1060(%rsp)
+	movq	%rdx, 956(%rsp)
+	movq	.LC109(%rip), %rdx
+	movups	%xmm0, 1164(%rsp)
+	movq	%rdx, 988(%rsp)
+	movq	.LC110(%rip), %rdx
+	movq	%rdx, 1020(%rsp)
+	movq	.LC111(%rip), %rdx
+	movq	%rdx, 1052(%rsp)
+	jmp	.L319
+.L338:
 	leaq	.LC124(%rip), %rdx
 	movq	%r12, %rcx
 	call	strcmp
 	testl	%eax, %eax
-	je	.L1277
+	je	.L1696
 	leaq	.LC126(%rip), %rdx
 	movq	%r12, %rcx
 	call	strcmp
 	testl	%eax, %eax
-	jne	.L300
+	jne	.L349
 	cmpl	%ebx, %esi
-	jle	.L1245
+	jle	.L1659
 	movq	8(%rdi,%r14,8), %rcx
 	call	atof
-	movss	.LC83(%rip), %xmm1
+	movss	.LC84(%rip), %xmm1
 	cvtsd2ss	%xmm0, %xmm0
 	comiss	%xmm0, %xmm1
-	ja	.L302
+	ja	.L351
 	movss	.LC127(%rip), %xmm2
 	movaps	%xmm2, %xmm1
 	cmpltss	%xmm0, %xmm1
 	andps	%xmm1, %xmm2
 	andnps	%xmm0, %xmm1
 	orps	%xmm2, %xmm1
-.L302:
-	movss	%xmm1, 736(%rsp)
-	jmp	.L284
-.L1272:
+.L351:
+	movss	%xmm1, 816(%rsp)
+	jmp	.L332
+.L1691:
 	call	print_help
-.L274:
+.L322:
 	xorl	%eax, %eax
-.L272:
-	movaps	2320(%rsp), %xmm6
-	movaps	2336(%rsp), %xmm7
-	movaps	2352(%rsp), %xmm8
-	movaps	2368(%rsp), %xmm9
-	movaps	2384(%rsp), %xmm10
-	movaps	2400(%rsp), %xmm11
-	movaps	2416(%rsp), %xmm12
-	movaps	2432(%rsp), %xmm13
-	movaps	2448(%rsp), %xmm14
-	movaps	2464(%rsp), %xmm15
-	addq	$2488, %rsp
+.L316:
+	movaps	2400(%rsp), %xmm6
+	movaps	2416(%rsp), %xmm7
+	movaps	2432(%rsp), %xmm8
+	movaps	2448(%rsp), %xmm9
+	movaps	2464(%rsp), %xmm10
+	movaps	2480(%rsp), %xmm11
+	movaps	2496(%rsp), %xmm12
+	movaps	2512(%rsp), %xmm13
+	movaps	2528(%rsp), %xmm14
+	movaps	2544(%rsp), %xmm15
+	addq	$2568, %rsp
 	popq	%rbx
 	popq	%rsi
 	popq	%rdi
@@ -1827,51 +2006,52 @@ main:
 	popq	%r14
 	popq	%r15
 	ret
-.L275:
+.L323:
 	call	print_help
 	xorl	%ecx, %ecx
 	call	exit
-.L1276:
-	xorl	%eax, %eax
-	movl	%eax, 728(%rsp)
-	jmp	.L289
-.L300:
+.L1695:
+	xorl	%ecx, %ecx
+	movl	%ecx, 808(%rsp)
+	jmp	.L337
+.L349:
 	leaq	.LC128(%rip), %rdx
 	movq	%r12, %rcx
 	call	strcmp
 	testl	%eax, %eax
-	jne	.L304
+	jne	.L353
 	cmpl	%ebx, %esi
-	jle	.L1245
+	jle	.L1659
 	movq	8(%rdi,%r14,8), %rcx
 	call	atof
 	cvtsd2ss	%xmm0, %xmm0
-	movss	%xmm0, 740(%rsp)
-	jmp	.L284
-.L1274:
+	movss	%xmm0, 820(%rsp)
+	jmp	.L332
+.L1693:
 	leaq	.LC116(%rip), %rcx
+	leaq	.LC114(%rip), %r8
 	leaq	.LC115(%rip), %rdx
 	call	printf
 	xorl	%ecx, %ecx
 	call	exit
-.L1245:
+.L1659:
 	movl	$2, %ecx
 	call	*__imp___acrt_iob_func(%rip)
 	leaq	.LC119(%rip), %rdx
 	movq	%r12, %r8
 	movq	%rax, %rcx
 	call	fprintf
-.L282:
+.L330:
 	movl	$1, %eax
-	jmp	.L272
-.L1277:
+	jmp	.L316
+.L1696:
 	cmpl	%ebx, %esi
-	jle	.L1245
+	jle	.L1659
 	movq	8(%rdi,%r14,8), %rcx
 	call	atoi
 	movl	%eax, %r12d
 	cmpl	$8000, %eax
-	movl	%eax, 732(%rsp)
+	movl	%eax, 812(%rsp)
 	sete	%al
 	cmpl	$16000, %r12d
 	sete	%dl
@@ -1882,25 +2062,25 @@ main:
 	cmpl	$44100, %r12d
 	sete	%dl
 	orb	%dl, %al
-	jne	.L284
+	jne	.L332
 	cmpl	$48000, %r12d
-	je	.L284
+	je	.L332
 	movl	$2, %ecx
 	call	*__imp___acrt_iob_func(%rip)
 	leaq	.LC125(%rip), %rdx
 	movl	%r12d, %r8d
 	movq	%rax, %rcx
 	call	fprintf
-	jmp	.L282
-.L294:
-	leaq	.LC91(%rip), %rdx
+	jmp	.L330
+.L342:
+	leaq	.LC92(%rip), %rdx
 	movq	%rbp, %rcx
 	call	*%r12
 	testl	%eax, %eax
-	jne	.L295
-	movl	$2, 728(%rsp)
-	jmp	.L289
-.L288:
+	jne	.L343
+	movl	$2, 808(%rsp)
+	jmp	.L337
+.L336:
 	movl	$2, %ecx
 	call	*__imp___acrt_iob_func(%rip)
 	movl	$30, %r8d
@@ -1908,591 +2088,62 @@ main:
 	leaq	.LC120(%rip), %rcx
 	movq	%rax, %r9
 	call	fwrite
-	jmp	.L282
-.L304:
+	jmp	.L330
+.L1024:
+	movss	.LC43(%rip), %xmm6
+	xorl	%edx, %edx
+	jmp	.L318
+.L353:
 	leaq	.LC129(%rip), %rdx
 	movq	%r12, %rcx
 	call	strcmp
 	testl	%eax, %eax
-	je	.L1278
+	je	.L1697
 	leaq	.LC131(%rip), %rdx
 	movq	%r12, %rcx
 	call	strcmp
 	testl	%eax, %eax
-	jne	.L311
+	jne	.L360
 	cmpl	%ebx, %esi
-	jle	.L1245
+	jle	.L1659
 	movq	8(%rdi,%r14,8), %rcx
 	call	atof
 	pxor	%xmm1, %xmm1
 	cvtsd2ss	%xmm0, %xmm1
 	pxor	%xmm0, %xmm0
 	comiss	%xmm1, %xmm0
-	ja	.L313
-	movaps	%xmm6, %xmm0
-	movaps	%xmm6, %xmm2
+	ja	.L362
+	movss	.LC43(%rip), %xmm2
+	movaps	%xmm2, %xmm0
 	cmpltss	%xmm1, %xmm0
 	andps	%xmm0, %xmm2
 	andnps	%xmm1, %xmm0
 	orps	%xmm2, %xmm0
-.L313:
-	movss	%xmm0, 744(%rsp)
-	jmp	.L284
-.L1273:
-	movl	728(%rsp), %edx
+.L362:
+	movss	%xmm0, 824(%rsp)
+	jmp	.L332
+.L1692:
+	movl	808(%rsp), %edx
 	orl	%edx, %ebp
-	jne	.L379
-.L422:
-	movss	1068(%rsp), %xmm0
-	movss	.LC164(%rip), %xmm7
-	comiss	%xmm0, %xmm7
-	jbe	.L380
-	movss	%xmm6, 1068(%rsp)
-	movaps	%xmm6, %xmm0
-.L380:
-	movss	.LC164(%rip), %xmm7
-	movss	%xmm0, 756(%rsp)
-	movss	1072(%rsp), %xmm0
-	comiss	%xmm0, %xmm7
-	jbe	.L382
-	movss	%xmm6, 1072(%rsp)
-	movaps	%xmm6, %xmm0
-.L382:
-	movss	.LC164(%rip), %xmm7
-	movss	%xmm0, 788(%rsp)
-	movss	1076(%rsp), %xmm0
-	comiss	%xmm0, %xmm7
-	jbe	.L384
-	movss	%xmm6, 1076(%rsp)
-	movaps	%xmm6, %xmm0
-.L384:
-	movss	.LC164(%rip), %xmm7
-	movss	%xmm0, 820(%rsp)
-	movss	1080(%rsp), %xmm0
-	comiss	%xmm0, %xmm7
-	jbe	.L386
-	movss	%xmm6, 1080(%rsp)
-	movaps	%xmm6, %xmm0
-.L386:
-	movss	.LC164(%rip), %xmm7
-	movss	%xmm0, 852(%rsp)
-	movss	1084(%rsp), %xmm0
-	comiss	%xmm0, %xmm7
-	jbe	.L388
-	movss	%xmm6, 1084(%rsp)
-	movaps	%xmm6, %xmm0
-.L388:
-	movss	.LC164(%rip), %xmm7
-	movss	%xmm0, 884(%rsp)
-	movss	1088(%rsp), %xmm0
-	comiss	%xmm0, %xmm7
-	jbe	.L390
-	movss	%xmm6, 1088(%rsp)
-	movaps	%xmm6, %xmm0
-.L390:
-	movss	.LC164(%rip), %xmm7
-	movss	%xmm0, 916(%rsp)
-	movss	1092(%rsp), %xmm0
-	comiss	%xmm0, %xmm7
-	jbe	.L392
-	movss	%xmm6, 1092(%rsp)
-	movaps	%xmm6, %xmm0
-.L392:
-	movss	.LC164(%rip), %xmm7
-	movss	%xmm0, 948(%rsp)
-	movss	1096(%rsp), %xmm0
-	comiss	%xmm0, %xmm7
-	jbe	.L394
-	movss	%xmm6, 1096(%rsp)
-	movaps	%xmm6, %xmm0
-.L394:
-	movss	.LC164(%rip), %xmm7
-	movss	%xmm0, 980(%rsp)
-	movss	1100(%rsp), %xmm0
-	comiss	%xmm0, %xmm7
-	jbe	.L396
-	movss	%xmm6, 1100(%rsp)
-	movaps	%xmm6, %xmm0
-.L396:
-	movss	.LC164(%rip), %xmm7
-	movss	%xmm0, 1012(%rsp)
-	movss	1104(%rsp), %xmm0
-	comiss	%xmm0, %xmm7
-	jbe	.L399
-	movss	%xmm6, 1104(%rsp)
-	movaps	%xmm6, %xmm0
-.L399:
-	movss	%xmm0, 1044(%rsp)
-	movl	720(%rsp), %eax
-	cmpl	$1, %eax
-	je	.L1279
-	cmpl	$2, %eax
-	je	.L1280
-.L429:
-	cmpl	$0, 2300(%rsp)
-	jne	.L1281
-.L434:
-	xorl	%ecx, %ecx
-	call	_time64
-	movl	720(%rsp), %esi
-	xorl	$-559038242, %eax
-	movl	732(%rsp), %ecx
-	movss	736(%rsp), %xmm0
-	movl	%eax, g_noise_state(%rip)
-	cmpl	$2, %esi
-	je	.L1282
-	cmpl	$1, %esi
-	jne	.L441
-	movss	.LC50(%rip), %xmm7
-	movss	1188(%rsp), %xmm1
-	divss	%xmm7, %xmm1
-	addss	.LC83(%rip), %xmm1
-	movaps	%xmm1, %xmm2
-	maxss	%xmm0, %xmm2
-	movaps	%xmm2, %xmm0
-.L441:
-	pxor	%xmm8, %xmm8
-	cvtsi2ssl	%ecx, %xmm8
-	mulss	%xmm8, %xmm0
-	cvttss2sil	%xmm0, %r13d
-	testl	%r13d, %r13d
-	jg	.L447
-	leal	(%rcx,%rcx), %r13d
-.L447:
-	movl	$5760000, %eax
-	movl	$4, %edx
-	cmpl	%eax, %r13d
-	cmovle	%r13d, %eax
-	movl	%eax, %r15d
-	cltq
-	movq	%rax, %rcx
-	movq	%rax, 336(%rsp)
-	call	calloc
-	testq	%rax, %rax
-	movq	%rax, %rbx
-	je	.L1283
-	movss	1136(%rsp), %xmm11
-	comiss	.LC137(%rip), %xmm11
-	ja	.L449
-	movss	.LC92(%rip), %xmm11
-.L449:
-	movss	1144(%rsp), %xmm0
-	comiss	.LC137(%rip), %xmm0
-	ja	.L450
-	movss	.LC93(%rip), %xmm0
-.L450:
-	movss	1140(%rsp), %xmm7
-	comiss	.LC137(%rip), %xmm7
-	ja	.L451
-	movss	.LC94(%rip), %xmm7
-.L451:
-	mulss	.LC183(%rip), %xmm0
-	divss	%xmm8, %xmm0
-	call	expf
-	xorl	%r11d, %r11d
-	cmpl	$2, %esi
-	movl	$0x00000000, 2312(%rsp)
-	movaps	%xmm0, %xmm12
-	movq	%r11, 772(%rsp)
-	movq	%r11, 804(%rsp)
-	movq	%r11, 836(%rsp)
-	movq	%r11, 868(%rsp)
-	movq	%r11, 900(%rsp)
-	movq	%r11, 932(%rsp)
-	movq	%r11, 964(%rsp)
-	movq	%r11, 996(%rsp)
-	movq	%r11, 1028(%rsp)
-	movq	%r11, 1060(%rsp)
-	movq	%r11, 2304(%rsp)
-	je	.L1284
-.L895:
-	xorl	%r10d, %r10d
-	xorl	%r12d, %r12d
-	movq	%r10, 320(%rsp)
-	movq	%r10, 312(%rsp)
-.L452:
-	movss	.LC186(%rip), %xmm0
-	movss	.LC98(%rip), %xmm1
-	mulss	%xmm8, %xmm0
-	divss	%xmm0, %xmm1
-	movaps	%xmm1, %xmm0
-	call	expf
-	movl	720(%rsp), %eax
-	movaps	%xmm0, %xmm15
-	cmpl	$2, %eax
-	movl	%eax, 56(%rsp)
-	je	.L1285
-.L462:
-	movss	1108(%rsp), %xmm14
-	movss	1112(%rsp), %xmm10
-	movss	1116(%rsp), %xmm9
-.L463:
-	testl	%r13d, %r13d
-	jle	.L841
-	mulss	.LC187(%rip), %xmm11
-	movl	2292(%rsp), %eax
-	movaps	%xmm11, %xmm0
-	divss	%xmm8, %xmm0
-	movl	%eax, 344(%rsp)
-	call	tanf
-	movaps	%xmm6, %xmm5
-	movss	.LC188(%rip), %xmm11
-	movaps	%xmm0, %xmm2
-	movss	.LC189(%rip), %xmm3
-	mulss	%xmm11, %xmm2
-	mulss	%xmm0, %xmm0
-	mulss	.LC190(%rip), %xmm7
-	movaps	%xmm2, %xmm1
-	addss	%xmm6, %xmm1
-	divss	%xmm8, %xmm7
-	addss	%xmm0, %xmm1
-	divss	%xmm1, %xmm5
-	movaps	%xmm0, %xmm1
-	subss	%xmm6, %xmm1
-	addss	%xmm1, %xmm1
-	movss	%xmm5, 240(%rsp)
-	mulss	%xmm5, %xmm1
-	mulss	%xmm5, %xmm3
-	movss	%xmm1, 248(%rsp)
-	movaps	%xmm6, %xmm1
-	movss	%xmm3, 244(%rsp)
-	subss	%xmm2, %xmm1
-	movaps	%xmm6, %xmm3
-	subss	%xmm12, %xmm3
-	addss	%xmm0, %xmm1
-	movaps	%xmm7, %xmm0
-	movaps	%xmm6, %xmm7
-	movss	%xmm3, 300(%rsp)
-	mulss	%xmm5, %xmm1
-	movss	%xmm1, 252(%rsp)
-	call	cosf
-	movss	.LC189(%rip), %xmm1
-	mulss	%xmm12, %xmm1
-	mulss	%xmm12, %xmm12
-	mulss	%xmm0, %xmm1
-	movss	.LC191(%rip), %xmm0
-	movss	%xmm12, 308(%rsp)
-	divss	%xmm8, %xmm0
-	movss	%xmm1, 304(%rsp)
-	call	tanf
-	movss	.LC189(%rip), %xmm3
-	mulss	%xmm0, %xmm11
-	cmpl	$2, 56(%rsp)
-	movq	1152(%rsp), %r14
-	mulss	%xmm0, %xmm0
-	movaps	%xmm11, %xmm1
-	sete	%dl
-	testq	%r12, %r12
-	addss	%xmm6, %xmm1
-	setne	%al
-	andl	%eax, %edx
-	movb	%dl, 214(%rsp)
-	addss	%xmm0, %xmm1
-	divss	%xmm1, %xmm7
-	movaps	%xmm0, %xmm1
-	subss	%xmm6, %xmm1
-	addss	%xmm1, %xmm1
-	movss	%xmm7, 284(%rsp)
-	mulss	%xmm7, %xmm1
-	mulss	%xmm7, %xmm3
-	movss	%xmm1, 292(%rsp)
-	movaps	%xmm6, %xmm1
-	movss	%xmm3, 288(%rsp)
-	subss	%xmm11, %xmm1
-	addss	%xmm0, %xmm1
-	movss	.LC192(%rip), %xmm0
-	mulss	%xmm8, %xmm0
-	mulss	%xmm7, %xmm1
-	movss	1108(%rsp), %xmm7
-	movss	%xmm7, 200(%rsp)
-	movss	1116(%rsp), %xmm7
-	cvttss2sil	%xmm0, %r8d
-	movss	.LC193(%rip), %xmm0
-	movss	%xmm7, 204(%rsp)
-	movss	740(%rsp), %xmm7
-	movss	%xmm1, 296(%rsp)
-	mulss	%xmm8, %xmm0
-	movss	%xmm7, 216(%rsp)
-	movss	1120(%rsp), %xmm7
-	movss	%xmm7, 48(%rsp)
-	movss	1128(%rsp), %xmm7
-	cvttss2sil	%xmm0, %esi
-	movss	%xmm7, 76(%rsp)
-	testl	%esi, %esi
-	movl	%esi, 280(%rsp)
-	movl	%esi, %eax
-	setg	215(%rsp)
-	movss	1132(%rsp), %xmm7
-	movl	2296(%rsp), %esi
-	movss	844(%rsp), %xmm0
-	movss	%xmm7, 80(%rsp)
-	movss	812(%rsp), %xmm2
-	movss	1112(%rsp), %xmm7
-	unpcklps	%xmm0, %xmm2
-	movl	%esi, 84(%rsp)
-	movl	%r15d, %esi
-	movss	780(%rsp), %xmm1
-	movss	748(%rsp), %xmm0
-	subl	%eax, %esi
-	testl	%r8d, %r8d
-	movss	%xmm7, 208(%rsp)
-	movss	744(%rsp), %xmm7
-	movl	%esi, 92(%rsp)
-	unpcklps	%xmm1, %xmm0
-	movq	1100(%rsp), %rax
-	movlhps	%xmm2, %xmm0
-	movss	972(%rsp), %xmm1
-	movss	%xmm7, 88(%rsp)
-	movss	940(%rsp), %xmm3
-	movups	1068(%rsp), %xmm7
-	unpcklps	%xmm1, %xmm3
-	movss	908(%rsp), %xmm2
-	movq	%rax, 128(%rsp)
-	movss	876(%rsp), %xmm1
-	movaps	%xmm7, 96(%rsp)
-	movups	1084(%rsp), %xmm7
-	unpcklps	%xmm2, %xmm1
-	movlhps	%xmm3, %xmm1
-	movl	724(%rsp), %r13d
-	movss	1004(%rsp), %xmm4
-	movaps	%xmm7, 112(%rsp)
-	movss	1036(%rsp), %xmm5
-	jle	.L896
-	movss	.LC50(%rip), %xmm7
-	cmpl	%r8d, %r15d
-	movl	%r8d, %r11d
-	movss	%xmm14, 144(%rsp)
-	cmovle	%r15d, %r11d
-	xorl	%r9d, %r9d
-	xorl	%ebp, %ebp
-	movl	$0x00000000, 256(%rsp)
-	movss	%xmm7, 140(%rsp)
-	movss	.LC204(%rip), %xmm7
-	movl	$0x00000000, 260(%rsp)
-	movss	%xmm7, 136(%rsp)
-	pxor	%xmm7, %xmm7
-	cvtsi2ssl	%r8d, %xmm7
-	movl	$0x00000000, 264(%rsp)
-	movl	$0x00000000, 268(%rsp)
-	movl	$0x00000000, 164(%rsp)
-	movl	$0x00000000, 160(%rsp)
-	movl	%r9d, 220(%rsp)
-	movl	%r15d, 332(%rsp)
-	movl	%r8d, 348(%rsp)
-	movl	%r11d, 232(%rsp)
-	movl	%r13d, 192(%rsp)
-	movq	%rbx, 224(%rsp)
-	movss	%xmm15, 236(%rsp)
-	movss	%xmm7, 272(%rsp)
-	pxor	%xmm7, %xmm7
-	.p2align 4,,10
-	.p2align 3
-.L650:
-	pxor	%xmm3, %xmm3
-	cvtsi2ssl	%ebp, %xmm3
-	testq	%r14, %r14
-	movss	848(%rsp), %xmm2
-	movaps	%xmm0, 368(%rsp)
-	movq	128(%rsp), %rax
-	movss	816(%rsp), %xmm13
-	movaps	%xmm1, 384(%rsp)
-	movss	784(%rsp), %xmm11
-	movss	%xmm4, 400(%rsp)
-	movaps	%xmm3, %xmm12
-	unpcklps	%xmm2, %xmm13
-	movss	752(%rsp), %xmm2
-	movss	%xmm3, 172(%rsp)
-	divss	%xmm8, %xmm12
-	movaps	96(%rsp), %xmm3
-	movss	%xmm5, 404(%rsp)
-	movss	976(%rsp), %xmm0
-	unpcklps	%xmm11, %xmm2
-	movq	%rax, 496(%rsp)
-	movlhps	%xmm13, %xmm2
-	movss	944(%rsp), %xmm11
-	movaps	%xmm3, 464(%rsp)
-	movaps	112(%rsp), %xmm3
-	movaps	%xmm2, 416(%rsp)
-	movss	912(%rsp), %xmm1
-	unpcklps	%xmm0, %xmm11
-	movss	880(%rsp), %xmm0
-	movaps	%xmm3, 480(%rsp)
-	unpcklps	%xmm1, %xmm0
-	movlhps	%xmm11, %xmm0
-	movaps	%xmm0, 432(%rsp)
-	movss	1008(%rsp), %xmm1
-	movss	1040(%rsp), %xmm0
-	unpcklps	%xmm0, %xmm1
-	movlps	%xmm1, 448(%rsp)
-	mulss	140(%rsp), %xmm12
-	je	.L465
-	movl	1160(%rsp), %edx
-	testl	%edx, %edx
-	jle	.L465
-	movss	(%r14), %xmm0
-	comiss	%xmm12, %xmm0
-	jnb	.L1286
-	cmpl	$1, 56(%rsp)
-	je	.L472
-	movaps	%xmm12, %xmm2
-	movq	%r14, %rcx
-	call	contour_f0.part.0
-	movaps	%xmm0, %xmm11
-.L473:
-	cmpb	$0, 214(%rsp)
-	jne	.L1287
-	movss	200(%rsp), %xmm5
-	movss	%xmm6, 176(%rsp)
-	movss	204(%rsp), %xmm15
-	movss	208(%rsp), %xmm13
-	movss	%xmm5, 168(%rsp)
-.L475:
-	movss	48(%rsp), %xmm4
-	comiss	%xmm7, %xmm4
-	jbe	.L519
-	movss	.LC190(%rip), %xmm0
-	mulss	1124(%rsp), %xmm0
-	divss	%xmm8, %xmm0
-	addss	2308(%rsp), %xmm0
-	comiss	.LC190(%rip), %xmm0
-	jb	.L521
-	subss	.LC190(%rip), %xmm0
-.L521:
-	movss	%xmm0, 2308(%rsp)
-	call	sinf
-	mulss	48(%rsp), %xmm0
-	addss	%xmm0, %xmm11
-.L519:
-	movss	76(%rsp), %xmm5
-	comiss	%xmm7, %xmm5
-	jbe	.L523
-	movl	g_noise_state(%rip), %edx
-	pxor	%xmm0, %xmm0
-	divss	.LC2(%rip), %xmm5
-	movl	%edx, %eax
-	sall	$13, %eax
-	xorl	%edx, %eax
-	movl	%eax, %edx
-	shrl	$17, %edx
-	xorl	%eax, %edx
-	movl	%edx, %eax
-	sall	$5, %eax
-	xorl	%edx, %eax
-	cvtsi2ssl	%eax, %xmm0
-	mulss	.LC203(%rip), %xmm0
-	movl	%eax, g_noise_state(%rip)
-	mulss	%xmm5, %xmm0
-	addss	%xmm6, %xmm0
-	mulss	%xmm0, %xmm11
-.L523:
-	movss	80(%rsp), %xmm4
-	movaps	%xmm6, %xmm12
-	comiss	%xmm7, %xmm4
-	jbe	.L525
-	movl	g_noise_state(%rip), %edx
-	pxor	%xmm12, %xmm12
-	divss	.LC2(%rip), %xmm4
-	movl	%edx, %eax
-	sall	$13, %eax
-	xorl	%edx, %eax
-	movl	%eax, %edx
-	shrl	$17, %edx
-	xorl	%eax, %edx
-	movl	%edx, %eax
-	sall	$5, %eax
-	xorl	%edx, %eax
-	cvtsi2ssl	%eax, %xmm12
-	movl	%eax, g_noise_state(%rip)
-	mulss	.LC203(%rip), %xmm12
-	mulss	%xmm4, %xmm12
-	addss	%xmm6, %xmm12
-.L525:
-	comiss	%xmm7, %xmm11
-	jbe	.L527
-	movss	.LC97(%rip), %xmm0
-	comiss	%xmm11, %xmm0
-	ja	.L913
-	movss	.LC92(%rip), %xmm0
-	movaps	%xmm0, %xmm1
-	cmpltss	%xmm11, %xmm1
-	andps	%xmm1, %xmm0
-	andnps	%xmm11, %xmm1
-	orps	%xmm0, %xmm1
-	movaps	%xmm1, %xmm11
-.L527:
-	comiss	%xmm8, %xmm7
-	jnb	.L529
-	cmpl	$0, 192(%rsp)
-	je	.L530
-	movq	64(%rsp), %r13
-	leaq	464(%rsp), %r15
-	movss	%xmm9, 276(%rsp)
-	leaq	416(%rsp), %rdi
-	movss	%xmm10, 328(%rsp)
-	leaq	368(%rsp), %rsi
-	leaq	504(%rsp), %rbx
-	jmp	.L534
-	.p2align 4,,10
-	.p2align 3
-.L1288:
-	comiss	%xmm0, %xmm7
-	jnb	.L532
-	mulss	.LC183(%rip), %xmm0
-	divss	%xmm8, %xmm0
-	call	expf
-	movss	.LC190(%rip), %xmm2
-	movaps	%xmm0, %xmm9
-	mulss	%xmm10, %xmm2
-	divss	%xmm8, %xmm2
-	movaps	%xmm2, %xmm0
-	call	cosf
-	movss	.LC189(%rip), %xmm1
-	movaps	%xmm0, %xmm2
-	movaps	%xmm9, %xmm0
-	mulss	%xmm9, %xmm0
-	mulss	%xmm9, %xmm1
-	movss	%xmm0, 48(%r13)
-	movaps	%xmm6, %xmm0
-	mulss	%xmm2, %xmm1
-	subss	%xmm9, %xmm0
-	unpcklps	%xmm1, %xmm0
-	movlps	%xmm0, 40(%r13)
-.L533:
-	addq	$4, %r15
-	addq	$32, %r13
-	addq	$4, %rdi
-	addq	$4, %rsi
-	cmpq	%rbx, %r15
-	je	.L1250
-.L534:
-	movss	(%r15), %xmm1
-	movaps	%xmm7, %xmm0
-	movss	(%rsi), %xmm10
-	cmpltss	%xmm1, %xmm0
-	comiss	%xmm10, %xmm7
-	movaps	%xmm10, %xmm3
-	andps	%xmm0, %xmm1
-	andnps	%xmm6, %xmm0
-	orps	%xmm0, %xmm1
-	movss	(%rdi), %xmm0
-	movss	%xmm1, 36(%r13)
-	unpcklps	%xmm0, %xmm3
-	movlps	%xmm3, 28(%r13)
-	jb	.L1288
-.L532:
-	movq	$0, 40(%r13)
-	movl	$0x00000000, 48(%r13)
-	jmp	.L533
-.L379:
+	je	.L1698
 	cmpl	$1, %edx
-	je	.L887
+	je	.L1035
 	leaq	g_preset_impulsive(%rip), %rax
 	cmpl	$2, %edx
-	jne	.L1289
-.L400:
-	leaq	748(%rsp), %rdx
+	jne	.L1699
+.L435:
+	movl	FORMANTS(%rip), %ebx
+	testl	%ebx, %ebx
+	jle	.L442
+	leal	-1(%rbx), %edx
+	cmpl	$2, %edx
+	jbe	.L1037
+	leaq	828(%rsp), %rdx
+	movl	%ebx, %r8d
 	xorl	%ecx, %ecx
-.L401:
+	shrl	$2, %r8d
+	salq	$4, %r8
+.L440:
 	movaps	(%rax,%rcx), %xmm0
 	subq	$-128, %rdx
 	movups	40(%rax,%rcx), %xmm2
@@ -2504,1406 +2155,677 @@ main:
 	movhps	%xmm1, -96(%rdx)
 	movq	%xmm0, -64(%rdx)
 	movhps	%xmm0, -32(%rdx)
-	cmpq	$32, %rcx
-	jne	.L401
-	movq	32(%rax), %xmm0
-	movq	72(%rax), %xmm1
+	cmpq	%rcx, %r8
+	jne	.L440
+	movl	%ebx, %edx
+	andl	$-4, %edx
+	cmpl	%edx, %ebx
+	movl	%edx, %ecx
+	je	.L442
+.L439:
+	movl	%ebx, %r8d
+	subl	%ecx, %r8d
+	cmpl	$1, %r8d
+	je	.L444
+	movq	64(%rsp), %rsi
+	movq	%rcx, %r9
+	movq	(%rax,%rcx,4), %xmm0
+	salq	$5, %r9
+	testb	$1, %r8b
+	movq	40(%rax,%rcx,4), %xmm1
 	movaps	%xmm0, %xmm2
-	movq	100(%rax), %rdx
 	unpcklps	%xmm1, %xmm2
 	unpcklps	%xmm1, %xmm0
-	movaps	96(%rax), %xmm1
+	movlps	%xmm2, 28(%rsi,%r9)
 	shufps	$78, %xmm0, %xmm0
-	cmpl	$0, 368(%rsp)
-	movlps	%xmm0, 1036(%rsp)
+	movlps	%xmm0, 60(%rsi,%r9)
+	je	.L442
+	andl	$-2, %r8d
+	addl	%r8d, %edx
+.L444:
+	movslq	%edx, %rdx
+	movss	40(%rax,%rdx,4), %xmm1
+	movss	(%rax,%rdx,4), %xmm0
+	salq	$5, %rdx
+	unpcklps	%xmm1, %xmm0
+	movlps	%xmm0, 828(%rsp,%rdx)
+.L442:
 	movaps	80(%rax), %xmm0
-	movlps	%xmm2, 1004(%rsp)
-	movq	%rdx, 1124(%rsp)
+	testl	%ebx, %ebx
+	movq	100(%rax), %rdx
+	movaps	96(%rax), %xmm1
 	shufps	$160, %xmm0, %xmm1
 	shufps	$36, %xmm1, %xmm0
 	movss	92(%rax), %xmm1
-	movups	%xmm0, 1108(%rsp)
+	movups	%xmm0, 1188(%rsp)
 	movss	108(%rax), %xmm0
-	movss	%xmm1, 740(%rsp)
-	movss	%xmm0, 1132(%rsp)
-	jne	.L402
-	movss	(%rax), %xmm0
-	movss	%xmm0, 748(%rsp)
-.L402:
-	cmpl	$0, 416(%rsp)
-	jne	.L403
-	movss	40(%rax), %xmm0
-	movss	%xmm0, 752(%rsp)
-.L403:
-	cmpl	$0, 372(%rsp)
-	jne	.L404
-	movss	4(%rax), %xmm0
-	movss	%xmm0, 780(%rsp)
-.L404:
-	cmpl	$0, 420(%rsp)
-	jne	.L405
-	movss	44(%rax), %xmm0
-	movss	%xmm0, 784(%rsp)
-.L405:
-	cmpl	$0, 376(%rsp)
-	jne	.L406
-	movss	8(%rax), %xmm0
-	movss	%xmm0, 812(%rsp)
-.L406:
-	cmpl	$0, 424(%rsp)
-	jne	.L407
-	movss	48(%rax), %xmm0
-	movss	%xmm0, 816(%rsp)
-.L407:
-	cmpl	$0, 380(%rsp)
-	jne	.L408
-	movss	12(%rax), %xmm0
-	movss	%xmm0, 844(%rsp)
-.L408:
-	cmpl	$0, 428(%rsp)
-	jne	.L409
-	movss	52(%rax), %xmm0
-	movss	%xmm0, 848(%rsp)
-.L409:
-	cmpl	$0, 384(%rsp)
-	jne	.L410
-	movss	16(%rax), %xmm0
-	movss	%xmm0, 876(%rsp)
-.L410:
-	cmpl	$0, 432(%rsp)
-	jne	.L411
-	movss	56(%rax), %xmm0
-	movss	%xmm0, 880(%rsp)
-.L411:
-	cmpl	$0, 388(%rsp)
-	jne	.L412
-	movss	20(%rax), %xmm0
-	movss	%xmm0, 908(%rsp)
-.L412:
-	cmpl	$0, 436(%rsp)
-	jne	.L413
-	movss	60(%rax), %xmm0
-	movss	%xmm0, 912(%rsp)
-.L413:
-	cmpl	$0, 392(%rsp)
-	jne	.L414
-	movss	24(%rax), %xmm0
-	movss	%xmm0, 940(%rsp)
-.L414:
-	cmpl	$0, 440(%rsp)
-	jne	.L415
-	movss	64(%rax), %xmm0
-	movss	%xmm0, 944(%rsp)
-.L415:
-	cmpl	$0, 396(%rsp)
-	jne	.L416
-	movss	28(%rax), %xmm0
-	movss	%xmm0, 972(%rsp)
-.L416:
-	cmpl	$0, 444(%rsp)
-	jne	.L417
-	movss	68(%rax), %xmm0
-	movss	%xmm0, 976(%rsp)
-.L417:
-	cmpl	$0, 400(%rsp)
-	jne	.L418
-	movss	32(%rax), %xmm0
-	movss	%xmm0, 1004(%rsp)
-.L418:
+	movq	%rdx, 1204(%rsp)
+	movss	%xmm1, 820(%rsp)
+	movss	%xmm0, 1212(%rsp)
+	jle	.L438
 	cmpl	$0, 448(%rsp)
-	jne	.L419
-	movss	72(%rax), %xmm0
-	movss	%xmm0, 1008(%rsp)
-.L419:
-	cmpl	$0, 404(%rsp)
-	jne	.L420
-	movss	36(%rax), %xmm0
-	movss	%xmm0, 1036(%rsp)
-.L420:
+	jne	.L446
+	movss	(%rax), %xmm0
+	movss	%xmm0, 828(%rsp)
+.L446:
+	cmpl	$0, 496(%rsp)
+	je	.L1700
+.L447:
+	cmpl	$1, %ebx
+	je	.L438
 	cmpl	$0, 452(%rsp)
-	jne	.L422
-	movss	76(%rax), %xmm0
-	movss	%xmm0, 1040(%rsp)
-	jmp	.L422
+	jne	.L449
+	movss	4(%rax), %xmm0
+	movss	%xmm0, 860(%rsp)
+.L449:
+	cmpl	$0, 500(%rsp)
+	je	.L1701
+.L450:
+	cmpl	$2, %ebx
+	je	.L438
+	cmpl	$0, 456(%rsp)
+	jne	.L451
+	movss	8(%rax), %xmm0
+	movss	%xmm0, 892(%rsp)
+.L451:
+	cmpl	$0, 504(%rsp)
+	je	.L1702
+.L452:
+	cmpl	$3, %ebx
+	je	.L438
+	cmpl	$0, 460(%rsp)
+	jne	.L453
+	movss	12(%rax), %xmm0
+	movss	%xmm0, 924(%rsp)
+.L453:
+	cmpl	$0, 508(%rsp)
+	je	.L1703
+.L454:
+	cmpl	$4, %ebx
+	je	.L438
+	cmpl	$0, 464(%rsp)
+	jne	.L455
+	movss	16(%rax), %xmm0
+	movss	%xmm0, 956(%rsp)
+.L455:
+	cmpl	$0, 512(%rsp)
+	jne	.L456
+	movss	56(%rax), %xmm0
+	movss	%xmm0, 960(%rsp)
+.L456:
+	cmpl	$5, %ebx
+	je	.L438
+	cmpl	$0, 468(%rsp)
+	jne	.L457
+	movss	20(%rax), %xmm0
+	movss	%xmm0, 988(%rsp)
+.L457:
+	cmpl	$0, 516(%rsp)
+	jne	.L458
+	movss	60(%rax), %xmm0
+	movss	%xmm0, 992(%rsp)
+.L458:
+	cmpl	$6, %ebx
+	je	.L438
+	cmpl	$0, 472(%rsp)
+	jne	.L459
+	movss	24(%rax), %xmm0
+	movss	%xmm0, 1020(%rsp)
+.L459:
+	cmpl	$0, 520(%rsp)
+	jne	.L460
+	movss	64(%rax), %xmm0
+	movss	%xmm0, 1024(%rsp)
+.L460:
+	cmpl	$7, %ebx
+	je	.L438
+	cmpl	$0, 476(%rsp)
+	jne	.L461
+	movss	28(%rax), %xmm0
+	movss	%xmm0, 1052(%rsp)
+.L461:
+	cmpl	$0, 524(%rsp)
+	jne	.L462
+	movss	68(%rax), %xmm0
+	movss	%xmm0, 1056(%rsp)
+.L462:
+	cmpl	$8, %ebx
+	je	.L438
+	cmpl	$0, 480(%rsp)
+	jne	.L463
+	movss	32(%rax), %xmm0
+	movss	%xmm0, 1084(%rsp)
+.L463:
+	cmpl	$0, 528(%rsp)
+	jne	.L464
+	movss	72(%rax), %xmm0
+	movss	%xmm0, 1088(%rsp)
+.L464:
+	cmpl	$9, %ebx
+	je	.L438
+	cmpl	$0, 484(%rsp)
+	jne	.L465
+	movss	36(%rax), %xmm0
+	movss	%xmm0, 1116(%rsp)
 .L465:
-	cmpl	$1, 56(%rsp)
-	movss	216(%rsp), %xmm11
-	jne	.L473
-	movl	1176(%rsp), %eax
-	testl	%eax, %eax
-	je	.L902
-.L1247:
-	movq	1168(%rsp), %rcx
-	movss	(%rcx), %xmm0
-	comiss	%xmm12, %xmm0
-	jb	.L1290
-	movl	144(%rcx), %edx
-	movq	%rcx, %rax
-.L482:
-	leaq	4(%rax), %rsi
-	movl	$10, %ecx
-	leaq	368(%rsp), %rdi
-	rep movsl
-	leaq	44(%rax), %rsi
-	movl	$10, %ecx
-	leaq	416(%rsp), %rdi
-	rep movsl
-.L498:
-	testl	%edx, %edx
-	movaps	%xmm6, %xmm0
-	je	.L497
-	movss	104(%rax,%rcx), %xmm0
-.L497:
-	movss	%xmm0, 464(%rsp,%rcx)
-	addq	$4, %rcx
-	cmpq	$40, %rcx
-	jne	.L498
-	movss	84(%rax), %xmm3
-	movss	96(%rax), %xmm11
-	movss	%xmm3, 168(%rsp)
-	movss	100(%rax), %xmm3
-	movss	92(%rax), %xmm15
-	movss	%xmm3, 176(%rsp)
-	movss	88(%rax), %xmm13
-.L874:
-	testq	%r14, %r14
-	je	.L475
-	movl	1160(%rsp), %edx
-	testl	%edx, %edx
-	jle	.L475
-.L1265:
-	movss	(%r14), %xmm0
-	comiss	%xmm12, %xmm0
-	jnb	.L1249
-.L1213:
-	movaps	%xmm12, %xmm2
-	movq	%r14, %rcx
-	call	contour_f0.part.0
-	movaps	%xmm0, %xmm11
-	jmp	.L475
-.L1250:
-	movss	276(%rsp), %xmm9
-	movss	328(%rsp), %xmm10
-.L535:
-	movss	236(%rsp), %xmm5
-	movaps	%xmm6, %xmm1
-	movss	168(%rsp), %xmm0
-	subss	%xmm5, %xmm1
-	mulss	%xmm5, %xmm14
-	movss	136(%rsp), %xmm4
-	mulss	%xmm5, %xmm10
-	comiss	144(%rsp), %xmm4
-	mulss	%xmm5, %xmm9
-	mulss	%xmm1, %xmm0
-	mulss	%xmm1, %xmm13
-	mulss	%xmm15, %xmm1
-	addss	%xmm0, %xmm14
-	addss	%xmm13, %xmm10
-	addss	%xmm1, %xmm9
-	jbe	.L543
-	comiss	.LC204(%rip), %xmm14
-	jb	.L543
-	movss	%xmm7, 2304(%rsp)
-	comiss	%xmm7, %xmm11
-	jbe	.L550
-.L546:
-	movaps	%xmm8, %xmm1
-	movaps	%xmm6, %xmm0
-	divss	%xmm11, %xmm1
-	divss	%xmm1, %xmm0
-	addss	2304(%rsp), %xmm0
-	comiss	%xmm6, %xmm0
-	jb	.L549
-	subss	%xmm6, %xmm0
-.L549:
-	movss	%xmm0, 2304(%rsp)
-	movl	728(%rsp), %eax
+	cmpl	$0, 532(%rsp)
+	jne	.L438
+	movss	76(%rax), %xmm0
+	movss	%xmm0, 1120(%rsp)
+.L438:
+	leal	-1(%rbx), %eax
+	cmpl	$9, %eax
+	ja	.L1704
+	movss	1148(%rsp), %xmm0
+	movss	.LC166(%rip), %xmm6
+	comiss	%xmm0, %xmm6
+	jbe	.L468
+	movss	.LC43(%rip), %xmm0
+	movss	%xmm0, 1148(%rsp)
+.L468:
+	movss	%xmm0, 836(%rsp)
+	cmpl	$1, %ebx
+	je	.L470
+	movss	1152(%rsp), %xmm0
+	movss	.LC166(%rip), %xmm6
+	comiss	%xmm0, %xmm6
+	jbe	.L471
+	movss	.LC43(%rip), %xmm0
+	movss	%xmm0, 1152(%rsp)
+.L471:
+	movss	%xmm0, 868(%rsp)
+	cmpl	$2, %ebx
+	je	.L470
+	movss	1156(%rsp), %xmm0
+	movss	.LC166(%rip), %xmm6
+	comiss	%xmm0, %xmm6
+	jbe	.L473
+	movss	.LC43(%rip), %xmm0
+	movss	%xmm0, 1156(%rsp)
+.L473:
+	movss	%xmm0, 900(%rsp)
+	cmpl	$3, %ebx
+	je	.L470
+	movss	1160(%rsp), %xmm0
+	movss	.LC166(%rip), %xmm6
+	comiss	%xmm0, %xmm6
+	jbe	.L475
+	movss	.LC43(%rip), %xmm0
+	movss	%xmm0, 1160(%rsp)
+.L475:
+	movss	%xmm0, 932(%rsp)
+	cmpl	$4, %ebx
+	je	.L470
+	movss	1164(%rsp), %xmm0
+	movss	.LC166(%rip), %xmm6
+	comiss	%xmm0, %xmm6
+	jbe	.L477
+	movss	.LC43(%rip), %xmm0
+	movss	%xmm0, 1164(%rsp)
+.L477:
+	movss	%xmm0, 964(%rsp)
+	cmpl	$5, %ebx
+	je	.L470
+	movss	1168(%rsp), %xmm0
+	movss	.LC166(%rip), %xmm6
+	comiss	%xmm0, %xmm6
+	jbe	.L479
+	movss	.LC43(%rip), %xmm0
+	movss	%xmm0, 1168(%rsp)
+.L479:
+	movss	%xmm0, 996(%rsp)
+	cmpl	$6, %ebx
+	je	.L470
+	movss	1172(%rsp), %xmm0
+	movss	.LC166(%rip), %xmm6
+	comiss	%xmm0, %xmm6
+	jbe	.L481
+	movss	.LC43(%rip), %xmm0
+	movss	%xmm0, 1172(%rsp)
+.L481:
+	movss	%xmm0, 1028(%rsp)
+	cmpl	$7, %ebx
+	je	.L470
+	movss	1176(%rsp), %xmm0
+	movss	.LC166(%rip), %xmm6
+	comiss	%xmm0, %xmm6
+	ja	.L1705
+.L483:
+	movss	%xmm0, 1060(%rsp)
+	cmpl	$8, %ebx
+	je	.L470
+	movss	1180(%rsp), %xmm0
+	movss	.LC166(%rip), %xmm6
+	comiss	%xmm0, %xmm6
+	ja	.L1706
+.L485:
+	movss	%xmm0, 1092(%rsp)
+	cmpl	$10, %ebx
+	jne	.L470
+	movss	1184(%rsp), %xmm0
+	movss	.LC166(%rip), %xmm6
+	comiss	%xmm0, %xmm6
+	ja	.L1707
+.L487:
+	movss	%xmm0, 1124(%rsp)
+.L470:
+	movl	800(%rsp), %eax
+	cmpl	$1, %eax
+	je	.L1708
 	cmpl	$2, %eax
-	je	.L1291
-	movss	.LC207(%rip), %xmm1
-	comiss	%xmm0, %xmm1
-	jbe	.L1217
-	movaps	%xmm0, %xmm2
-	divss	%xmm1, %xmm2
-.L557:
-	addss	%xmm2, %xmm2
-	subl	$1, %eax
-	subss	%xmm6, %xmm2
-	jne	.L553
-	movl	g_noise_state(%rip), %edx
-	pxor	%xmm0, %xmm0
-	mulss	.LC209(%rip), %xmm2
-	movl	%edx, %eax
-	sall	$13, %eax
-	xorl	%edx, %eax
-	movl	%eax, %edx
-	shrl	$17, %edx
-	xorl	%eax, %edx
-	movl	%edx, %eax
-	sall	$5, %eax
-	xorl	%edx, %eax
-	cvtsi2ssl	%eax, %xmm0
-	mulss	.LC203(%rip), %xmm0
+	je	.L1709
+.L494:
+	cmpl	$0, 2380(%rsp)
+	jne	.L1710
+.L499:
+	xorl	%ecx, %ecx
+	call	_time64
+	movl	800(%rsp), %ebx
+	xorl	$-559038242, %eax
+	movl	812(%rsp), %ecx
+	movss	816(%rsp), %xmm0
 	movl	%eax, g_noise_state(%rip)
-	mulss	.LC210(%rip), %xmm0
-	addss	%xmm0, %xmm2
-.L553:
-	mulss	%xmm14, %xmm2
-	mulss	%xmm12, %xmm2
-.L547:
-	comiss	.LC205(%rip), %xmm10
-	pxor	%xmm1, %xmm1
-	jbe	.L558
-	movl	g_noise_state(%rip), %edx
-	pxor	%xmm0, %xmm0
-	movss	240(%rsp), %xmm4
-	movss	160(%rsp), %xmm1
-	movss	248(%rsp), %xmm5
-	movl	%edx, %eax
-	sall	$13, %eax
-	xorl	%edx, %eax
-	movl	%eax, %edx
-	shrl	$17, %edx
-	xorl	%eax, %edx
-	movl	%edx, %eax
-	sall	$5, %eax
-	xorl	%edx, %eax
-	cvtsi2ssl	%eax, %xmm0
-	mulss	.LC203(%rip), %xmm0
-	movl	%eax, g_noise_state(%rip)
-	mulss	%xmm0, %xmm4
-	mulss	244(%rsp), %xmm0
-	addss	%xmm4, %xmm1
-	mulss	%xmm1, %xmm5
-	subss	%xmm5, %xmm0
-	addss	164(%rsp), %xmm0
-	movss	%xmm0, 160(%rsp)
-	movss	252(%rsp), %xmm0
-	mulss	%xmm1, %xmm0
-	mulss	%xmm10, %xmm1
-	subss	%xmm0, %xmm4
-	movss	%xmm4, 164(%rsp)
-.L558:
-	comiss	.LC205(%rip), %xmm9
-	pxor	%xmm11, %xmm11
-	jbe	.L560
-	movl	g_noise_state(%rip), %edx
-	pxor	%xmm0, %xmm0
-	movl	%edx, %eax
-	sall	$13, %eax
-	xorl	%edx, %eax
-	movl	%eax, %edx
-	shrl	$17, %edx
-	xorl	%eax, %edx
-	movl	%edx, %eax
-	sall	$5, %eax
-	xorl	%edx, %eax
-	cmpl	$0, 220(%rsp)
-	cvtsi2ssl	%eax, %xmm0
-	mulss	.LC203(%rip), %xmm0
-	je	.L562
-	movss	284(%rsp), %xmm4
-	movss	260(%rsp), %xmm11
-	movss	292(%rsp), %xmm5
-	mulss	%xmm0, %xmm4
-	mulss	288(%rsp), %xmm0
-	addss	%xmm4, %xmm11
-	mulss	%xmm11, %xmm5
-	subss	%xmm5, %xmm0
-	addss	256(%rsp), %xmm0
-	movss	%xmm0, 260(%rsp)
-	movss	296(%rsp), %xmm0
-	mulss	%xmm11, %xmm0
-	subss	%xmm0, %xmm4
-	movss	%xmm4, 256(%rsp)
-.L563:
-	mulss	%xmm9, %xmm11
-	movl	%eax, g_noise_state(%rip)
-.L560:
-	movl	192(%rsp), %r9d
-	addss	%xmm1, %xmm2
-	movss	748(%rsp), %xmm0
-	testl	%r9d, %r9d
-	je	.L564
-	comiss	%xmm7, %xmm0
-	pxor	%xmm12, %xmm12
-	jbe	.L565
-	movss	760(%rsp), %xmm12
-	ucomiss	%xmm7, %xmm12
-	jp	.L567
-	je	.L1292
-.L567:
-	movss	772(%rsp), %xmm4
-	mulss	%xmm2, %xmm12
-	movss	764(%rsp), %xmm1
-	mulss	%xmm4, %xmm1
-	subss	%xmm1, %xmm12
-	movss	768(%rsp), %xmm1
-	mulss	776(%rsp), %xmm1
-	subss	%xmm1, %xmm12
-	movaps	%xmm12, %xmm1
-	mulss	756(%rsp), %xmm12
-	unpcklps	%xmm4, %xmm1
-	movlps	%xmm1, 772(%rsp)
-.L569:
-	addss	%xmm7, %xmm12
-.L565:
-	movl	780(%rsp), %r8d
-	movd	%r8d, %xmm4
-	comiss	%xmm7, %xmm4
-	jbe	.L570
-	movss	792(%rsp), %xmm5
-	ucomiss	%xmm7, %xmm5
-	jp	.L572
-	je	.L1293
-.L572:
-	movss	804(%rsp), %xmm4
-	mulss	%xmm2, %xmm5
-	movss	796(%rsp), %xmm1
-	mulss	%xmm4, %xmm1
-	subss	%xmm1, %xmm5
-	movss	800(%rsp), %xmm1
-	mulss	808(%rsp), %xmm1
-	subss	%xmm1, %xmm5
-	movaps	%xmm5, %xmm1
-	mulss	788(%rsp), %xmm5
-	unpcklps	%xmm4, %xmm1
-	movlps	%xmm1, 804(%rsp)
-	movaps	%xmm5, %xmm1
-.L574:
-	addss	%xmm1, %xmm12
-.L570:
-	movl	812(%rsp), %eax
-	movd	%eax, %xmm4
-	comiss	%xmm7, %xmm4
-	jbe	.L575
-	movss	824(%rsp), %xmm5
-	ucomiss	%xmm7, %xmm5
-	jp	.L577
-	je	.L1294
-.L577:
-	movss	836(%rsp), %xmm4
-	mulss	%xmm2, %xmm5
-	movss	828(%rsp), %xmm1
-	mulss	%xmm4, %xmm1
-	subss	%xmm1, %xmm5
-	movss	832(%rsp), %xmm1
-	mulss	840(%rsp), %xmm1
-	subss	%xmm1, %xmm5
-	movaps	%xmm5, %xmm1
-	mulss	820(%rsp), %xmm5
-	unpcklps	%xmm4, %xmm1
-	movlps	%xmm1, 836(%rsp)
-	movaps	%xmm5, %xmm1
-.L579:
-	addss	%xmm1, %xmm12
-.L575:
-	movl	844(%rsp), %r9d
-	movd	%r9d, %xmm4
-	comiss	%xmm7, %xmm4
-	jbe	.L580
-	movss	856(%rsp), %xmm5
-	ucomiss	%xmm7, %xmm5
-	jp	.L582
-	je	.L1295
-.L582:
-	movss	868(%rsp), %xmm4
-	mulss	%xmm2, %xmm5
-	movss	860(%rsp), %xmm1
-	mulss	%xmm4, %xmm1
-	subss	%xmm1, %xmm5
-	movss	864(%rsp), %xmm1
-	mulss	872(%rsp), %xmm1
-	subss	%xmm1, %xmm5
-	movaps	%xmm5, %xmm1
-	mulss	852(%rsp), %xmm5
-	unpcklps	%xmm4, %xmm1
-	movlps	%xmm1, 868(%rsp)
-	movaps	%xmm5, %xmm1
-.L584:
-	addss	%xmm1, %xmm12
-.L580:
-	movss	876(%rsp), %xmm1
-	comiss	%xmm7, %xmm1
-	jbe	.L585
-	movss	888(%rsp), %xmm13
-	ucomiss	%xmm7, %xmm13
-	jp	.L587
-	je	.L1296
-.L587:
-	movss	900(%rsp), %xmm5
-	mulss	%xmm2, %xmm13
-	movss	892(%rsp), %xmm4
-	mulss	%xmm5, %xmm4
-	subss	%xmm4, %xmm13
-	movss	896(%rsp), %xmm4
-	mulss	904(%rsp), %xmm4
-	subss	%xmm4, %xmm13
-	movaps	%xmm13, %xmm4
-	unpcklps	%xmm5, %xmm4
-	movlps	%xmm4, 900(%rsp)
-	movss	884(%rsp), %xmm4
-	mulss	%xmm13, %xmm4
-.L589:
-	addss	%xmm4, %xmm12
-.L585:
-	movss	908(%rsp), %xmm3
-	comiss	%xmm7, %xmm3
-	jbe	.L590
-	movss	920(%rsp), %xmm13
-	ucomiss	%xmm7, %xmm13
-	jp	.L592
-	je	.L1297
-.L592:
-	movss	932(%rsp), %xmm5
-	mulss	%xmm2, %xmm13
-	movss	924(%rsp), %xmm4
-	mulss	%xmm5, %xmm4
-	subss	%xmm4, %xmm13
-	movss	928(%rsp), %xmm4
-	mulss	936(%rsp), %xmm4
-	subss	%xmm4, %xmm13
-	movaps	%xmm13, %xmm4
-	unpcklps	%xmm5, %xmm4
-	movlps	%xmm4, 932(%rsp)
-	movss	916(%rsp), %xmm4
-	mulss	%xmm13, %xmm4
-.L594:
-	addss	%xmm4, %xmm12
-.L590:
-	movss	940(%rsp), %xmm13
-	comiss	%xmm7, %xmm13
-	jbe	.L595
-	movss	952(%rsp), %xmm15
-	ucomiss	%xmm7, %xmm15
-	jp	.L597
-	je	.L1298
-.L597:
-	movss	964(%rsp), %xmm5
-	mulss	%xmm2, %xmm15
-	movss	956(%rsp), %xmm4
-	mulss	%xmm5, %xmm4
-	subss	%xmm4, %xmm15
-	movss	960(%rsp), %xmm4
-	mulss	968(%rsp), %xmm4
-	subss	%xmm4, %xmm15
-	movaps	%xmm15, %xmm4
-	unpcklps	%xmm5, %xmm4
-	movlps	%xmm4, 964(%rsp)
-	movss	948(%rsp), %xmm4
-	mulss	%xmm15, %xmm4
-.L599:
-	addss	%xmm4, %xmm12
-.L595:
-	movl	972(%rsp), %ecx
-	movd	%ecx, %xmm4
-	comiss	%xmm7, %xmm4
-	jbe	.L600
-	movss	984(%rsp), %xmm15
-	ucomiss	%xmm7, %xmm15
-	jp	.L602
-	je	.L1299
-.L602:
-	movss	996(%rsp), %xmm5
-	mulss	%xmm2, %xmm15
-	movss	988(%rsp), %xmm4
-	mulss	%xmm5, %xmm4
-	subss	%xmm4, %xmm15
-	movss	992(%rsp), %xmm4
-	mulss	1000(%rsp), %xmm4
-	subss	%xmm4, %xmm15
-	movaps	%xmm15, %xmm4
-	unpcklps	%xmm5, %xmm4
-	movlps	%xmm4, 996(%rsp)
-	movss	980(%rsp), %xmm4
-	mulss	%xmm15, %xmm4
-.L604:
-	addss	%xmm4, %xmm12
-.L600:
-	movss	1004(%rsp), %xmm4
-	comiss	%xmm7, %xmm4
-	jbe	.L605
-	movss	1016(%rsp), %xmm15
-	ucomiss	%xmm7, %xmm15
-	jp	.L607
-	je	.L1300
-.L607:
-	movss	1028(%rsp), %xmm5
-	mulss	%xmm2, %xmm15
-	mulss	1020(%rsp), %xmm5
-	subss	%xmm5, %xmm15
-	movss	1024(%rsp), %xmm5
-	mulss	1032(%rsp), %xmm5
-	subss	%xmm5, %xmm15
-	movd	%xmm15, %ebx
-	movaps	%xmm15, %xmm5
-	movss	1028(%rsp), %xmm15
-	unpcklps	%xmm15, %xmm5
-	movlps	%xmm5, 1028(%rsp)
-	movd	%ebx, %xmm5
-	mulss	1012(%rsp), %xmm5
-.L609:
-	addss	%xmm5, %xmm12
-.L605:
-	movss	1036(%rsp), %xmm5
-	comiss	%xmm7, %xmm5
-	jbe	.L610
-	movss	1048(%rsp), %xmm15
-	ucomiss	%xmm7, %xmm15
-	jp	.L612
-	je	.L1301
-.L612:
-	mulss	%xmm2, %xmm15
-	movss	1060(%rsp), %xmm2
-	mulss	1052(%rsp), %xmm2
-	subss	%xmm2, %xmm15
-	movss	1056(%rsp), %xmm2
-	mulss	1064(%rsp), %xmm2
-	subss	%xmm2, %xmm15
-	movd	%xmm15, %ebx
-	movaps	%xmm15, %xmm2
-	movss	1060(%rsp), %xmm15
-	unpcklps	%xmm15, %xmm2
-	movd	%ebx, %xmm15
-	movlps	%xmm2, 1060(%rsp)
-	mulss	1044(%rsp), %xmm15
-.L614:
-	addss	%xmm15, %xmm12
-.L610:
-	mulss	.LC210(%rip), %xmm11
-	addss	%xmm12, %xmm11
-.L615:
-	movd	%r9d, %xmm15
-	movd	%eax, %xmm2
-	unpcklps	%xmm3, %xmm1
-	unpcklps	%xmm15, %xmm2
-	movd	%r8d, %xmm15
-	movl	84(%rsp), %r8d
-	unpcklps	%xmm15, %xmm0
-	movlhps	%xmm2, %xmm0
-	movd	%ecx, %xmm2
-	unpcklps	%xmm2, %xmm13
-	movlhps	%xmm13, %xmm1
-	testl	%r8d, %r8d
-	je	.L646
-	movss	.LC211(%rip), %xmm2
-	mulss	2312(%rsp), %xmm2
-	movss	%xmm11, 2312(%rsp)
-	subss	%xmm2, %xmm11
-.L646:
-	movss	176(%rsp), %xmm2
-	mulss	88(%rsp), %xmm2
-	cmpl	%ebp, 92(%rsp)
-	mulss	%xmm11, %xmm2
-	movss	172(%rsp), %xmm11
-	divss	272(%rsp), %xmm11
-	mulss	%xmm11, %xmm2
-	jg	.L647
-	cmpb	$0, 215(%rsp)
-	jne	.L1302
-.L647:
-	movq	224(%rsp), %rax
-	movss	%xmm2, (%rax,%rbp,4)
-	addq	$1, %rbp
-	cmpl	%ebp, 232(%rsp)
-	jle	.L1242
-.L648:
-	movss	%xmm14, 144(%rsp)
-	jmp	.L650
-	.p2align 4,,10
-	.p2align 3
-.L543:
-	comiss	%xmm7, %xmm11
-	jbe	.L550
-	comiss	.LC205(%rip), %xmm14
-	ja	.L546
-.L550:
-	pxor	%xmm2, %xmm2
-	jmp	.L547
-.L564:
-	comiss	%xmm7, %xmm0
-	jbe	.L616
-	movss	760(%rsp), %xmm1
-	ucomiss	%xmm7, %xmm1
-	jp	.L1017
-	je	.L918
-.L1017:
-	movss	772(%rsp), %xmm4
-	mulss	%xmm2, %xmm1
-	movss	764(%rsp), %xmm2
-	mulss	%xmm4, %xmm2
-	subss	%xmm2, %xmm1
-	movss	776(%rsp), %xmm2
-	mulss	768(%rsp), %xmm2
-	subss	%xmm2, %xmm1
+	cmpl	$2, %ebx
+	je	.L1711
+	cmpl	$1, %ebx
+	jne	.L507
+	movss	.LC51(%rip), %xmm6
+	movss	1268(%rsp), %xmm1
+	divss	%xmm6, %xmm1
+	addss	.LC84(%rip), %xmm1
 	movaps	%xmm1, %xmm2
-	unpcklps	%xmm4, %xmm2
-	movlps	%xmm2, 772(%rsp)
-	movss	756(%rsp), %xmm2
-	mulss	%xmm1, %xmm2
-.L616:
-	movl	780(%rsp), %r8d
-	movd	%r8d, %xmm5
-	comiss	%xmm7, %xmm5
-	jbe	.L619
-	movss	792(%rsp), %xmm1
-	ucomiss	%xmm7, %xmm1
-	jp	.L1019
-	je	.L919
-.L1019:
-	movss	804(%rsp), %xmm4
-	mulss	%xmm2, %xmm1
-	movss	796(%rsp), %xmm2
-	mulss	%xmm4, %xmm2
-	subss	%xmm2, %xmm1
-	movss	808(%rsp), %xmm2
-	mulss	800(%rsp), %xmm2
-	subss	%xmm2, %xmm1
-	movaps	%xmm1, %xmm2
-	unpcklps	%xmm4, %xmm2
-	movlps	%xmm2, 804(%rsp)
-	movss	788(%rsp), %xmm2
-	mulss	%xmm1, %xmm2
-.L619:
-	movl	812(%rsp), %eax
-	movd	%eax, %xmm4
-	comiss	%xmm7, %xmm4
-	jbe	.L622
-	movss	824(%rsp), %xmm1
-	ucomiss	%xmm7, %xmm1
-	jp	.L1021
-	je	.L920
-.L1021:
-	movss	836(%rsp), %xmm4
-	mulss	%xmm2, %xmm1
-	movss	828(%rsp), %xmm2
-	mulss	%xmm4, %xmm2
-	subss	%xmm2, %xmm1
-	movss	840(%rsp), %xmm2
-	mulss	832(%rsp), %xmm2
-	subss	%xmm2, %xmm1
-	movaps	%xmm1, %xmm2
-	unpcklps	%xmm4, %xmm2
-	movlps	%xmm2, 836(%rsp)
-	movss	820(%rsp), %xmm2
-	mulss	%xmm1, %xmm2
-.L622:
-	movl	844(%rsp), %r9d
-	movd	%r9d, %xmm5
-	comiss	%xmm7, %xmm5
-	jbe	.L625
-	movss	856(%rsp), %xmm1
-	ucomiss	%xmm7, %xmm1
-	jp	.L1023
-	je	.L921
-.L1023:
-	movss	868(%rsp), %xmm4
-	mulss	%xmm2, %xmm1
-	movss	860(%rsp), %xmm2
-	mulss	%xmm4, %xmm2
-	subss	%xmm2, %xmm1
-	movss	872(%rsp), %xmm2
-	mulss	864(%rsp), %xmm2
-	subss	%xmm2, %xmm1
-	movaps	%xmm1, %xmm2
-	unpcklps	%xmm4, %xmm2
-	movlps	%xmm2, 868(%rsp)
-	movss	852(%rsp), %xmm2
-	mulss	%xmm1, %xmm2
-.L625:
-	movss	876(%rsp), %xmm1
-	comiss	%xmm7, %xmm1
-	jbe	.L628
-	movss	888(%rsp), %xmm4
-	ucomiss	%xmm7, %xmm4
-	jp	.L1025
-	je	.L922
-.L1025:
-	movss	900(%rsp), %xmm5
-	mulss	%xmm2, %xmm4
-	movss	892(%rsp), %xmm2
-	mulss	%xmm5, %xmm2
-	subss	%xmm2, %xmm4
-	movss	904(%rsp), %xmm2
-	mulss	896(%rsp), %xmm2
-	subss	%xmm2, %xmm4
-	movaps	%xmm4, %xmm2
-	mulss	884(%rsp), %xmm4
-	unpcklps	%xmm5, %xmm2
-	movlps	%xmm2, 900(%rsp)
-	movaps	%xmm4, %xmm2
-.L628:
-	movss	908(%rsp), %xmm3
-	comiss	%xmm7, %xmm3
-	jbe	.L631
-	movss	920(%rsp), %xmm4
-	ucomiss	%xmm7, %xmm4
-	jp	.L1027
-	je	.L923
-.L1027:
-	movss	932(%rsp), %xmm5
-	mulss	%xmm2, %xmm4
-	movss	924(%rsp), %xmm2
-	mulss	%xmm5, %xmm2
-	subss	%xmm2, %xmm4
-	movss	936(%rsp), %xmm2
-	mulss	928(%rsp), %xmm2
-	subss	%xmm2, %xmm4
-	movaps	%xmm4, %xmm2
-	mulss	916(%rsp), %xmm4
-	unpcklps	%xmm5, %xmm2
-	movlps	%xmm2, 932(%rsp)
-	movaps	%xmm4, %xmm2
-.L631:
-	movss	940(%rsp), %xmm13
-	comiss	%xmm7, %xmm13
-	jbe	.L634
-	movss	952(%rsp), %xmm4
-	ucomiss	%xmm7, %xmm4
-	jp	.L1029
-	je	.L924
-.L1029:
-	movss	964(%rsp), %xmm5
-	mulss	%xmm2, %xmm4
-	movss	956(%rsp), %xmm2
-	mulss	%xmm5, %xmm2
-	subss	%xmm2, %xmm4
-	movss	968(%rsp), %xmm2
-	mulss	960(%rsp), %xmm2
-	subss	%xmm2, %xmm4
-	movaps	%xmm4, %xmm2
-	mulss	948(%rsp), %xmm4
-	unpcklps	%xmm5, %xmm2
-	movlps	%xmm2, 964(%rsp)
-	movaps	%xmm4, %xmm2
-.L634:
-	movl	972(%rsp), %ecx
-	movd	%ecx, %xmm4
-	comiss	%xmm7, %xmm4
-	jbe	.L637
-	movss	984(%rsp), %xmm4
-	ucomiss	%xmm7, %xmm4
-	jp	.L1031
-	je	.L925
-.L1031:
-	movss	996(%rsp), %xmm5
-	mulss	%xmm2, %xmm4
-	movss	988(%rsp), %xmm2
-	mulss	%xmm5, %xmm2
-	subss	%xmm2, %xmm4
-	movss	1000(%rsp), %xmm2
-	mulss	992(%rsp), %xmm2
-	subss	%xmm2, %xmm4
-	movaps	%xmm4, %xmm2
-	mulss	980(%rsp), %xmm4
-	unpcklps	%xmm5, %xmm2
-	movlps	%xmm2, 996(%rsp)
-	movaps	%xmm4, %xmm2
-.L637:
-	movss	1004(%rsp), %xmm4
-	comiss	%xmm7, %xmm4
-	jbe	.L640
-	movss	1016(%rsp), %xmm5
-	ucomiss	%xmm7, %xmm5
-	jp	.L1033
-	je	.L926
-.L1033:
-	movss	1028(%rsp), %xmm12
-	mulss	%xmm2, %xmm5
-	movss	1020(%rsp), %xmm2
-	mulss	%xmm12, %xmm2
-	subss	%xmm2, %xmm5
-	movss	1024(%rsp), %xmm2
-	mulss	1032(%rsp), %xmm2
-	subss	%xmm2, %xmm5
-	movaps	%xmm5, %xmm2
-	mulss	1012(%rsp), %xmm5
-	unpcklps	%xmm12, %xmm2
-	movlps	%xmm2, 1028(%rsp)
-	movaps	%xmm5, %xmm2
-.L640:
-	movss	1036(%rsp), %xmm5
-	comiss	%xmm7, %xmm5
-	jbe	.L643
-	movss	1048(%rsp), %xmm12
-	ucomiss	%xmm7, %xmm12
-	jp	.L1035
-	je	.L927
-.L1035:
-	movss	1060(%rsp), %xmm15
-	mulss	%xmm2, %xmm12
-	movss	1052(%rsp), %xmm2
-	mulss	%xmm15, %xmm2
-	subss	%xmm2, %xmm12
-	movss	1056(%rsp), %xmm2
-	mulss	1064(%rsp), %xmm2
-	subss	%xmm2, %xmm12
-	movaps	%xmm12, %xmm2
-	unpcklps	%xmm15, %xmm2
-	movlps	%xmm2, 1060(%rsp)
-	movss	1044(%rsp), %xmm2
-	mulss	%xmm12, %xmm2
-.L643:
-	mulss	.LC60(%rip), %xmm11
-	addss	%xmm2, %xmm11
-	jmp	.L615
-.L529:
-	movq	464(%rsp), %xmm2
-	xorl	%ebx, %ebx
-	xorl	%esi, %esi
-	xorl	%edi, %edi
-	pxor	%xmm0, %xmm0
-	movaps	%xmm0, %xmm1
-	xorl	%r10d, %r10d
-	xorl	%eax, %eax
-	movq	%xmm2, %xmm4
-	xorl	%r11d, %r11d
-	xorl	%r13d, %r13d
-	movq	.LC54(%rip), %xmm3
-	cmpltps	%xmm4, %xmm1
-	movq	%r10, 764(%rsp)
-	movq	368(%rsp), %xmm4
-	xorl	%r15d, %r15d
-	movq	416(%rsp), %xmm5
-	movq	%r11, 796(%rsp)
-	movq	%rbx, 828(%rsp)
-	andps	%xmm1, %xmm2
-	andnps	%xmm3, %xmm1
-	orps	%xmm1, %xmm2
-	movaps	%xmm4, %xmm1
-	movss	%xmm2, 276(%rsp)
-	psrlq	$32, %xmm2
-	unpcklps	%xmm5, %xmm1
-	unpcklps	%xmm5, %xmm4
-	movlps	%xmm1, 748(%rsp)
-	shufps	$78, %xmm4, %xmm4
-	movss	276(%rsp), %xmm1
-	movlps	%xmm2, 788(%rsp)
-	movq	472(%rsp), %xmm2
-	movlps	%xmm1, 756(%rsp)
-	movaps	%xmm0, %xmm1
-	movq	424(%rsp), %xmm5
-	movlps	%xmm4, 780(%rsp)
-	movq	%xmm2, %xmm4
-	cmpltps	%xmm4, %xmm1
-	movq	%rsi, 860(%rsp)
-	movq	376(%rsp), %xmm4
-	movq	%rdi, 892(%rsp)
-	andps	%xmm1, %xmm2
-	andnps	%xmm3, %xmm1
-	orps	%xmm1, %xmm2
-	movaps	%xmm4, %xmm1
-	movss	%xmm2, 276(%rsp)
-	unpcklps	%xmm5, %xmm1
-	unpcklps	%xmm5, %xmm4
-	psrlq	$32, %xmm2
-	movlps	%xmm1, 812(%rsp)
-	shufps	$78, %xmm4, %xmm4
-	movss	276(%rsp), %xmm1
-	movlps	%xmm2, 852(%rsp)
-	movq	480(%rsp), %xmm2
-	movlps	%xmm1, 820(%rsp)
-	movaps	%xmm0, %xmm1
-	movq	432(%rsp), %xmm5
-	movlps	%xmm4, 844(%rsp)
-	movq	%xmm2, %xmm4
-	cmpltps	%xmm4, %xmm1
-	movq	384(%rsp), %xmm4
-	andps	%xmm1, %xmm2
-	andnps	%xmm3, %xmm1
-	orps	%xmm1, %xmm2
-	movaps	%xmm4, %xmm1
-	movss	%xmm2, 276(%rsp)
-	unpcklps	%xmm5, %xmm1
-	unpcklps	%xmm5, %xmm4
-	psrlq	$32, %xmm2
-	movlps	%xmm1, 876(%rsp)
-	shufps	$78, %xmm4, %xmm4
-	movss	276(%rsp), %xmm1
-	movlps	%xmm4, 908(%rsp)
-	movlps	%xmm1, 884(%rsp)
-	movaps	%xmm0, %xmm1
-	movlps	%xmm2, 916(%rsp)
-	movq	488(%rsp), %xmm2
-	movq	440(%rsp), %xmm5
-	movq	%rax, 988(%rsp)
-	xorl	%eax, %eax
-	movq	%xmm2, %xmm4
-	movq	%rax, 1020(%rsp)
-	xorl	%eax, %eax
-	cmpltps	%xmm4, %xmm1
-	movq	%r13, 924(%rsp)
-	movq	392(%rsp), %xmm4
-	movq	%r15, 956(%rsp)
-	movq	%rax, 1052(%rsp)
-	andps	%xmm1, %xmm2
-	andnps	%xmm3, %xmm1
-	orps	%xmm1, %xmm2
-	movaps	%xmm4, %xmm1
-	movss	%xmm2, 276(%rsp)
-	unpcklps	%xmm5, %xmm1
-	unpcklps	%xmm5, %xmm4
-	psrlq	$32, %xmm2
-	movlps	%xmm1, 940(%rsp)
-	shufps	$78, %xmm4, %xmm4
-	movss	276(%rsp), %xmm1
-	movlps	%xmm2, 980(%rsp)
-	movlps	%xmm1, 948(%rsp)
-	movq	496(%rsp), %xmm1
-	movlps	%xmm4, 972(%rsp)
-	movq	448(%rsp), %xmm4
-	movq	%xmm1, %xmm2
-	cmpltps	%xmm2, %xmm0
-	movq	400(%rsp), %xmm2
-	andps	%xmm0, %xmm1
-	andnps	%xmm3, %xmm0
-	orps	%xmm1, %xmm0
-	movaps	%xmm2, %xmm1
-	movss	%xmm0, 276(%rsp)
-	unpcklps	%xmm4, %xmm1
-	unpcklps	%xmm4, %xmm2
-	psrlq	$32, %xmm0
-	movlps	%xmm1, 1004(%rsp)
-	shufps	$78, %xmm2, %xmm2
-	movss	276(%rsp), %xmm1
-	movlps	%xmm2, 1036(%rsp)
-	movlps	%xmm1, 1012(%rsp)
-	movlps	%xmm0, 1044(%rsp)
-	jmp	.L535
-.L913:
-	movaps	%xmm0, %xmm11
-	jmp	.L527
-.L1302:
-	movl	332(%rsp), %eax
-	pxor	%xmm11, %xmm11
-	pxor	%xmm12, %xmm12
-	cvtsi2ssl	280(%rsp), %xmm12
-	subl	%ebp, %eax
-	cvtsi2ssl	%eax, %xmm11
-	movq	224(%rsp), %rax
-	divss	%xmm12, %xmm11
-	mulss	%xmm2, %xmm11
-	movss	%xmm11, (%rax,%rbp,4)
-	addq	$1, %rbp
-	cmpl	%ebp, 232(%rsp)
-	jg	.L648
-	movl	332(%rsp), %r15d
-	movq	%rax, %rbx
-	movl	348(%rsp), %r8d
-	movl	232(%rsp), %r11d
-	movl	192(%rsp), %r13d
-	movss	236(%rsp), %xmm15
-	jmp	.L649
-.L530:
-	movq	64(%rsp), %r15
-	leaq	464(%rsp), %r13
-	movss	%xmm9, 276(%rsp)
-	leaq	416(%rsp), %rbx
-	movss	%xmm10, 328(%rsp)
-	leaq	368(%rsp), %rdi
-	leaq	504(%rsp), %rsi
-	jmp	.L542
-	.p2align 4,,10
-	.p2align 3
-.L1215:
-	comiss	%xmm0, %xmm7
-	jnb	.L540
-	mulss	.LC183(%rip), %xmm0
-	divss	%xmm8, %xmm0
-	call	expf
-	movss	.LC190(%rip), %xmm2
-	movaps	%xmm0, %xmm9
-	mulss	%xmm10, %xmm2
-	divss	%xmm8, %xmm2
+	maxss	%xmm0, %xmm2
 	movaps	%xmm2, %xmm0
-	call	cosf
-	movaps	%xmm9, %xmm1
-	mulss	%xmm9, %xmm1
-	movaps	%xmm0, %xmm2
-	movss	.LC189(%rip), %xmm0
-	mulss	%xmm9, %xmm0
-	mulss	%xmm2, %xmm0
-	movaps	%xmm0, %xmm2
-	addss	%xmm6, %xmm0
-	unpcklps	%xmm1, %xmm2
-	movlps	%xmm2, 44(%r15)
-	addss	%xmm1, %xmm0
-	movss	.LC164(%rip), %xmm1
-	maxss	%xmm0, %xmm1
-	movss	%xmm1, 40(%r15)
-.L539:
-	addq	$4, %r13
-	addq	$32, %r15
-	addq	$4, %rbx
-	addq	$4, %rdi
-	cmpq	%r13, %rsi
-	je	.L1250
-.L542:
-	movss	0(%r13), %xmm1
-	movaps	%xmm7, %xmm0
-	movss	(%rdi), %xmm10
-	cmpltss	%xmm1, %xmm0
-	comiss	%xmm10, %xmm7
-	movaps	%xmm10, %xmm3
-	andps	%xmm0, %xmm1
-	andnps	%xmm6, %xmm0
-	orps	%xmm0, %xmm1
-	movss	(%rbx), %xmm0
-	movss	%xmm1, 36(%r15)
-	unpcklps	%xmm0, %xmm3
-	movlps	%xmm3, 28(%r15)
-	jb	.L1215
-.L540:
-	movq	$0, 40(%r15)
-	movl	$0x00000000, 48(%r15)
-	jmp	.L539
-.L562:
-	movss	300(%rsp), %xmm11
-	movss	304(%rsp), %xmm5
-	mulss	%xmm0, %xmm11
-	addss	268(%rsp), %xmm11
-	mulss	%xmm7, %xmm0
-	mulss	%xmm11, %xmm5
-	movaps	%xmm0, %xmm4
-	subss	%xmm5, %xmm4
-	addss	264(%rsp), %xmm4
-	movss	%xmm4, 268(%rsp)
-	movss	308(%rsp), %xmm4
-	mulss	%xmm11, %xmm4
-	subss	%xmm4, %xmm0
-	movss	%xmm0, 264(%rsp)
-	jmp	.L563
-.L1326:
-	movl	176(%rsp), %ebx
-	pxor	%xmm11, %xmm11
-	pxor	%xmm13, %xmm13
-	cvtsi2ssl	280(%rsp), %xmm13
-	movq	192(%rsp), %rsi
-	movl	%ebx, %r10d
-	subl	%ebp, %r10d
-	cvtsi2ssl	%r10d, %xmm11
-	divss	%xmm13, %xmm11
-	mulss	%xmm2, %xmm11
-	movss	%xmm11, (%rsi,%rbp,4)
-	addq	$1, %rbp
-	cmpl	%ebp, %ebx
-	jg	.L837
-	movl	%ebx, %r15d
-	movq	%rsi, %rbx
-.L838:
-	cmpl	$0, 344(%rsp)
-	jne	.L1303
-.L843:
-	xorl	%eax, %eax
-	.p2align 6
-	.p2align 4,,10
-	.p2align 3
-.L850:
-	movss	(%rbx,%rax,4), %xmm1
-	movss	.LC98(%rip), %xmm5
-	comiss	%xmm1, %xmm5
-	ja	.L848
-	movaps	%xmm6, %xmm0
-	movaps	%xmm6, %xmm2
-	cmpltss	%xmm1, %xmm0
-	andps	%xmm0, %xmm2
-	andnps	%xmm1, %xmm0
-	orps	%xmm2, %xmm0
-	movss	%xmm0, (%rbx,%rax,4)
-	addq	$1, %rax
-	cmpl	%eax, %r15d
-	jg	.L850
-.L841:
-	movq	%r12, %rcx
-	call	free
-	movq	312(%rsp), %rcx
-	call	free
-	movq	320(%rsp), %rcx
-	call	free
-	cmpl	$0, 2300(%rsp)
-	jne	.L1304
-	movl	2288(%rsp), %eax
-	cmpl	$2, %eax
-	je	.L851
-	ja	.L868
-.L1256:
+.L507:
+	pxor	%xmm8, %xmm8
+	cvtsi2ssl	%ecx, %xmm8
+	mulss	%xmm8, %xmm0
+	cvttss2sil	%xmm0, %eax
 	testl	%eax, %eax
-	je	.L1305
-	leaq	.LC216(%rip), %rdx
-	movl	732(%rsp), %ebp
-	leaq	1232(%rsp), %rcx
-	call	fopen
+	movl	%eax, 228(%rsp)
+	jg	.L513
+	leal	(%rcx,%rcx), %eax
+	movl	%eax, 228(%rsp)
+.L513:
+	movslq	228(%rsp), %rdi
+	movl	$5760000, %eax
+	movl	$4, %edx
+	cmpl	%eax, %edi
+	cmovle	%rdi, %rax
+	movq	%rax, %rcx
+	movl	%eax, 72(%rsp)
+	movq	%rax, 312(%rsp)
+	call	calloc
 	testq	%rax, %rax
 	movq	%rax, %rsi
-	je	.L1258
-	movq	%rax, %r9
-	movl	$4, %r8d
-	movl	$1, %edx
-	movl	$1179011410, 464(%rsp)
-	leal	0(,%r15,4), %r12d
-	leaq	464(%rsp), %rcx
-	call	fwrite
-	leal	52(%r12), %edx
-	movq	%rsi, %rcx
-	call	w32
-	movq	%rsi, %r9
-	movl	$4, %r8d
-	movl	$1, %edx
-	leaq	464(%rsp), %rcx
-	movl	$1163280727, 464(%rsp)
-	call	fwrite
-	movq	%rsi, %r9
-	movl	$4, %r8d
-	movl	$1, %edx
-	leaq	464(%rsp), %rcx
-	movl	$544501094, 464(%rsp)
-	call	fwrite
-	movq	%rsi, %r9
-	movl	$4, %r8d
-	movl	$1, %edx
-	leaq	464(%rsp), %rcx
-	movl	$18, 464(%rsp)
-	call	fwrite
-	movq	%rsi, %r9
-	movl	$2, %r8d
-	movl	$1, %edx
-	leaq	464(%rsp), %rcx
-	movw	$3, 464(%rsp)
-	call	fwrite
-	movq	%rsi, %r9
-	movl	$2, %r8d
-	movl	$1, %edx
-	leaq	464(%rsp), %rcx
-	movw	$1, 464(%rsp)
-	call	fwrite
-	movl	%ebp, %edx
-	movq	%rsi, %rcx
-	call	w32
-	leal	0(,%rbp,4), %edx
-	movq	%rsi, %rcx
-	call	w32
-	movq	%rsi, %r9
-	movl	$2, %r8d
-	movl	$1, %edx
-	leaq	464(%rsp), %rcx
-	movw	$4, 464(%rsp)
-	call	fwrite
-	movq	%rsi, %r9
-	movl	$2, %r8d
-	movl	$1, %edx
-	leaq	464(%rsp), %rcx
-	movw	$32, 464(%rsp)
-	call	fwrite
-	movq	%rsi, %r9
-	movl	$2, %r8d
-	movl	$1, %edx
-	leaq	464(%rsp), %rcx
-	movw	$0, 464(%rsp)
-	call	fwrite
-	movq	%rsi, %r9
-	movl	$4, %r8d
-	movl	$1, %edx
-	leaq	464(%rsp), %rcx
-	movl	$1952670054, 464(%rsp)
-	call	fwrite
-	movq	%rsi, %r9
-	movl	$4, %r8d
-	movl	$1, %edx
-	leaq	464(%rsp), %rcx
-	movl	$4, 464(%rsp)
-	call	fwrite
-	movl	%r15d, %edx
-	movq	%rsi, %rcx
-	call	w32
-	movl	$1, %edx
-	movq	%rsi, %r9
-	movl	$4, %r8d
-	leaq	464(%rsp), %rcx
-	movl	$1635017060, 464(%rsp)
-	call	fwrite
-	movl	%r12d, %edx
-	movq	%rsi, %rcx
-	call	w32
-.L1239:
-	movq	336(%rsp), %r8
-	movq	%rsi, %r9
-	movl	$4, %edx
-	movq	%rbx, %rcx
-	call	fwrite
-.L1259:
-	movq	%rsi, %rcx
-	call	fclose
-.L856:
-	cmpl	$0, 2300(%rsp)
-	je	.L867
-	leaq	1232(%rsp), %rdx
-	leaq	.LC234(%rip), %rcx
-	call	printf
-.L867:
-	movq	%rbx, %rcx
-	call	free
-	movq	1168(%rsp), %rcx
-	call	free
-	movq	1192(%rsp), %rcx
-	call	free
-	movq	1152(%rsp), %rcx
-	call	free
-	jmp	.L274
-.L1287:
-	movslq	1200(%rsp), %rax
-	movss	(%r12,%rax,4), %xmm0
-	movq	%rax, %rdx
-	comiss	%xmm12, %xmm0
-	jbe	.L501
-	subl	$1, %edx
-	js	.L501
-	xorl	%r8d, %r8d
-	jmp	.L508
-	.p2align 6
-.L1306:
-	leal	-1(%rax), %edx
-.L505:
-	cmpl	%r8d, %edx
-	jl	.L501
-.L508:
-	leal	(%rdx,%r8), %ecx
-	movl	%ecx, %eax
-	shrl	$31, %eax
-	addl	%ecx, %eax
-	sarl	%eax
-	movslq	%eax, %rsi
-	movss	(%r12,%rsi,4), %xmm0
-	comiss	%xmm12, %xmm0
-	ja	.L1306
-	comiss	4(%r12,%rsi,4), %xmm12
-	jb	.L1210
-	leal	1(%rax), %r8d
-	jmp	.L505
-.L1286:
-	cmpl	$1, 56(%rsp)
-	je	.L1307
-	movss	4(%r14), %xmm11
-	jmp	.L473
-.L501:
-	movq	.LC196(%rip), %rax
-	pxor	%xmm15, %xmm15
-	movss	%xmm6, 176(%rsp)
-	movaps	%xmm15, %xmm13
-	movaps	.LC194(%rip), %xmm3
-	movaps	%xmm15, %xmm11
-	movss	%xmm15, 168(%rsp)
-	movaps	%xmm3, 368(%rsp)
-	movq	%rax, 400(%rsp)
-	movq	.LC197(%rip), %rax
-	movaps	%xmm3, 384(%rsp)
-	movaps	.LC195(%rip), %xmm3
-	movaps	%xmm3, 416(%rsp)
-	movq	%rax, 448(%rsp)
-	movq	.LC54(%rip), %rax
-	movaps	%xmm3, 432(%rsp)
-	movaps	.LC55(%rip), %xmm3
-	movaps	%xmm3, 464(%rsp)
-	movaps	%xmm3, 480(%rsp)
-	movq	%rax, 496(%rsp)
-	jmp	.L475
-.L896:
-	movss	.LC50(%rip), %xmm7
-	xorl	%ecx, %ecx
-	xorl	%r11d, %r11d
-	movl	$0x00000000, 256(%rsp)
-	movl	$0x00000000, 260(%rsp)
-	movss	%xmm7, 140(%rsp)
-	movss	.LC204(%rip), %xmm7
-	movl	$0x00000000, 264(%rsp)
-	movl	$0x00000000, 268(%rsp)
-	movl	$0x00000000, 164(%rsp)
-	movl	$0x00000000, 160(%rsp)
-	movl	%ecx, 220(%rsp)
-	movss	%xmm7, 136(%rsp)
-.L464:
-	movslq	%r11d, %rbp
-	movl	%r15d, 176(%rsp)
-	pxor	%xmm7, %xmm7
-	movl	%r13d, 172(%rsp)
-	movq	%rbx, 192(%rsp)
-	movss	%xmm15, 232(%rsp)
-.L839:
-	pxor	%xmm12, %xmm12
-	cvtsi2ssl	%ebp, %xmm12
-	testq	%r14, %r14
-	movss	848(%rsp), %xmm2
-	movaps	%xmm0, 368(%rsp)
-	movaps	96(%rsp), %xmm3
-	movq	128(%rsp), %rax
-	movaps	%xmm1, 384(%rsp)
-	movss	816(%rsp), %xmm13
-	movaps	%xmm3, 464(%rsp)
-	divss	%xmm8, %xmm12
-	movaps	112(%rsp), %xmm3
-	movss	%xmm4, 400(%rsp)
-	movss	784(%rsp), %xmm11
-	unpcklps	%xmm2, %xmm13
-	movss	%xmm5, 404(%rsp)
-	movss	752(%rsp), %xmm2
-	movaps	%xmm3, 480(%rsp)
-	movss	976(%rsp), %xmm0
-	movq	%rax, 496(%rsp)
-	movss	912(%rsp), %xmm1
-	unpcklps	%xmm11, %xmm2
-	movlhps	%xmm13, %xmm2
-	movaps	%xmm2, 416(%rsp)
-	movss	944(%rsp), %xmm11
-	unpcklps	%xmm0, %xmm11
-	movss	880(%rsp), %xmm0
-	unpcklps	%xmm1, %xmm0
-	movlhps	%xmm11, %xmm0
-	movaps	%xmm0, 432(%rsp)
-	movss	1008(%rsp), %xmm1
-	movss	1040(%rsp), %xmm0
-	unpcklps	%xmm0, %xmm1
-	movlps	%xmm1, 448(%rsp)
-	mulss	140(%rsp), %xmm12
-	je	.L651
-	movl	1160(%rsp), %edx
-	testl	%edx, %edx
-	jle	.L651
-	movss	(%r14), %xmm0
-	comiss	%xmm12, %xmm0
-	jnb	.L1308
-	cmpl	$1, 56(%rsp)
-	je	.L659
-	movaps	%xmm12, %xmm2
-	movq	%r14, %rcx
-	call	contour_f0.part.0
-	movaps	%xmm0, %xmm11
-.L658:
-	cmpb	$0, 214(%rsp)
-	jne	.L1309
-	movss	200(%rsp), %xmm5
-	movss	%xmm6, 144(%rsp)
-	movss	204(%rsp), %xmm15
-	movss	208(%rsp), %xmm13
-	movss	%xmm5, 168(%rsp)
-.L661:
-	movss	48(%rsp), %xmm4
-	comiss	%xmm7, %xmm4
-	jbe	.L706
-	movss	.LC190(%rip), %xmm0
-	mulss	1124(%rsp), %xmm0
+	je	.L1712
+	movss	1216(%rsp), %xmm6
+	comiss	.LC137(%rip), %xmm6
+	ja	.L515
+	movss	.LC93(%rip), %xmm6
+.L515:
+	movss	1224(%rsp), %xmm0
+	comiss	.LC137(%rip), %xmm0
+	ja	.L516
+	movss	.LC94(%rip), %xmm0
+.L516:
+	movss	1220(%rsp), %xmm13
+	comiss	.LC137(%rip), %xmm13
+	ja	.L517
+	movss	.LC95(%rip), %xmm13
+.L517:
+	mulss	.LC185(%rip), %xmm0
 	divss	%xmm8, %xmm0
-	addss	2308(%rsp), %xmm0
-	comiss	.LC190(%rip), %xmm0
-	jb	.L708
-	subss	.LC190(%rip), %xmm0
-.L708:
-	movss	%xmm0, 2308(%rsp)
+	call	expf
+	movl	FORMANTS(%rip), %edi
+	movaps	%xmm0, %xmm12
+	testl	%edi, %edi
+	jle	.L523
+	cmpl	$1, %edi
+	je	.L1043
+	movl	%edi, %eax
+	xorl	%r14d, %r14d
+	shrl	%eax
+	movq	%r14, 852(%rsp)
+	cmpl	$1, %eax
+	movq	%r14, 884(%rsp)
+	je	.L522
+	xorl	%r13d, %r13d
+	cmpl	$2, %eax
+	movq	%r13, 916(%rsp)
+	movq	%r13, 948(%rsp)
+	je	.L522
+	xorl	%r12d, %r12d
+	cmpl	$3, %eax
+	movq	%r12, 980(%rsp)
+	movq	%r12, 1012(%rsp)
+	je	.L522
+	xorl	%ebp, %ebp
+	cmpl	$4, %eax
+	movq	%rbp, 1044(%rsp)
+	movq	%rbp, 1076(%rsp)
+	je	.L522
+	xorl	%r11d, %r11d
+	movq	%r11, 1108(%rsp)
+	movq	%r11, 1140(%rsp)
+.L522:
+	movl	%edi, %eax
+	andl	$-2, %eax
+	testb	$1, %dil
+	je	.L523
+.L521:
+	cltq
+	xorl	%r10d, %r10d
+	salq	$5, %rax
+	movq	%r10, 852(%rsp,%rax)
+.L523:
+	movl	$0x00000000, 2392(%rsp)
+	xorl	%r15d, %r15d
+	cmpl	$2, %ebx
+	movq	%r15, 2384(%rsp)
+	je	.L519
+.L1044:
+	xorl	%r9d, %r9d
+	xorl	%r13d, %r13d
+	movq	%r9, 280(%rsp)
+	movq	%r9, 272(%rsp)
+.L520:
+	movss	.LC188(%rip), %xmm0
+	movss	.LC99(%rip), %xmm1
+	mulss	%xmm8, %xmm0
+	divss	%xmm0, %xmm1
+	movaps	%xmm1, %xmm0
+	call	expf
+	movl	800(%rsp), %eax
+	movaps	%xmm0, %xmm15
+	cmpl	$2, %eax
+	movl	%eax, 76(%rsp)
+	je	.L1713
+.L536:
+	movss	1188(%rsp), %xmm11
+	movss	1192(%rsp), %xmm9
+	movss	1196(%rsp), %xmm10
+.L537:
+	cmpl	$0, 228(%rsp)
+	movl	2372(%rsp), %ebp
+	jle	.L1714
+	mulss	.LC189(%rip), %xmm6
+	divss	%xmm8, %xmm6
+	movaps	%xmm6, %xmm0
+	call	tanf
+	movss	.LC190(%rip), %xmm7
+	movaps	%xmm0, %xmm2
+	movss	.LC43(%rip), %xmm6
+	mulss	%xmm7, %xmm2
+	movss	.LC191(%rip), %xmm3
+	mulss	%xmm0, %xmm0
+	movaps	%xmm6, %xmm5
+	mulss	.LC192(%rip), %xmm13
+	movaps	%xmm2, %xmm1
+	addss	%xmm6, %xmm1
+	addss	%xmm0, %xmm1
+	divss	%xmm1, %xmm5
+	movaps	%xmm0, %xmm1
+	subss	%xmm6, %xmm1
+	addss	%xmm1, %xmm1
+	movss	%xmm5, 168(%rsp)
+	mulss	%xmm5, %xmm1
+	mulss	%xmm5, %xmm3
+	movss	%xmm1, 176(%rsp)
+	movaps	%xmm6, %xmm1
+	movss	%xmm3, 172(%rsp)
+	subss	%xmm2, %xmm1
+	addss	%xmm0, %xmm1
+	movaps	%xmm13, %xmm0
+	divss	%xmm8, %xmm0
+	mulss	%xmm5, %xmm1
+	movaps	%xmm6, %xmm5
+	subss	%xmm12, %xmm5
+	movss	%xmm1, 180(%rsp)
+	movss	%xmm5, 248(%rsp)
+	call	cosf
+	movss	.LC191(%rip), %xmm1
+	mulss	%xmm12, %xmm1
+	mulss	%xmm12, %xmm12
+	mulss	%xmm0, %xmm1
+	movss	.LC193(%rip), %xmm0
+	movss	%xmm12, 264(%rsp)
+	divss	%xmm8, %xmm0
+	movss	%xmm1, 252(%rsp)
+	call	tanf
+	movaps	%xmm6, %xmm5
+	cmpl	$2, 76(%rsp)
+	movss	.LC191(%rip), %xmm3
+	mulss	%xmm0, %xmm7
+	movq	1232(%rsp), %r15
+	mulss	%xmm0, %xmm0
+	sete	%dl
+	testq	%r13, %r13
+	setne	%al
+	movaps	%xmm7, %xmm1
+	andl	%eax, %edx
+	movl	804(%rsp), %eax
+	addss	%xmm6, %xmm1
+	movb	%dl, 150(%rsp)
+	addss	%xmm0, %xmm1
+	divss	%xmm1, %xmm5
+	movaps	%xmm0, %xmm1
+	subss	%xmm6, %xmm1
+	addss	%xmm1, %xmm1
+	movss	%xmm5, 232(%rsp)
+	mulss	%xmm5, %xmm1
+	mulss	%xmm5, %xmm3
+	movss	%xmm1, 240(%rsp)
+	movaps	%xmm6, %xmm1
+	movss	%xmm3, 236(%rsp)
+	subss	%xmm7, %xmm1
+	movss	1196(%rsp), %xmm7
+	movss	%xmm7, 140(%rsp)
+	movss	820(%rsp), %xmm7
+	addss	%xmm0, %xmm1
+	movss	.LC194(%rip), %xmm0
+	movss	%xmm7, 152(%rsp)
+	movss	1200(%rsp), %xmm7
+	mulss	%xmm8, %xmm0
+	movss	%xmm7, 48(%rsp)
+	mulss	%xmm5, %xmm1
+	movss	1208(%rsp), %xmm7
+	movss	%xmm7, 80(%rsp)
+	movss	1212(%rsp), %xmm7
+	cvttss2sil	%xmm0, %edi
+	movss	.LC195(%rip), %xmm0
+	movss	%xmm7, 84(%rsp)
+	movss	%xmm1, 244(%rsp)
+	mulss	%xmm8, %xmm0
+	cvttss2sil	%xmm0, %r14d
+	testl	%r14d, %r14d
+	setg	151(%rsp)
+	movl	%eax, 56(%rsp)
+	movl	2376(%rsp), %eax
+	movss	1192(%rsp), %xmm7
+	movl	FORMANTS(%rip), %ebx
+	movss	%xmm7, 144(%rsp)
+	movss	1188(%rsp), %xmm7
+	movl	%eax, 88(%rsp)
+	movl	72(%rsp), %eax
+	movss	%xmm7, 136(%rsp)
+	movss	824(%rsp), %xmm7
+	movss	%xmm7, 92(%rsp)
+	movl	%eax, %ecx
+	subl	%r14d, %ecx
+	testl	%edi, %edi
+	movl	%ecx, 96(%rsp)
+	jle	.L1045
+	movss	.LC51(%rip), %xmm7
+	cmpl	%edi, %eax
+	movl	%eax, %r11d
+	movslq	%ebx, %rcx
+	cmovg	%edi, %r11d
+	xorl	%r8d, %r8d
+	xorl	%r12d, %r12d
+	movl	%r14d, 308(%rsp)
+	movss	%xmm7, 100(%rsp)
+	movss	.LC204(%rip), %xmm7
+	leal	-1(%rbx), %eax
+	movss	%xmm11, 132(%rsp)
+	movss	%xmm7, 104(%rsp)
+	pxor	%xmm7, %xmm7
+	cvtsi2ssl	%edi, %xmm7
+	leaq	0(,%rcx,4), %r14
+	movl	%eax, 268(%rsp)
+	leaq	4(,%rax,4), %rax
+	movq	%rax, 216(%rsp)
+	movl	$0x00000000, 196(%rsp)
+	movl	$0x00000000, 200(%rsp)
+	movl	$0x00000000, 204(%rsp)
+	movl	$0x00000000, 224(%rsp)
+	movl	$0x00000000, 108(%rsp)
+	movl	$0x00000000, 128(%rsp)
+	movl	%r8d, 156(%rsp)
+	movl	%edi, 320(%rsp)
+	movl	%r11d, 192(%rsp)
+	movl	%ebp, 324(%rsp)
+	movq	%rcx, 328(%rsp)
+	movq	%rsi, 184(%rsp)
+	movss	%xmm7, 208(%rsp)
+	pxor	%xmm7, %xmm7
+	.p2align 4,,10
+	.p2align 3
+.L759:
+	pxor	%xmm14, %xmm14
+	cvtsi2ssl	%r12d, %xmm14
+	testl	%ebx, %ebx
+	movaps	%xmm14, %xmm2
+	divss	%xmm8, %xmm2
+	mulss	100(%rsp), %xmm2
+	jle	.L553
+	movss	828(%rsp), %xmm0
+	cmpl	$1, %ebx
+	movss	%xmm0, 448(%rsp)
+	je	.L1715
+	movss	860(%rsp), %xmm0
+	cmpl	$2, %ebx
+	movss	%xmm0, 452(%rsp)
+	je	.L1716
+	movss	892(%rsp), %xmm0
+	cmpl	$3, %ebx
+	movss	%xmm0, 456(%rsp)
+	je	.L1662
+	movss	924(%rsp), %xmm0
+	cmpl	$4, %ebx
+	movss	%xmm0, 460(%rsp)
+	je	.L1662
+	movss	956(%rsp), %xmm0
+	cmpl	$5, %ebx
+	movss	%xmm0, 464(%rsp)
+	je	.L1662
+	movss	988(%rsp), %xmm0
+	cmpl	$6, %ebx
+	movss	%xmm0, 468(%rsp)
+	je	.L1662
+	movss	1020(%rsp), %xmm0
+	cmpl	$7, %ebx
+	movss	%xmm0, 472(%rsp)
+	je	.L1662
+	movss	1052(%rsp), %xmm0
+	cmpl	$8, %ebx
+	movss	%xmm0, 476(%rsp)
+	je	.L1662
+	movss	1084(%rsp), %xmm0
+	cmpl	$9, %ebx
+	movss	%xmm0, 480(%rsp)
+	je	.L1662
+	movss	1116(%rsp), %xmm0
+	movss	%xmm0, 484(%rsp)
+.L1662:
+	movss	832(%rsp), %xmm0
+	cmpl	$3, %ebx
+	movss	%xmm0, 496(%rsp)
+	movss	864(%rsp), %xmm0
+	movss	%xmm0, 500(%rsp)
+	movss	896(%rsp), %xmm0
+	movss	%xmm0, 504(%rsp)
+	je	.L543
+	movss	928(%rsp), %xmm0
+	cmpl	$4, %ebx
+	movss	%xmm0, 508(%rsp)
+	je	.L543
+	movss	960(%rsp), %xmm0
+	cmpl	$5, %ebx
+	movss	%xmm0, 512(%rsp)
+	je	.L543
+	movss	992(%rsp), %xmm0
+	cmpl	$6, %ebx
+	movss	%xmm0, 516(%rsp)
+	je	.L543
+	movss	1024(%rsp), %xmm0
+	cmpl	$7, %ebx
+	movss	%xmm0, 520(%rsp)
+	je	.L543
+	movss	1056(%rsp), %xmm0
+	cmpl	$8, %ebx
+	movss	%xmm0, 524(%rsp)
+	je	.L543
+	movss	1088(%rsp), %xmm0
+	cmpl	$9, %ebx
+	movss	%xmm0, 528(%rsp)
+	je	.L543
+	movss	1120(%rsp), %xmm0
+	movss	%xmm0, 532(%rsp)
+.L543:
+	movq	216(%rsp), %r8
+	leaq	544(%rsp), %rcx
+	movss	%xmm2, 112(%rsp)
+	leaq	1148(%rsp), %rdx
+	call	memcpy
+	movss	112(%rsp), %xmm2
+.L553:
+	testq	%r15, %r15
+	je	.L1620
+	movl	1240(%rsp), %edx
+	testl	%edx, %edx
+	jle	.L1620
+	movss	(%r15), %xmm0
+	comiss	%xmm2, %xmm0
+	jnb	.L1717
+	cmpl	$1, 76(%rsp)
+	je	.L560
+	movq	%r15, %rcx
+	movss	%xmm2, 112(%rsp)
+	call	contour_f0.part.0
+	movss	112(%rsp), %xmm2
+	movaps	%xmm0, %xmm1
+.L561:
+	cmpb	$0, 150(%rsp)
+	jne	.L1718
+	movss	140(%rsp), %xmm5
+	movss	144(%rsp), %xmm12
+	movss	136(%rsp), %xmm13
+	movss	%xmm5, 112(%rsp)
+.L1665:
+	movss	%xmm6, 120(%rsp)
+.L563:
+	movss	48(%rsp), %xmm5
+	comiss	%xmm7, %xmm5
+	jbe	.L618
+	movss	.LC192(%rip), %xmm0
+	mulss	1204(%rsp), %xmm0
+	divss	%xmm8, %xmm0
+	addss	2388(%rsp), %xmm0
+	comiss	.LC192(%rip), %xmm0
+	jb	.L620
+	subss	.LC192(%rip), %xmm0
+.L620:
+	movss	%xmm1, 160(%rsp)
+	movss	%xmm0, 2388(%rsp)
 	call	sinf
 	mulss	48(%rsp), %xmm0
-	addss	%xmm0, %xmm11
-.L706:
-	movss	76(%rsp), %xmm5
+	movss	160(%rsp), %xmm1
+	addss	%xmm0, %xmm1
+.L618:
+	movss	80(%rsp), %xmm5
 	comiss	%xmm7, %xmm5
-	jbe	.L710
+	jbe	.L622
 	movl	g_noise_state(%rip), %edx
 	pxor	%xmm0, %xmm0
 	divss	.LC2(%rip), %xmm5
@@ -3921,15 +2843,14 @@ main:
 	movl	%eax, g_noise_state(%rip)
 	mulss	%xmm5, %xmm0
 	addss	%xmm6, %xmm0
-	mulss	%xmm0, %xmm11
-.L710:
-	movss	80(%rsp), %xmm3
-	movaps	%xmm6, %xmm2
-	comiss	%xmm7, %xmm3
-	jbe	.L712
+	mulss	%xmm0, %xmm1
+.L622:
+	movss	84(%rsp), %xmm5
+	comiss	%xmm7, %xmm5
+	jbe	.L1629
 	movl	g_noise_state(%rip), %edx
-	pxor	%xmm2, %xmm2
-	divss	.LC2(%rip), %xmm3
+	pxor	%xmm0, %xmm0
+	divss	.LC2(%rip), %xmm5
 	movl	%edx, %eax
 	sall	$13, %eax
 	xorl	%edx, %eax
@@ -3939,3131 +2860,4938 @@ main:
 	movl	%edx, %eax
 	sall	$5, %eax
 	xorl	%edx, %eax
-	cvtsi2ssl	%eax, %xmm2
-	mulss	.LC203(%rip), %xmm2
+	cvtsi2ssl	%eax, %xmm0
+	mulss	.LC203(%rip), %xmm0
 	movl	%eax, g_noise_state(%rip)
-	mulss	%xmm3, %xmm2
-	addss	%xmm6, %xmm2
-.L712:
-	comiss	%xmm7, %xmm11
-	jbe	.L714
-	movss	.LC97(%rip), %xmm0
-	comiss	%xmm11, %xmm0
-	ja	.L944
-	movss	.LC92(%rip), %xmm0
-	movaps	%xmm0, %xmm1
-	cmpltss	%xmm11, %xmm1
-	andps	%xmm1, %xmm0
-	andnps	%xmm11, %xmm1
-	orps	%xmm0, %xmm1
-	movaps	%xmm1, %xmm11
-.L714:
+	mulss	%xmm5, %xmm0
+	addss	%xmm6, %xmm0
+	movss	%xmm0, 160(%rsp)
+.L624:
+	comiss	%xmm7, %xmm1
+	jbe	.L626
+	movss	.LC98(%rip), %xmm2
+	comiss	%xmm1, %xmm2
+	ja	.L1064
+	movss	.LC93(%rip), %xmm2
+	movaps	%xmm2, %xmm3
+	cmpltss	%xmm1, %xmm3
+	andps	%xmm3, %xmm2
+	andnps	%xmm1, %xmm3
+	orps	%xmm2, %xmm3
+	movaps	%xmm3, %xmm1
+.L626:
+	testl	%ebx, %ebx
+	jle	.L637
 	comiss	%xmm8, %xmm7
-	jnb	.L1310
-	cmpl	$0, 172(%rsp)
-	je	.L719
-	movq	64(%rsp), %rdi
-	leaq	464(%rsp), %r15
-	movss	%xmm9, 224(%rsp)
-	movaps	%xmm2, %xmm12
-	leaq	416(%rsp), %r13
-	movss	%xmm10, 236(%rsp)
-	leaq	368(%rsp), %rsi
-	leaq	504(%rsp), %rbx
-	jmp	.L723
+	jnb	.L631
+	movq	64(%rsp), %rax
+	xorl	%edi, %edi
+	movq	%r12, 288(%rsp)
+	cmpl	$0, 56(%rsp)
+	leaq	448(%rsp), %rbp
+	movl	%ebx, 304(%rsp)
+	movss	%xmm9, 256(%rsp)
+	movq	%rbp, %rbx
+	movss	%xmm10, 296(%rsp)
+	leaq	544(%rsp), %rbp
+	movss	%xmm1, 300(%rsp)
+	movq	%rax, %rsi
+	leaq	496(%rsp), %r12
+	je	.L644
+	jmp	.L636
 	.p2align 4,,10
 	.p2align 3
-.L1311:
+.L1719:
 	comiss	%xmm0, %xmm7
-	jnb	.L721
-	mulss	.LC183(%rip), %xmm0
+	jnb	.L634
+	mulss	.LC185(%rip), %xmm0
 	divss	%xmm8, %xmm0
 	call	expf
-	movss	.LC190(%rip), %xmm2
+	movss	.LC192(%rip), %xmm3
 	movaps	%xmm0, %xmm9
-	mulss	%xmm10, %xmm2
-	divss	%xmm8, %xmm2
-	movaps	%xmm2, %xmm0
+	mulss	%xmm10, %xmm3
+	divss	%xmm8, %xmm3
+	movaps	%xmm3, %xmm0
 	call	cosf
-	movss	.LC189(%rip), %xmm1
-	movaps	%xmm0, %xmm2
+	movss	.LC191(%rip), %xmm1
+	movaps	%xmm0, %xmm3
 	movaps	%xmm9, %xmm0
 	mulss	%xmm9, %xmm0
 	mulss	%xmm9, %xmm1
-	movss	%xmm0, 48(%rdi)
+	movss	%xmm0, 48(%rsi)
 	movaps	%xmm6, %xmm0
-	mulss	%xmm2, %xmm1
+	mulss	%xmm3, %xmm1
 	subss	%xmm9, %xmm0
 	unpcklps	%xmm1, %xmm0
-	movlps	%xmm0, 40(%rdi)
-.L722:
-	addq	$4, %r15
-	addq	$32, %rdi
-	addq	$4, %r13
-	addq	$4, %rsi
-	cmpq	%r15, %rbx
-	je	.L1254
-.L723:
-	movss	(%r15), %xmm1
+	movlps	%xmm0, 40(%rsi)
+.L635:
+	addq	$4, %rdi
+	addq	$4, %rbp
+	addq	$32, %rsi
+	cmpq	%rdi, %r14
+	je	.L1668
+.L636:
+	movss	0(%rbp), %xmm1
 	movaps	%xmm7, %xmm0
-	movss	(%rsi), %xmm10
+	movss	(%rbx,%rdi), %xmm10
 	cmpltss	%xmm1, %xmm0
 	comiss	%xmm10, %xmm7
-	movaps	%xmm10, %xmm3
+	movaps	%xmm10, %xmm4
 	andps	%xmm0, %xmm1
 	andnps	%xmm6, %xmm0
 	orps	%xmm0, %xmm1
-	movss	0(%r13), %xmm0
-	movss	%xmm1, 36(%rdi)
-	unpcklps	%xmm0, %xmm3
-	movlps	%xmm3, 28(%rdi)
-	jb	.L1311
-.L721:
-	movq	$0, 40(%rdi)
-	movl	$0x00000000, 48(%rdi)
-	jmp	.L722
-.L651:
-	cmpl	$1, 56(%rsp)
-	movss	216(%rsp), %xmm11
-	jne	.L658
-	movl	1176(%rsp), %eax
-	testl	%eax, %eax
-	je	.L933
-.L1251:
-	movq	1168(%rsp), %rcx
-	movss	(%rcx), %xmm0
-	comiss	%xmm12, %xmm0
-	jb	.L1312
-	movl	144(%rcx), %edx
-	movq	%rcx, %rax
-.L668:
-	leaq	4(%rax), %rsi
-	movl	$10, %ecx
-	leaq	368(%rsp), %rdi
-	rep movsl
-	leaq	44(%rax), %rsi
-	movl	$10, %ecx
-	leaq	416(%rsp), %rdi
-	rep movsl
-	jmp	.L672
-	.p2align 5
-.L1314:
-	movaps	%xmm6, %xmm0
-.L674:
-	movss	%xmm0, 464(%rsp,%rcx)
-	addq	$4, %rcx
-	cmpq	$40, %rcx
-	je	.L1313
-.L672:
-	testl	%edx, %edx
-	je	.L1314
-	movss	104(%rax,%rcx), %xmm0
-	jmp	.L674
-.L1254:
-	movss	224(%rsp), %xmm9
-	movaps	%xmm12, %xmm2
-	movss	236(%rsp), %xmm10
-.L718:
-	movss	232(%rsp), %xmm5
-	movaps	%xmm6, %xmm0
-	movss	168(%rsp), %xmm12
-	subss	%xmm5, %xmm0
-	mulss	%xmm5, %xmm10
-	movaps	%xmm5, %xmm1
-	mulss	%xmm5, %xmm9
-	movss	136(%rsp), %xmm5
-	mulss	%xmm14, %xmm1
-	mulss	%xmm0, %xmm12
-	comiss	%xmm14, %xmm5
-	mulss	%xmm0, %xmm13
-	mulss	%xmm15, %xmm0
-	addss	%xmm1, %xmm12
-	addss	%xmm13, %xmm10
-	addss	%xmm0, %xmm9
-	jbe	.L732
-	comiss	.LC204(%rip), %xmm12
-	jb	.L732
-	movss	%xmm7, 2304(%rsp)
-	comiss	%xmm7, %xmm11
-	jbe	.L745
-.L735:
-	movaps	%xmm8, %xmm1
-	movaps	%xmm6, %xmm0
-	divss	%xmm11, %xmm1
-	divss	%xmm1, %xmm0
-	addss	2304(%rsp), %xmm0
-	comiss	%xmm6, %xmm0
-	jb	.L737
-	subss	%xmm6, %xmm0
-.L737:
-	movss	%xmm0, 2304(%rsp)
-	movl	728(%rsp), %eax
-	cmpl	$2, %eax
-	je	.L1315
-	movss	.LC207(%rip), %xmm1
-	comiss	%xmm0, %xmm1
-	jbe	.L1233
-	movaps	%xmm0, %xmm4
-	divss	%xmm1, %xmm4
-.L744:
-	addss	%xmm4, %xmm4
-	subl	$1, %eax
-	subss	%xmm6, %xmm4
-	movaps	%xmm4, %xmm0
-	jne	.L740
-	movl	g_noise_state(%rip), %edx
-	pxor	%xmm4, %xmm4
-	mulss	.LC209(%rip), %xmm0
-	movl	%edx, %eax
-	sall	$13, %eax
-	xorl	%edx, %eax
-	movl	%eax, %edx
-	shrl	$17, %edx
-	xorl	%eax, %edx
-	movl	%edx, %eax
-	sall	$5, %eax
-	xorl	%edx, %eax
-	cvtsi2ssl	%eax, %xmm4
-	mulss	.LC203(%rip), %xmm4
-	movl	%eax, g_noise_state(%rip)
-	mulss	.LC210(%rip), %xmm4
-	addss	%xmm4, %xmm0
-.L740:
-	mulss	%xmm12, %xmm0
-	mulss	%xmm2, %xmm0
-.L736:
-	comiss	.LC205(%rip), %xmm10
-	pxor	%xmm2, %xmm2
-	jbe	.L747
-	movl	g_noise_state(%rip), %edx
-	pxor	%xmm1, %xmm1
-	movss	240(%rsp), %xmm4
-	movss	160(%rsp), %xmm2
-	movss	248(%rsp), %xmm5
-	movl	%edx, %eax
-	sall	$13, %eax
-	xorl	%edx, %eax
-	movl	%eax, %edx
-	shrl	$17, %edx
-	xorl	%eax, %edx
-	movl	%edx, %eax
-	sall	$5, %eax
-	xorl	%edx, %eax
-	cvtsi2ssl	%eax, %xmm1
-	mulss	.LC203(%rip), %xmm1
-	movl	%eax, g_noise_state(%rip)
-	mulss	%xmm1, %xmm4
-	mulss	244(%rsp), %xmm1
-	addss	%xmm4, %xmm2
-	mulss	%xmm2, %xmm5
-	subss	%xmm5, %xmm1
-	addss	164(%rsp), %xmm1
-	movss	%xmm1, 160(%rsp)
-	movss	252(%rsp), %xmm1
-	mulss	%xmm2, %xmm1
-	mulss	%xmm10, %xmm2
-	subss	%xmm1, %xmm4
-	movss	%xmm4, 164(%rsp)
-.L747:
-	comiss	.LC205(%rip), %xmm9
-	pxor	%xmm11, %xmm11
-	jbe	.L749
-	movl	g_noise_state(%rip), %edx
-	pxor	%xmm1, %xmm1
-	movl	%edx, %eax
-	sall	$13, %eax
-	xorl	%edx, %eax
-	movl	%eax, %edx
-	shrl	$17, %edx
-	xorl	%eax, %edx
-	movl	%edx, %eax
-	sall	$5, %eax
-	xorl	%edx, %eax
-	cmpl	$0, 220(%rsp)
-	cvtsi2ssl	%eax, %xmm1
-	mulss	.LC203(%rip), %xmm1
-	je	.L751
-	movss	284(%rsp), %xmm4
-	movss	260(%rsp), %xmm11
-	movss	292(%rsp), %xmm5
-	mulss	%xmm1, %xmm4
-	mulss	288(%rsp), %xmm1
-	addss	%xmm4, %xmm11
-	mulss	%xmm11, %xmm5
-	subss	%xmm5, %xmm1
-	addss	256(%rsp), %xmm1
-	movss	%xmm1, 260(%rsp)
-	movss	296(%rsp), %xmm1
-	mulss	%xmm11, %xmm1
-	subss	%xmm1, %xmm4
-	movss	%xmm4, 256(%rsp)
-.L752:
-	mulss	%xmm9, %xmm11
-	movl	%eax, g_noise_state(%rip)
-.L749:
-	movl	172(%rsp), %ecx
-	addss	%xmm0, %xmm2
-	movss	748(%rsp), %xmm0
-	testl	%ecx, %ecx
-	je	.L753
-	comiss	%xmm7, %xmm0
-	pxor	%xmm13, %xmm13
-	jbe	.L754
-	movss	760(%rsp), %xmm13
-	ucomiss	%xmm7, %xmm13
-	jp	.L756
-	je	.L1316
-.L756:
-	movss	772(%rsp), %xmm4
-	mulss	%xmm2, %xmm13
-	movss	764(%rsp), %xmm1
-	mulss	%xmm4, %xmm1
-	subss	%xmm1, %xmm13
-	movss	768(%rsp), %xmm1
-	mulss	776(%rsp), %xmm1
-	subss	%xmm1, %xmm13
-	movaps	%xmm13, %xmm1
-	mulss	756(%rsp), %xmm13
-	unpcklps	%xmm4, %xmm1
-	movlps	%xmm1, 772(%rsp)
-.L758:
-	addss	%xmm7, %xmm13
-.L754:
-	movl	780(%rsp), %r8d
-	movd	%r8d, %xmm4
-	comiss	%xmm7, %xmm4
-	jbe	.L759
-	movss	792(%rsp), %xmm5
-	ucomiss	%xmm7, %xmm5
-	jp	.L761
-	je	.L1317
-.L761:
-	movss	804(%rsp), %xmm4
-	mulss	%xmm2, %xmm5
-	movss	796(%rsp), %xmm1
-	mulss	%xmm4, %xmm1
-	subss	%xmm1, %xmm5
-	movss	800(%rsp), %xmm1
-	mulss	808(%rsp), %xmm1
-	subss	%xmm1, %xmm5
-	movaps	%xmm5, %xmm1
-	mulss	788(%rsp), %xmm5
-	unpcklps	%xmm4, %xmm1
-	movlps	%xmm1, 804(%rsp)
-	movaps	%xmm5, %xmm1
-.L763:
-	addss	%xmm1, %xmm13
-.L759:
-	movl	812(%rsp), %eax
-	movd	%eax, %xmm4
-	comiss	%xmm7, %xmm4
-	jbe	.L764
-	movss	824(%rsp), %xmm5
-	ucomiss	%xmm7, %xmm5
-	jp	.L766
-	je	.L1318
-.L766:
-	movss	836(%rsp), %xmm4
-	mulss	%xmm2, %xmm5
-	movss	828(%rsp), %xmm1
-	mulss	%xmm4, %xmm1
-	subss	%xmm1, %xmm5
-	movss	840(%rsp), %xmm1
-	mulss	832(%rsp), %xmm1
-	subss	%xmm1, %xmm5
-	movaps	%xmm5, %xmm1
-	mulss	820(%rsp), %xmm5
-	unpcklps	%xmm4, %xmm1
-	movlps	%xmm1, 836(%rsp)
-	movaps	%xmm5, %xmm1
-.L768:
-	addss	%xmm1, %xmm13
-.L764:
-	movl	844(%rsp), %r9d
-	movd	%r9d, %xmm5
-	comiss	%xmm7, %xmm5
-	jbe	.L769
-	movss	856(%rsp), %xmm5
-	ucomiss	%xmm7, %xmm5
-	jp	.L771
-	je	.L1319
-.L771:
-	movss	868(%rsp), %xmm4
-	mulss	%xmm2, %xmm5
-	movss	860(%rsp), %xmm1
-	mulss	%xmm4, %xmm1
-	subss	%xmm1, %xmm5
-	movss	872(%rsp), %xmm1
-	mulss	864(%rsp), %xmm1
-	subss	%xmm1, %xmm5
-	movaps	%xmm5, %xmm1
-	mulss	852(%rsp), %xmm5
-	unpcklps	%xmm4, %xmm1
-	movlps	%xmm1, 868(%rsp)
-	movaps	%xmm5, %xmm1
-.L773:
-	addss	%xmm1, %xmm13
-.L769:
-	movss	876(%rsp), %xmm1
-	comiss	%xmm7, %xmm1
-	jbe	.L774
-	movss	888(%rsp), %xmm14
-	ucomiss	%xmm7, %xmm14
-	jp	.L776
-	je	.L1320
-.L776:
-	movss	900(%rsp), %xmm5
-	mulss	%xmm2, %xmm14
-	movss	892(%rsp), %xmm4
-	mulss	%xmm5, %xmm4
-	subss	%xmm4, %xmm14
-	movss	904(%rsp), %xmm4
-	mulss	896(%rsp), %xmm4
-	subss	%xmm4, %xmm14
-	movaps	%xmm14, %xmm4
-	unpcklps	%xmm5, %xmm4
-	movlps	%xmm4, 900(%rsp)
-	movss	884(%rsp), %xmm4
-	mulss	%xmm14, %xmm4
-.L778:
-	addss	%xmm4, %xmm13
-.L774:
-	movss	908(%rsp), %xmm3
-	comiss	%xmm7, %xmm3
-	jbe	.L779
-	movss	920(%rsp), %xmm14
-	ucomiss	%xmm7, %xmm14
-	jp	.L781
-	je	.L1321
-.L781:
-	movss	932(%rsp), %xmm5
-	mulss	%xmm2, %xmm14
-	movss	924(%rsp), %xmm4
-	mulss	%xmm5, %xmm4
-	subss	%xmm4, %xmm14
-	movss	936(%rsp), %xmm4
-	mulss	928(%rsp), %xmm4
-	subss	%xmm4, %xmm14
-	movaps	%xmm14, %xmm4
-	unpcklps	%xmm5, %xmm4
-	movlps	%xmm4, 932(%rsp)
-	movss	916(%rsp), %xmm4
-	mulss	%xmm14, %xmm4
-.L783:
-	addss	%xmm4, %xmm13
-.L779:
-	movss	940(%rsp), %xmm14
-	comiss	%xmm7, %xmm14
-	jbe	.L784
-	movss	952(%rsp), %xmm15
-	ucomiss	%xmm7, %xmm15
-	jp	.L786
-	je	.L1322
-.L786:
-	movss	964(%rsp), %xmm5
-	mulss	%xmm2, %xmm15
-	movss	956(%rsp), %xmm4
-	mulss	%xmm5, %xmm4
-	subss	%xmm4, %xmm15
-	movss	968(%rsp), %xmm4
-	mulss	960(%rsp), %xmm4
-	subss	%xmm4, %xmm15
-	movaps	%xmm15, %xmm4
-	unpcklps	%xmm5, %xmm4
-	movlps	%xmm4, 964(%rsp)
-	movss	948(%rsp), %xmm4
-	mulss	%xmm15, %xmm4
-.L788:
-	addss	%xmm4, %xmm13
-.L784:
-	movl	972(%rsp), %ecx
-	movd	%ecx, %xmm4
-	comiss	%xmm7, %xmm4
-	jbe	.L789
-	movss	984(%rsp), %xmm15
-	ucomiss	%xmm7, %xmm15
-	jp	.L791
-	je	.L1323
-.L791:
-	movss	996(%rsp), %xmm5
-	mulss	%xmm2, %xmm15
-	movss	988(%rsp), %xmm4
-	mulss	%xmm5, %xmm4
-	subss	%xmm4, %xmm15
-	movss	992(%rsp), %xmm4
-	mulss	1000(%rsp), %xmm4
-	subss	%xmm4, %xmm15
-	movaps	%xmm15, %xmm4
-	unpcklps	%xmm5, %xmm4
-	movlps	%xmm4, 996(%rsp)
-	movss	980(%rsp), %xmm4
-	mulss	%xmm15, %xmm4
-.L793:
-	addss	%xmm4, %xmm13
-.L789:
-	movss	1004(%rsp), %xmm4
-	comiss	%xmm7, %xmm4
-	jbe	.L794
-	movss	1016(%rsp), %xmm15
-	ucomiss	%xmm7, %xmm15
-	jp	.L796
-	je	.L1324
-.L796:
-	movss	1028(%rsp), %xmm5
-	mulss	%xmm2, %xmm15
-	mulss	1020(%rsp), %xmm5
-	subss	%xmm5, %xmm15
-	movss	1032(%rsp), %xmm5
-	mulss	1024(%rsp), %xmm5
-	subss	%xmm5, %xmm15
-	movd	%xmm15, %ebx
-	movaps	%xmm15, %xmm5
-	movss	1028(%rsp), %xmm15
-	unpcklps	%xmm15, %xmm5
-	movlps	%xmm5, 1028(%rsp)
-	movd	%ebx, %xmm5
-	mulss	1012(%rsp), %xmm5
-.L798:
-	addss	%xmm5, %xmm13
-.L794:
-	movss	1036(%rsp), %xmm5
-	comiss	%xmm7, %xmm5
-	jbe	.L799
-	movss	1048(%rsp), %xmm15
-	ucomiss	%xmm7, %xmm15
-	jp	.L801
-	je	.L1325
-.L801:
-	mulss	%xmm2, %xmm15
-	movss	1060(%rsp), %xmm2
-	mulss	1052(%rsp), %xmm2
-	subss	%xmm2, %xmm15
-	movss	1064(%rsp), %xmm2
-	mulss	1056(%rsp), %xmm2
-	subss	%xmm2, %xmm15
-	movd	%xmm15, %ebx
-	movaps	%xmm15, %xmm2
-	movss	1060(%rsp), %xmm15
-	unpcklps	%xmm15, %xmm2
-	movd	%ebx, %xmm15
-	movlps	%xmm2, 1060(%rsp)
-	mulss	1044(%rsp), %xmm15
-.L803:
-	addss	%xmm15, %xmm13
-.L799:
-	movss	.LC210(%rip), %xmm2
-	mulss	%xmm11, %xmm2
-	addss	%xmm13, %xmm2
-.L804:
-	movl	84(%rsp), %edx
-	testl	%edx, %edx
-	je	.L835
-	movss	.LC211(%rip), %xmm11
-	mulss	2312(%rsp), %xmm11
-	movss	%xmm2, 2312(%rsp)
-	subss	%xmm11, %xmm2
-.L835:
-	movss	144(%rsp), %xmm11
-	cmpl	%ebp, 92(%rsp)
-	mulss	88(%rsp), %xmm11
-	mulss	%xmm11, %xmm2
-	jg	.L836
-	cmpb	$0, 215(%rsp)
-	jne	.L1326
-.L836:
-	movq	192(%rsp), %rsi
-	movss	%xmm2, (%rsi,%rbp,4)
-	addq	$1, %rbp
-	cmpl	%ebp, 176(%rsp)
-	jle	.L1243
-.L837:
-	movd	%r9d, %xmm15
-	movd	%eax, %xmm2
-	unpcklps	%xmm3, %xmm1
-	unpcklps	%xmm15, %xmm2
-	movd	%r8d, %xmm15
-	unpcklps	%xmm15, %xmm0
-	movlhps	%xmm2, %xmm0
-	movd	%ecx, %xmm2
-	unpcklps	%xmm2, %xmm14
-	movlhps	%xmm14, %xmm1
-	movaps	%xmm12, %xmm14
-	jmp	.L839
+	movss	(%r12,%rdi), %xmm0
+	movss	%xmm1, 36(%rsi)
+	unpcklps	%xmm0, %xmm4
+	movlps	%xmm4, 28(%rsi)
+	jb	.L1719
+.L634:
+	movq	$0, 40(%rsi)
+	movl	$0x00000000, 48(%rsi)
+	jmp	.L635
 	.p2align 4,,10
 	.p2align 3
-.L732:
-	comiss	%xmm7, %xmm11
-	jbe	.L745
-	comiss	.LC205(%rip), %xmm12
-	ja	.L735
-.L745:
-	pxor	%xmm0, %xmm0
-	jmp	.L736
-.L753:
-	comiss	%xmm7, %xmm0
-	jbe	.L805
-	movss	760(%rsp), %xmm1
-	ucomiss	%xmm7, %xmm1
-	jp	.L1081
-	je	.L950
-.L1081:
-	movss	772(%rsp), %xmm4
-	mulss	%xmm2, %xmm1
-	movss	764(%rsp), %xmm2
-	mulss	%xmm4, %xmm2
-	subss	%xmm2, %xmm1
-	movss	776(%rsp), %xmm2
-	mulss	768(%rsp), %xmm2
-	subss	%xmm2, %xmm1
-	movaps	%xmm1, %xmm2
-	unpcklps	%xmm4, %xmm2
-	movlps	%xmm2, 772(%rsp)
-	movss	756(%rsp), %xmm2
-	mulss	%xmm1, %xmm2
-.L805:
-	movl	780(%rsp), %r8d
-	movd	%r8d, %xmm5
-	comiss	%xmm7, %xmm5
-	jbe	.L808
-	movss	792(%rsp), %xmm1
-	ucomiss	%xmm7, %xmm1
-	jp	.L1083
-	je	.L951
-.L1083:
-	movss	804(%rsp), %xmm4
-	mulss	%xmm2, %xmm1
-	movss	796(%rsp), %xmm2
-	mulss	%xmm4, %xmm2
-	subss	%xmm2, %xmm1
-	movss	808(%rsp), %xmm2
-	mulss	800(%rsp), %xmm2
-	subss	%xmm2, %xmm1
-	movaps	%xmm1, %xmm2
-	unpcklps	%xmm4, %xmm2
-	movlps	%xmm2, 804(%rsp)
-	movss	788(%rsp), %xmm2
-	mulss	%xmm1, %xmm2
-.L808:
-	movl	812(%rsp), %eax
-	movd	%eax, %xmm3
-	comiss	%xmm7, %xmm3
-	jbe	.L811
-	movss	824(%rsp), %xmm1
-	ucomiss	%xmm7, %xmm1
-	jp	.L1085
-	je	.L952
-.L1085:
-	movss	836(%rsp), %xmm4
-	mulss	%xmm2, %xmm1
-	movss	828(%rsp), %xmm2
-	mulss	%xmm4, %xmm2
-	subss	%xmm2, %xmm1
-	movss	840(%rsp), %xmm2
-	mulss	832(%rsp), %xmm2
-	subss	%xmm2, %xmm1
-	movaps	%xmm1, %xmm2
-	unpcklps	%xmm4, %xmm2
-	movlps	%xmm2, 836(%rsp)
-	movss	820(%rsp), %xmm2
-	mulss	%xmm1, %xmm2
-.L811:
-	movl	844(%rsp), %r9d
-	movd	%r9d, %xmm4
-	comiss	%xmm7, %xmm4
-	jbe	.L814
-	movss	856(%rsp), %xmm1
-	ucomiss	%xmm7, %xmm1
-	jp	.L1087
-	je	.L953
-.L1087:
-	movss	868(%rsp), %xmm4
-	mulss	%xmm2, %xmm1
-	movss	860(%rsp), %xmm2
-	mulss	%xmm4, %xmm2
-	subss	%xmm2, %xmm1
-	movss	872(%rsp), %xmm2
-	mulss	864(%rsp), %xmm2
-	subss	%xmm2, %xmm1
-	movaps	%xmm1, %xmm2
-	unpcklps	%xmm4, %xmm2
-	movlps	%xmm2, 868(%rsp)
-	movss	852(%rsp), %xmm2
-	mulss	%xmm1, %xmm2
-.L814:
-	movss	876(%rsp), %xmm1
-	comiss	%xmm7, %xmm1
-	jbe	.L817
-	movss	888(%rsp), %xmm4
-	ucomiss	%xmm7, %xmm4
-	jp	.L1089
-	je	.L954
-.L1089:
-	movss	900(%rsp), %xmm5
-	mulss	%xmm2, %xmm4
-	movss	892(%rsp), %xmm2
-	mulss	%xmm5, %xmm2
-	subss	%xmm2, %xmm4
-	movss	904(%rsp), %xmm2
-	mulss	896(%rsp), %xmm2
-	subss	%xmm2, %xmm4
-	movaps	%xmm4, %xmm2
-	mulss	884(%rsp), %xmm4
-	unpcklps	%xmm5, %xmm2
-	movlps	%xmm2, 900(%rsp)
-	movaps	%xmm4, %xmm2
-.L817:
-	movss	908(%rsp), %xmm3
-	comiss	%xmm7, %xmm3
-	jbe	.L820
-	movss	920(%rsp), %xmm4
-	ucomiss	%xmm7, %xmm4
-	jp	.L1091
-	je	.L955
-.L1091:
-	movss	932(%rsp), %xmm5
-	mulss	%xmm2, %xmm4
-	movss	924(%rsp), %xmm2
-	mulss	%xmm5, %xmm2
-	subss	%xmm2, %xmm4
-	movss	936(%rsp), %xmm2
-	mulss	928(%rsp), %xmm2
-	subss	%xmm2, %xmm4
-	movaps	%xmm4, %xmm2
-	mulss	916(%rsp), %xmm4
-	unpcklps	%xmm5, %xmm2
-	movlps	%xmm2, 932(%rsp)
-	movaps	%xmm4, %xmm2
-.L820:
-	movss	940(%rsp), %xmm14
-	comiss	%xmm7, %xmm14
-	jbe	.L823
-	movss	952(%rsp), %xmm4
-	ucomiss	%xmm7, %xmm4
-	jp	.L1093
-	je	.L956
-.L1093:
-	movss	964(%rsp), %xmm5
-	mulss	%xmm2, %xmm4
-	movss	956(%rsp), %xmm2
-	mulss	%xmm5, %xmm2
-	subss	%xmm2, %xmm4
-	movss	968(%rsp), %xmm2
-	mulss	960(%rsp), %xmm2
-	subss	%xmm2, %xmm4
-	movaps	%xmm4, %xmm2
-	mulss	948(%rsp), %xmm4
-	unpcklps	%xmm5, %xmm2
-	movlps	%xmm2, 964(%rsp)
-	movaps	%xmm4, %xmm2
-.L823:
-	movl	972(%rsp), %ecx
-	movd	%ecx, %xmm5
-	comiss	%xmm7, %xmm5
-	jbe	.L826
-	movss	984(%rsp), %xmm4
-	ucomiss	%xmm7, %xmm4
-	jp	.L1095
-	je	.L957
-.L1095:
-	movss	996(%rsp), %xmm5
-	mulss	%xmm2, %xmm4
-	movss	988(%rsp), %xmm2
-	mulss	%xmm5, %xmm2
-	subss	%xmm2, %xmm4
-	movss	1000(%rsp), %xmm2
-	mulss	992(%rsp), %xmm2
-	subss	%xmm2, %xmm4
-	movaps	%xmm4, %xmm2
-	mulss	980(%rsp), %xmm4
-	unpcklps	%xmm5, %xmm2
-	movlps	%xmm2, 996(%rsp)
-	movaps	%xmm4, %xmm2
-.L826:
-	movss	1004(%rsp), %xmm4
-	comiss	%xmm7, %xmm4
-	jbe	.L829
-	movss	1016(%rsp), %xmm5
-	ucomiss	%xmm7, %xmm5
-	jp	.L1097
-	je	.L958
-.L1097:
-	movss	1028(%rsp), %xmm13
-	mulss	%xmm2, %xmm5
-	movss	1020(%rsp), %xmm2
-	mulss	%xmm13, %xmm2
-	subss	%xmm2, %xmm5
-	movss	1032(%rsp), %xmm2
-	mulss	1024(%rsp), %xmm2
-	subss	%xmm2, %xmm5
-	movaps	%xmm5, %xmm2
-	mulss	1012(%rsp), %xmm5
-	unpcklps	%xmm13, %xmm2
-	movlps	%xmm2, 1028(%rsp)
-	movaps	%xmm5, %xmm2
-.L829:
-	movss	1036(%rsp), %xmm5
-	comiss	%xmm7, %xmm5
-	jbe	.L832
-	movss	1048(%rsp), %xmm13
-	ucomiss	%xmm7, %xmm13
-	jp	.L1099
-	je	.L959
-.L1099:
-	movss	1060(%rsp), %xmm15
-	mulss	%xmm2, %xmm13
-	movss	1052(%rsp), %xmm2
-	mulss	%xmm15, %xmm2
-	subss	%xmm2, %xmm13
-	movss	1064(%rsp), %xmm2
-	mulss	1056(%rsp), %xmm2
-	subss	%xmm2, %xmm13
-	movaps	%xmm13, %xmm2
-	unpcklps	%xmm15, %xmm2
-	movlps	%xmm2, 1060(%rsp)
-	movss	1044(%rsp), %xmm2
-	mulss	%xmm13, %xmm2
-.L832:
-	mulss	.LC60(%rip), %xmm11
-	addss	%xmm11, %xmm2
-	jmp	.L804
-.L1310:
-	pxor	%xmm0, %xmm0
-	movaps	%xmm0, %xmm1
-	xorl	%r8d, %r8d
-	xorl	%r9d, %r9d
-	movq	464(%rsp), %xmm4
-	xorl	%ebx, %ebx
-	xorl	%esi, %esi
-	xorl	%edi, %edi
-	xorl	%r10d, %r10d
-	xorl	%r11d, %r11d
-	movq	%r8, 764(%rsp)
-	xorl	%eax, %eax
-	movq	%xmm4, %xmm5
-	movq	%r9, 796(%rsp)
-	movq	.LC54(%rip), %xmm12
-	xorl	%r13d, %r13d
-	cmpltps	%xmm5, %xmm1
-	movq	%r10, 828(%rsp)
-	xorl	%r15d, %r15d
-	movq	368(%rsp), %xmm5
-	movq	%r11, 860(%rsp)
-	movaps	%xmm5, %xmm3
-	movq	%rbx, 892(%rsp)
-	andps	%xmm1, %xmm4
-	andnps	%xmm12, %xmm1
-	orps	%xmm1, %xmm4
-	movss	%xmm4, 224(%rsp)
-	movq	416(%rsp), %xmm1
-	psrlq	$32, %xmm4
-	movlps	%xmm4, 788(%rsp)
-	movq	472(%rsp), %xmm4
-	unpcklps	%xmm1, %xmm3
-	unpcklps	%xmm1, %xmm5
-	movaps	%xmm0, %xmm1
-	shufps	$78, %xmm5, %xmm5
-	movlps	%xmm5, 780(%rsp)
-	movq	%xmm4, %xmm5
-	cmpltps	%xmm5, %xmm1
-	movlps	%xmm3, 748(%rsp)
-	movq	376(%rsp), %xmm5
-	movss	224(%rsp), %xmm3
-	andps	%xmm1, %xmm4
-	andnps	%xmm12, %xmm1
-	orps	%xmm1, %xmm4
-	movss	%xmm4, 224(%rsp)
-	psrlq	$32, %xmm4
-	movlps	%xmm3, 756(%rsp)
-	movq	424(%rsp), %xmm1
-	movaps	%xmm5, %xmm3
-	movlps	%xmm4, 852(%rsp)
-	movq	480(%rsp), %xmm4
-	unpcklps	%xmm1, %xmm3
-	unpcklps	%xmm1, %xmm5
-	movaps	%xmm0, %xmm1
-	shufps	$78, %xmm5, %xmm5
-	movlps	%xmm5, 844(%rsp)
-	movq	%xmm4, %xmm5
-	cmpltps	%xmm5, %xmm1
-	movlps	%xmm3, 812(%rsp)
-	movq	384(%rsp), %xmm5
-	movss	224(%rsp), %xmm3
-	andps	%xmm1, %xmm4
-	andnps	%xmm12, %xmm1
-	orps	%xmm1, %xmm4
-	movq	432(%rsp), %xmm1
-	movlps	%xmm3, 820(%rsp)
-	movaps	%xmm5, %xmm3
-	movss	%xmm4, 224(%rsp)
-	unpcklps	%xmm1, %xmm3
-	unpcklps	%xmm1, %xmm5
-	psrlq	$32, %xmm4
-	movlps	%xmm3, 876(%rsp)
-	shufps	$78, %xmm5, %xmm5
-	movaps	%xmm0, %xmm1
-	movss	224(%rsp), %xmm3
-	movlps	%xmm5, 908(%rsp)
-	movlps	%xmm3, 884(%rsp)
-	movlps	%xmm4, 916(%rsp)
-	movq	488(%rsp), %xmm4
-	movq	%rsi, 924(%rsp)
-	movq	%xmm4, %xmm5
-	movq	%rdi, 956(%rsp)
-	cmpltps	%xmm5, %xmm1
-	movq	%r13, 988(%rsp)
-	movq	392(%rsp), %xmm5
-	movq	%r15, 1020(%rsp)
-	movaps	%xmm5, %xmm3
-	movq	%rax, 1052(%rsp)
-	andps	%xmm1, %xmm4
-	andnps	%xmm12, %xmm1
-	orps	%xmm1, %xmm4
-	movq	440(%rsp), %xmm1
-	movss	%xmm4, 224(%rsp)
-	psrlq	$32, %xmm4
-	unpcklps	%xmm1, %xmm3
-	unpcklps	%xmm1, %xmm5
-	shufps	$78, %xmm5, %xmm5
-	movq	496(%rsp), %xmm1
-	movlps	%xmm4, 980(%rsp)
-	movq	%xmm1, %xmm4
-	movlps	%xmm5, 972(%rsp)
-	movq	448(%rsp), %xmm5
-	cmpltps	%xmm4, %xmm0
-	movlps	%xmm3, 940(%rsp)
-	movq	400(%rsp), %xmm4
-	movss	224(%rsp), %xmm3
-	andps	%xmm0, %xmm1
-	andnps	%xmm12, %xmm0
-	orps	%xmm1, %xmm0
-	movaps	%xmm4, %xmm1
-	movss	%xmm0, 224(%rsp)
-	unpcklps	%xmm5, %xmm1
-	psrlq	$32, %xmm0
-	unpcklps	%xmm5, %xmm4
-	movlps	%xmm1, 1004(%rsp)
-	shufps	$78, %xmm4, %xmm4
-	movss	224(%rsp), %xmm1
-	movlps	%xmm3, 948(%rsp)
-	movlps	%xmm1, 1012(%rsp)
-	movlps	%xmm4, 1036(%rsp)
-	movlps	%xmm0, 1044(%rsp)
-	jmp	.L718
-.L944:
-	movaps	%xmm0, %xmm11
-	jmp	.L714
-.L1303:
-	xorl	%eax, %eax
-	pxor	%xmm1, %xmm1
-	.p2align 5
-	.p2align 4,,10
-	.p2align 3
-.L842:
-	movss	(%rbx,%rax,4), %xmm0
-	andps	.LC212(%rip), %xmm0
-	maxss	%xmm1, %xmm0
-	addq	$1, %rax
-	cmpl	%eax, %r15d
-	movaps	%xmm0, %xmm1
-	jg	.L842
-	comiss	.LC213(%rip), %xmm0
-	jbe	.L843
-	movss	.LC214(%rip), %xmm2
-	xorl	%eax, %eax
-	divss	%xmm0, %xmm2
-.L847:
-	movss	(%rbx,%rax,4), %xmm0
-	mulss	%xmm2, %xmm0
-	movss	%xmm0, (%rbx,%rax,4)
-	addq	$1, %rax
-	cmpl	%eax, %r15d
-	jg	.L847
-	jmp	.L843
-	.p2align 4,,10
-	.p2align 3
-.L848:
-	movl	$0xbf800000, (%rbx,%rax,4)
-	addq	$1, %rax
-	cmpl	%eax, %r15d
-	jg	.L850
-	jmp	.L841
-.L719:
-	movq	64(%rsp), %rdi
-	leaq	464(%rsp), %r13
-	movss	%xmm9, 224(%rsp)
-	movaps	%xmm2, %xmm12
-	leaq	416(%rsp), %r15
-	movss	%xmm10, 236(%rsp)
-	leaq	368(%rsp), %rsi
-	leaq	504(%rsp), %rbx
-	jmp	.L731
-	.p2align 4,,10
-	.p2align 3
-.L1231:
+.L1630:
 	comiss	%xmm0, %xmm7
-	jnb	.L728
-	mulss	.LC183(%rip), %xmm0
+	jnb	.L642
+	mulss	.LC185(%rip), %xmm0
 	divss	%xmm8, %xmm0
 	call	expf
-	movss	.LC190(%rip), %xmm2
+	movss	.LC192(%rip), %xmm3
 	movaps	%xmm0, %xmm9
-	mulss	%xmm10, %xmm2
-	divss	%xmm8, %xmm2
-	movaps	%xmm2, %xmm0
+	mulss	%xmm10, %xmm3
+	divss	%xmm8, %xmm3
+	movaps	%xmm3, %xmm0
 	call	cosf
 	movaps	%xmm9, %xmm1
 	mulss	%xmm9, %xmm1
-	movaps	%xmm0, %xmm2
-	movss	.LC189(%rip), %xmm0
+	movaps	%xmm0, %xmm3
+	movss	.LC191(%rip), %xmm0
 	mulss	%xmm9, %xmm0
-	mulss	%xmm2, %xmm0
-	movaps	%xmm0, %xmm2
+	mulss	%xmm3, %xmm0
+	movaps	%xmm0, %xmm3
 	addss	%xmm6, %xmm0
-	unpcklps	%xmm1, %xmm2
-	movlps	%xmm2, 44(%rdi)
+	unpcklps	%xmm1, %xmm3
+	movlps	%xmm3, 44(%rsi)
 	addss	%xmm1, %xmm0
-	movss	.LC164(%rip), %xmm1
+	movss	.LC166(%rip), %xmm1
 	maxss	%xmm0, %xmm1
-	movss	%xmm1, 40(%rdi)
-.L727:
-	addq	$4, %r13
-	addq	$32, %rdi
-	addq	$4, %r15
-	addq	$4, %rsi
-	cmpq	%r13, %rbx
-	je	.L1254
-.L731:
-	movss	0(%r13), %xmm1
+	movss	%xmm1, 40(%rsi)
+.L641:
+	addq	$4, %rdi
+	addq	$4, %rbp
+	addq	$32, %rsi
+	cmpq	%r14, %rdi
+	je	.L1668
+.L644:
+	movss	0(%rbp), %xmm1
 	movaps	%xmm7, %xmm0
-	movss	(%rsi), %xmm10
+	movss	(%rbx,%rdi), %xmm10
 	cmpltss	%xmm1, %xmm0
 	comiss	%xmm10, %xmm7
-	movaps	%xmm10, %xmm3
+	movaps	%xmm10, %xmm4
 	andps	%xmm0, %xmm1
 	andnps	%xmm6, %xmm0
 	orps	%xmm0, %xmm1
-	movss	(%r15), %xmm0
-	movss	%xmm1, 36(%rdi)
-	unpcklps	%xmm0, %xmm3
-	movlps	%xmm3, 28(%rdi)
-	jb	.L1231
+	movss	(%r12,%rdi), %xmm0
+	movss	%xmm1, 36(%rsi)
+	unpcklps	%xmm0, %xmm4
+	movlps	%xmm4, 28(%rsi)
+	jb	.L1630
+.L642:
+	movq	$0, 40(%rsi)
+	movl	$0x00000000, 48(%rsi)
+	jmp	.L641
+.L1668:
+	movq	288(%rsp), %r12
+	movl	304(%rsp), %ebx
+	movss	256(%rsp), %xmm9
+	movss	296(%rsp), %xmm10
+	movss	300(%rsp), %xmm1
+.L637:
+	mulss	%xmm15, %xmm11
+	movaps	%xmm6, %xmm2
+	movss	104(%rsp), %xmm5
+	subss	%xmm15, %xmm2
+	mulss	%xmm15, %xmm9
+	mulss	%xmm15, %xmm10
+	comiss	132(%rsp), %xmm5
+	mulss	%xmm2, %xmm13
+	mulss	%xmm2, %xmm12
+	mulss	112(%rsp), %xmm2
+	addss	%xmm13, %xmm11
+	addss	%xmm12, %xmm9
+	addss	%xmm2, %xmm10
+	jbe	.L630
+	comiss	.LC204(%rip), %xmm11
+	jb	.L630
+	movss	%xmm7, 2384(%rsp)
+	comiss	%xmm7, %xmm1
+	jbe	.L654
+.L650:
+	movaps	%xmm8, %xmm2
+	divss	%xmm1, %xmm2
+	movaps	%xmm6, %xmm1
+	divss	%xmm2, %xmm1
+	addss	2384(%rsp), %xmm1
+	comiss	%xmm6, %xmm1
+	jb	.L653
+	subss	%xmm6, %xmm1
+.L653:
+	movss	%xmm1, 2384(%rsp)
+	movl	808(%rsp), %eax
+	cmpl	$2, %eax
+	je	.L1720
+	movss	.LC208(%rip), %xmm2
+	comiss	%xmm1, %xmm2
+	jbe	.L1632
+	movaps	%xmm1, %xmm3
+	divss	%xmm2, %xmm3
+.L661:
+	subl	$1, %eax
+	je	.L662
+	addss	%xmm3, %xmm3
+	subss	%xmm6, %xmm3
+.L657:
+	mulss	%xmm11, %xmm3
+	mulss	160(%rsp), %xmm3
+.L651:
+	comiss	.LC206(%rip), %xmm9
+	pxor	%xmm1, %xmm1
+	jbe	.L663
+	movl	g_noise_state(%rip), %edx
+	pxor	%xmm0, %xmm0
+	movss	168(%rsp), %xmm2
+	movss	128(%rsp), %xmm1
+	movss	176(%rsp), %xmm4
+	movl	%edx, %eax
+	sall	$13, %eax
+	xorl	%edx, %eax
+	movl	%eax, %edx
+	shrl	$17, %edx
+	xorl	%eax, %edx
+	movl	%edx, %eax
+	sall	$5, %eax
+	xorl	%edx, %eax
+	cvtsi2ssl	%eax, %xmm0
+	mulss	.LC203(%rip), %xmm0
+	movl	%eax, g_noise_state(%rip)
+	mulss	%xmm0, %xmm2
+	mulss	172(%rsp), %xmm0
+	addss	%xmm2, %xmm1
+	mulss	%xmm1, %xmm4
+	subss	%xmm4, %xmm0
+	addss	108(%rsp), %xmm0
+	movss	%xmm0, 128(%rsp)
+	movss	180(%rsp), %xmm0
+	mulss	%xmm1, %xmm0
+	mulss	%xmm9, %xmm1
+	subss	%xmm0, %xmm2
+	movss	%xmm2, 108(%rsp)
+.L663:
+	comiss	.LC206(%rip), %xmm10
+	pxor	%xmm0, %xmm0
+	jbe	.L665
+	movl	g_noise_state(%rip), %edx
+	pxor	%xmm2, %xmm2
+	movl	%edx, %eax
+	sall	$13, %eax
+	xorl	%edx, %eax
+	movl	%eax, %edx
+	shrl	$17, %edx
+	xorl	%eax, %edx
+	movl	%edx, %eax
+	sall	$5, %eax
+	xorl	%edx, %eax
+	cmpl	$0, 156(%rsp)
+	cvtsi2ssl	%eax, %xmm2
+	mulss	.LC203(%rip), %xmm2
+	je	.L667
+	movss	232(%rsp), %xmm4
+	movss	200(%rsp), %xmm0
+	movss	240(%rsp), %xmm5
+	mulss	%xmm2, %xmm4
+	mulss	236(%rsp), %xmm2
+	addss	%xmm4, %xmm0
+	mulss	%xmm0, %xmm5
+	subss	%xmm5, %xmm2
+	addss	196(%rsp), %xmm2
+	movss	%xmm2, 200(%rsp)
+	movss	244(%rsp), %xmm2
+	mulss	%xmm0, %xmm2
+	subss	%xmm2, %xmm4
+	movss	%xmm4, 196(%rsp)
+.L668:
+	mulss	%xmm10, %xmm0
+	movl	%eax, g_noise_state(%rip)
+.L665:
+	movl	56(%rsp), %eax
+	addss	%xmm3, %xmm1
+	testl	%eax, %eax
+	je	.L669
+	testl	%ebx, %ebx
+	pxor	%xmm2, %xmm2
+	jle	.L671
+	movss	828(%rsp), %xmm2
+	comiss	%xmm7, %xmm2
+	jbe	.L1635
+	movss	840(%rsp), %xmm2
+	ucomiss	%xmm7, %xmm2
+	jp	.L707
+	je	.L1721
+.L707:
+	movss	852(%rsp), %xmm3
+	mulss	%xmm1, %xmm2
+	movss	844(%rsp), %xmm4
+	mulss	%xmm3, %xmm4
+	subss	%xmm4, %xmm2
+	movss	848(%rsp), %xmm4
+	mulss	856(%rsp), %xmm4
+	subss	%xmm4, %xmm2
+	movaps	%xmm2, %xmm4
+	mulss	836(%rsp), %xmm2
+	unpcklps	%xmm3, %xmm4
+	movlps	%xmm4, 852(%rsp)
+.L709:
+	addss	%xmm7, %xmm2
+.L705:
+	cmpl	$1, %ebx
+	je	.L671
+	movss	860(%rsp), %xmm3
+	comiss	%xmm7, %xmm3
+	jbe	.L711
+	movss	872(%rsp), %xmm5
+	ucomiss	%xmm7, %xmm5
+	jp	.L713
+	je	.L1722
+.L713:
+	movss	884(%rsp), %xmm4
+	mulss	%xmm1, %xmm5
+	movss	876(%rsp), %xmm3
+	mulss	%xmm4, %xmm3
+	subss	%xmm3, %xmm5
+	movss	880(%rsp), %xmm3
+	mulss	888(%rsp), %xmm3
+	subss	%xmm3, %xmm5
+	movaps	%xmm5, %xmm3
+	mulss	868(%rsp), %xmm5
+	unpcklps	%xmm4, %xmm3
+	movlps	%xmm3, 884(%rsp)
+	movaps	%xmm5, %xmm3
+.L715:
+	addss	%xmm3, %xmm2
+.L711:
+	cmpl	$2, %ebx
+	je	.L671
+	movss	892(%rsp), %xmm3
+	comiss	%xmm7, %xmm3
+	jbe	.L716
+	movss	904(%rsp), %xmm5
+	ucomiss	%xmm7, %xmm5
+	jp	.L718
+	je	.L1723
+.L718:
+	movss	916(%rsp), %xmm4
+	mulss	%xmm1, %xmm5
+	movss	908(%rsp), %xmm3
+	mulss	%xmm4, %xmm3
+	subss	%xmm3, %xmm5
+	movss	912(%rsp), %xmm3
+	mulss	920(%rsp), %xmm3
+	subss	%xmm3, %xmm5
+	movaps	%xmm5, %xmm3
+	mulss	900(%rsp), %xmm5
+	unpcklps	%xmm4, %xmm3
+	movlps	%xmm3, 916(%rsp)
+	movaps	%xmm5, %xmm3
+.L720:
+	addss	%xmm3, %xmm2
+.L716:
+	cmpl	$3, %ebx
+	je	.L671
+	movss	924(%rsp), %xmm3
+	comiss	%xmm7, %xmm3
+	jbe	.L721
+	movss	936(%rsp), %xmm5
+	ucomiss	%xmm7, %xmm5
+	jp	.L723
+	je	.L1724
+.L723:
+	movss	948(%rsp), %xmm4
+	mulss	%xmm1, %xmm5
+	movss	940(%rsp), %xmm3
+	mulss	%xmm4, %xmm3
+	subss	%xmm3, %xmm5
+	movss	944(%rsp), %xmm3
+	mulss	952(%rsp), %xmm3
+	subss	%xmm3, %xmm5
+	movaps	%xmm5, %xmm3
+	mulss	932(%rsp), %xmm5
+	unpcklps	%xmm4, %xmm3
+	movlps	%xmm3, 948(%rsp)
+	movaps	%xmm5, %xmm3
+.L725:
+	addss	%xmm3, %xmm2
+.L721:
+	cmpl	$4, %ebx
+	je	.L671
+	movss	956(%rsp), %xmm3
+	comiss	%xmm7, %xmm3
+	jbe	.L726
+	movss	968(%rsp), %xmm5
+	ucomiss	%xmm7, %xmm5
+	jp	.L728
+	je	.L1725
 .L728:
-	movq	$0, 40(%rdi)
-	movl	$0x00000000, 48(%rdi)
-	jmp	.L727
-.L751:
-	movss	300(%rsp), %xmm11
-	movss	304(%rsp), %xmm5
-	mulss	%xmm1, %xmm11
-	addss	268(%rsp), %xmm11
-	mulss	%xmm7, %xmm1
-	mulss	%xmm11, %xmm5
-	movaps	%xmm1, %xmm4
-	subss	%xmm5, %xmm4
-	addss	264(%rsp), %xmm4
-	movss	%xmm4, 268(%rsp)
-	movss	308(%rsp), %xmm4
-	mulss	%xmm11, %xmm4
-	subss	%xmm4, %xmm1
-	movss	%xmm1, 264(%rsp)
-	jmp	.L752
-.L1309:
-	movslq	1200(%rsp), %rax
-	movss	(%r12,%rax,4), %xmm0
-	movq	%rax, %rcx
-	comiss	%xmm12, %xmm0
-	jbe	.L690
-	subl	$1, %ecx
-	js	.L690
+	movss	980(%rsp), %xmm4
+	mulss	%xmm1, %xmm5
+	movss	972(%rsp), %xmm3
+	mulss	%xmm4, %xmm3
+	subss	%xmm3, %xmm5
+	movss	976(%rsp), %xmm3
+	mulss	984(%rsp), %xmm3
+	subss	%xmm3, %xmm5
+	movaps	%xmm5, %xmm3
+	mulss	964(%rsp), %xmm5
+	unpcklps	%xmm4, %xmm3
+	movlps	%xmm3, 980(%rsp)
+	movaps	%xmm5, %xmm3
+.L730:
+	addss	%xmm3, %xmm2
+.L726:
+	cmpl	$5, %ebx
+	je	.L671
+	movss	988(%rsp), %xmm3
+	comiss	%xmm7, %xmm3
+	jbe	.L731
+	movss	1000(%rsp), %xmm5
+	ucomiss	%xmm7, %xmm5
+	jp	.L733
+	je	.L1726
+.L733:
+	movss	1012(%rsp), %xmm4
+	mulss	%xmm1, %xmm5
+	movss	1004(%rsp), %xmm3
+	mulss	%xmm4, %xmm3
+	subss	%xmm3, %xmm5
+	movss	1008(%rsp), %xmm3
+	mulss	1016(%rsp), %xmm3
+	subss	%xmm3, %xmm5
+	movaps	%xmm5, %xmm3
+	mulss	996(%rsp), %xmm5
+	unpcklps	%xmm4, %xmm3
+	movlps	%xmm3, 1012(%rsp)
+	movaps	%xmm5, %xmm3
+.L735:
+	addss	%xmm3, %xmm2
+.L731:
+	cmpl	$6, %ebx
+	je	.L671
+	movss	1020(%rsp), %xmm3
+	comiss	%xmm7, %xmm3
+	jbe	.L736
+	movss	1032(%rsp), %xmm5
+	ucomiss	%xmm7, %xmm5
+	jp	.L738
+	je	.L1727
+.L738:
+	movss	1044(%rsp), %xmm4
+	mulss	%xmm1, %xmm5
+	movss	1036(%rsp), %xmm3
+	mulss	%xmm4, %xmm3
+	subss	%xmm3, %xmm5
+	movss	1040(%rsp), %xmm3
+	mulss	1048(%rsp), %xmm3
+	subss	%xmm3, %xmm5
+	movaps	%xmm5, %xmm3
+	mulss	1028(%rsp), %xmm5
+	unpcklps	%xmm4, %xmm3
+	movlps	%xmm3, 1044(%rsp)
+	movaps	%xmm5, %xmm3
+.L740:
+	addss	%xmm3, %xmm2
+.L736:
+	cmpl	$7, %ebx
+	je	.L671
+	movss	1052(%rsp), %xmm3
+	comiss	%xmm7, %xmm3
+	jbe	.L741
+	movss	1064(%rsp), %xmm5
+	ucomiss	%xmm7, %xmm5
+	jp	.L743
+	je	.L1728
+.L743:
+	movss	1076(%rsp), %xmm4
+	mulss	%xmm1, %xmm5
+	movss	1068(%rsp), %xmm3
+	mulss	%xmm4, %xmm3
+	subss	%xmm3, %xmm5
+	movss	1072(%rsp), %xmm3
+	mulss	1080(%rsp), %xmm3
+	subss	%xmm3, %xmm5
+	movaps	%xmm5, %xmm3
+	mulss	1060(%rsp), %xmm5
+	unpcklps	%xmm4, %xmm3
+	movlps	%xmm3, 1076(%rsp)
+	movaps	%xmm5, %xmm3
+.L745:
+	addss	%xmm3, %xmm2
+.L741:
+	cmpl	$8, %ebx
+	je	.L671
+	movss	1084(%rsp), %xmm3
+	comiss	%xmm7, %xmm3
+	jbe	.L746
+	movss	1096(%rsp), %xmm5
+	ucomiss	%xmm7, %xmm5
+	jp	.L748
+	je	.L1729
+.L748:
+	movss	1108(%rsp), %xmm4
+	mulss	%xmm1, %xmm5
+	movss	1100(%rsp), %xmm3
+	mulss	%xmm4, %xmm3
+	subss	%xmm3, %xmm5
+	movss	1104(%rsp), %xmm3
+	mulss	1112(%rsp), %xmm3
+	subss	%xmm3, %xmm5
+	movaps	%xmm5, %xmm3
+	mulss	1092(%rsp), %xmm5
+	unpcklps	%xmm4, %xmm3
+	movlps	%xmm3, 1108(%rsp)
+	movaps	%xmm5, %xmm3
+.L750:
+	addss	%xmm3, %xmm2
+.L746:
+	cmpl	$9, %ebx
+	je	.L671
+	movss	1116(%rsp), %xmm3
+	comiss	%xmm7, %xmm3
+	jbe	.L671
+	movss	1128(%rsp), %xmm3
+	ucomiss	%xmm7, %xmm3
+	jp	.L1190
+	je	.L1080
+.L1190:
+	movss	1140(%rsp), %xmm4
+	mulss	%xmm3, %xmm1
+	movss	1132(%rsp), %xmm3
+	mulss	%xmm4, %xmm3
+	subss	%xmm3, %xmm1
+	movss	1136(%rsp), %xmm3
+	mulss	1144(%rsp), %xmm3
+	subss	%xmm3, %xmm1
+	movaps	%xmm1, %xmm3
+	mulss	1124(%rsp), %xmm1
+	unpcklps	%xmm4, %xmm3
+	movlps	%xmm3, 1140(%rsp)
+.L753:
+	addss	%xmm1, %xmm2
+.L671:
+	mulss	.LC210(%rip), %xmm0
+	addss	%xmm2, %xmm0
+.L704:
+	movl	88(%rsp), %eax
+	testl	%eax, %eax
+	je	.L755
+	movss	.LC211(%rip), %xmm1
+	mulss	2392(%rsp), %xmm1
+	movss	%xmm0, 2392(%rsp)
+	subss	%xmm1, %xmm0
+.L755:
+	movss	120(%rsp), %xmm1
+	mulss	92(%rsp), %xmm1
+	cmpl	%r12d, 96(%rsp)
+	mulss	%xmm0, %xmm1
+	movaps	%xmm14, %xmm0
+	divss	208(%rsp), %xmm0
+	mulss	%xmm1, %xmm0
+	jg	.L756
+	cmpb	$0, 151(%rsp)
+	jne	.L1730
+.L756:
+	movq	184(%rsp), %rax
+	movss	%xmm0, (%rax,%r12,4)
+	addq	$1, %r12
+	cmpl	%r12d, 192(%rsp)
+	jle	.L1656
+.L757:
+	movss	%xmm11, 132(%rsp)
+	jmp	.L759
+.L630:
+	comiss	%xmm7, %xmm1
+	jbe	.L654
+	comiss	.LC206(%rip), %xmm11
+	ja	.L650
+.L654:
+	pxor	%xmm3, %xmm3
+	jmp	.L651
+.L1620:
+	cmpl	$1, 76(%rsp)
+	movss	152(%rsp), %xmm1
+	jne	.L561
+	movslq	1256(%rsp), %rcx
+	testl	%ecx, %ecx
+	je	.L1051
+.L1663:
+	movq	1248(%rsp), %rdx
+	movss	(%rdx), %xmm0
+	comiss	%xmm2, %xmm0
+	jnb	.L564
+	leal	-1(%rcx), %eax
+	subq	$1, %rcx
+	imulq	$148, %rcx, %rcx
+	movl	%eax, %r9d
+	comiss	(%rdx,%rcx), %xmm2
+	jnb	.L565
+	testl	%eax, %eax
+	jle	.L1053
+	movq	%rdx, %rcx
+	xorl	%r9d, %r9d
+.L569:
+	comiss	(%rcx), %xmm2
+	jb	.L566
+	movss	148(%rcx), %xmm0
+	comiss	%xmm2, %xmm0
+	jnb	.L1731
+.L566:
+	addl	$1, %r9d
+	addq	$148, %rcx
+	cmpl	%r9d, %eax
+	jg	.L569
+.L1053:
+	xorl	%r9d, %r9d
+.L565:
+	movslq	%r9d, %r9
+	cltq
+	imulq	$148, %r9, %r9
+	imulq	$148, %rax, %rax
+	addq	%rdx, %r9
+	addq	%rax, %rdx
+	testl	%ebx, %ebx
+	movss	(%r9), %xmm0
+	movss	(%rdx), %xmm3
+	jle	.L1023
+	comiss	%xmm3, %xmm0
+	movl	144(%r9), %r10d
+	movl	144(%rdx), %r8d
+	jnb	.L573
+	movaps	%xmm2, %xmm4
+	subss	%xmm0, %xmm3
+	testl	%r10d, %r10d
+	subss	%xmm0, %xmm4
+	movd	%xmm4, %r10d
+	jne	.L574
+	divss	%xmm3, %xmm4
+	xorl	%eax, %eax
+	movss	%xmm2, 112(%rsp)
+	pxor	%xmm12, %xmm12
+	leaq	544(%rsp), %rcx
+	movss	%xmm3, 120(%rsp)
+	leaq	448(%rsp), %rbp
+	leaq	496(%rsp), %rdi
+	jmp	.L579
+.L1732:
+	movaps	%xmm6, %xmm5
+	movaps	%xmm6, %xmm3
+	testl	%r8d, %r8d
+	cmpltss	%xmm4, %xmm5
+	subss	%xmm13, %xmm2
+	andps	%xmm5, %xmm3
+	andnps	%xmm4, %xmm5
+	orps	%xmm3, %xmm5
+	mulss	%xmm5, %xmm0
+	addss	%xmm1, %xmm0
+	movss	%xmm0, 0(%rbp,%rax,4)
+	movaps	%xmm2, %xmm0
+	mulss	%xmm5, %xmm0
+	addss	%xmm13, %xmm0
+	movss	%xmm0, (%rdi,%rax,4)
+	movaps	%xmm6, %xmm0
+	je	.L577
+	movss	104(%rdx,%rax,4), %xmm0
+.L577:
+	movaps	%xmm6, %xmm1
+	movaps	%xmm6, %xmm5
+	cmpltss	%xmm4, %xmm1
+	andps	%xmm1, %xmm5
+	andnps	%xmm4, %xmm1
+	orps	%xmm5, %xmm1
+.L578:
+	subss	%xmm6, %xmm0
+	mulss	%xmm1, %xmm0
+	addss	%xmm6, %xmm0
+	movss	%xmm0, (%rcx,%rax,4)
+	addq	$1, %rax
+	cmpl	%eax, %ebx
+	jle	.L1679
+.L579:
+	comiss	%xmm4, %xmm12
+	movss	4(%r9,%rax,4), %xmm1
+	movss	4(%rdx,%rax,4), %xmm0
+	movss	44(%r9,%rax,4), %xmm13
+	subss	%xmm1, %xmm0
+	movss	44(%rdx,%rax,4), %xmm2
+	jbe	.L1732
+	mulss	%xmm12, %xmm0
+	subss	%xmm13, %xmm2
+	testl	%r8d, %r8d
+	addss	%xmm1, %xmm0
+	movss	%xmm0, 0(%rbp,%rax,4)
+	movaps	%xmm2, %xmm0
+	mulss	%xmm12, %xmm0
+	addss	%xmm13, %xmm0
+	movss	%xmm0, (%rdi,%rax,4)
+	je	.L1054
+	movss	104(%rdx,%rax,4), %xmm0
+	pxor	%xmm1, %xmm1
+	jmp	.L578
+.L669:
+	testl	%ebx, %ebx
+	jle	.L672
+	movss	828(%rsp), %xmm2
+	comiss	%xmm7, %xmm2
+	jbe	.L673
+	movss	840(%rsp), %xmm2
+	ucomiss	%xmm7, %xmm2
+	jp	.L1152
+	je	.L1069
+.L1152:
+	movss	852(%rsp), %xmm3
+	mulss	%xmm1, %xmm2
+	movss	844(%rsp), %xmm1
+	mulss	%xmm3, %xmm1
+	subss	%xmm1, %xmm2
+	movss	848(%rsp), %xmm1
+	mulss	856(%rsp), %xmm1
+	subss	%xmm1, %xmm2
+	movaps	%xmm2, %xmm1
+	mulss	836(%rsp), %xmm2
+	unpcklps	%xmm3, %xmm1
+	movlps	%xmm1, 852(%rsp)
+	movaps	%xmm2, %xmm1
+.L673:
+	cmpl	$1, %ebx
+	je	.L672
+	movss	860(%rsp), %xmm2
+	comiss	%xmm7, %xmm2
+	jbe	.L677
+	movss	872(%rsp), %xmm2
+	ucomiss	%xmm7, %xmm2
+	jp	.L1154
+	je	.L1070
+.L1154:
+	movss	884(%rsp), %xmm3
+	mulss	%xmm1, %xmm2
+	movss	876(%rsp), %xmm1
+	mulss	%xmm3, %xmm1
+	subss	%xmm1, %xmm2
+	movss	880(%rsp), %xmm1
+	mulss	888(%rsp), %xmm1
+	subss	%xmm1, %xmm2
+	movaps	%xmm2, %xmm1
+	mulss	868(%rsp), %xmm2
+	unpcklps	%xmm3, %xmm1
+	movlps	%xmm1, 884(%rsp)
+	movaps	%xmm2, %xmm1
+.L677:
+	cmpl	$2, %ebx
+	je	.L672
+	movss	892(%rsp), %xmm2
+	comiss	%xmm7, %xmm2
+	jbe	.L680
+	movss	904(%rsp), %xmm2
+	ucomiss	%xmm7, %xmm2
+	jp	.L1156
+	je	.L1071
+.L1156:
+	movss	916(%rsp), %xmm3
+	mulss	%xmm1, %xmm2
+	movss	908(%rsp), %xmm1
+	mulss	%xmm3, %xmm1
+	subss	%xmm1, %xmm2
+	movss	912(%rsp), %xmm1
+	mulss	920(%rsp), %xmm1
+	subss	%xmm1, %xmm2
+	movaps	%xmm2, %xmm1
+	mulss	900(%rsp), %xmm2
+	unpcklps	%xmm3, %xmm1
+	movlps	%xmm1, 916(%rsp)
+	movaps	%xmm2, %xmm1
+.L680:
+	cmpl	$3, %ebx
+	je	.L672
+	movss	924(%rsp), %xmm2
+	comiss	%xmm7, %xmm2
+	jbe	.L683
+	movss	936(%rsp), %xmm2
+	ucomiss	%xmm7, %xmm2
+	jp	.L1158
+	je	.L1072
+.L1158:
+	movss	948(%rsp), %xmm3
+	mulss	%xmm1, %xmm2
+	movss	940(%rsp), %xmm1
+	mulss	%xmm3, %xmm1
+	subss	%xmm1, %xmm2
+	movss	944(%rsp), %xmm1
+	mulss	952(%rsp), %xmm1
+	subss	%xmm1, %xmm2
+	movaps	%xmm2, %xmm1
+	mulss	932(%rsp), %xmm2
+	unpcklps	%xmm3, %xmm1
+	movlps	%xmm1, 948(%rsp)
+	movaps	%xmm2, %xmm1
+.L683:
+	cmpl	$4, %ebx
+	je	.L672
+	movss	956(%rsp), %xmm2
+	comiss	%xmm7, %xmm2
+	jbe	.L686
+	movss	968(%rsp), %xmm2
+	ucomiss	%xmm7, %xmm2
+	jp	.L1160
+	je	.L1073
+.L1160:
+	movss	980(%rsp), %xmm3
+	mulss	%xmm1, %xmm2
+	movss	972(%rsp), %xmm1
+	mulss	%xmm3, %xmm1
+	subss	%xmm1, %xmm2
+	movss	976(%rsp), %xmm1
+	mulss	984(%rsp), %xmm1
+	subss	%xmm1, %xmm2
+	movaps	%xmm2, %xmm1
+	mulss	964(%rsp), %xmm2
+	unpcklps	%xmm3, %xmm1
+	movlps	%xmm1, 980(%rsp)
+	movaps	%xmm2, %xmm1
+.L686:
+	cmpl	$5, %ebx
+	je	.L672
+	movss	988(%rsp), %xmm2
+	comiss	%xmm7, %xmm2
+	jbe	.L689
+	movss	1000(%rsp), %xmm2
+	ucomiss	%xmm7, %xmm2
+	jp	.L1162
+	je	.L1074
+.L1162:
+	movss	1012(%rsp), %xmm3
+	mulss	%xmm1, %xmm2
+	movss	1004(%rsp), %xmm1
+	mulss	%xmm3, %xmm1
+	subss	%xmm1, %xmm2
+	movss	1008(%rsp), %xmm1
+	mulss	1016(%rsp), %xmm1
+	subss	%xmm1, %xmm2
+	movaps	%xmm2, %xmm1
+	mulss	996(%rsp), %xmm2
+	unpcklps	%xmm3, %xmm1
+	movlps	%xmm1, 1012(%rsp)
+	movaps	%xmm2, %xmm1
+.L689:
+	cmpl	$6, %ebx
+	je	.L672
+	movss	1020(%rsp), %xmm2
+	comiss	%xmm7, %xmm2
+	jbe	.L692
+	movss	1032(%rsp), %xmm2
+	ucomiss	%xmm7, %xmm2
+	jp	.L1164
+	je	.L1075
+.L1164:
+	movss	1044(%rsp), %xmm3
+	mulss	%xmm1, %xmm2
+	movss	1036(%rsp), %xmm1
+	mulss	%xmm3, %xmm1
+	subss	%xmm1, %xmm2
+	movss	1040(%rsp), %xmm1
+	mulss	1048(%rsp), %xmm1
+	subss	%xmm1, %xmm2
+	movaps	%xmm2, %xmm1
+	mulss	1028(%rsp), %xmm2
+	unpcklps	%xmm3, %xmm1
+	movlps	%xmm1, 1044(%rsp)
+	movaps	%xmm2, %xmm1
+.L692:
+	cmpl	$7, %ebx
+	je	.L672
+	movss	1052(%rsp), %xmm2
+	comiss	%xmm7, %xmm2
+	jbe	.L695
+	movss	1064(%rsp), %xmm2
+	ucomiss	%xmm7, %xmm2
+	jp	.L1166
+	je	.L1076
+.L1166:
+	movss	1076(%rsp), %xmm3
+	mulss	%xmm1, %xmm2
+	movss	1068(%rsp), %xmm1
+	mulss	%xmm3, %xmm1
+	subss	%xmm1, %xmm2
+	movss	1072(%rsp), %xmm1
+	mulss	1080(%rsp), %xmm1
+	subss	%xmm1, %xmm2
+	movaps	%xmm2, %xmm1
+	mulss	1060(%rsp), %xmm2
+	unpcklps	%xmm3, %xmm1
+	movlps	%xmm1, 1076(%rsp)
+	movaps	%xmm2, %xmm1
+.L695:
+	cmpl	$8, %ebx
+	je	.L672
+	movss	1084(%rsp), %xmm2
+	comiss	%xmm7, %xmm2
+	jbe	.L698
+	movss	1096(%rsp), %xmm2
+	ucomiss	%xmm7, %xmm2
+	jp	.L1168
+	je	.L1077
+.L1168:
+	movss	1108(%rsp), %xmm3
+	mulss	%xmm1, %xmm2
+	movss	1100(%rsp), %xmm1
+	mulss	%xmm3, %xmm1
+	subss	%xmm1, %xmm2
+	movss	1104(%rsp), %xmm1
+	mulss	1112(%rsp), %xmm1
+	subss	%xmm1, %xmm2
+	movaps	%xmm2, %xmm1
+	mulss	1092(%rsp), %xmm2
+	unpcklps	%xmm3, %xmm1
+	movlps	%xmm1, 1108(%rsp)
+	movaps	%xmm2, %xmm1
+.L698:
+	cmpl	$9, %ebx
+	je	.L672
+	movss	1116(%rsp), %xmm2
+	comiss	%xmm7, %xmm2
+	jbe	.L672
+	movss	1128(%rsp), %xmm2
+	ucomiss	%xmm7, %xmm2
+	jp	.L1170
+	je	.L1078
+.L1170:
+	movss	1140(%rsp), %xmm3
+	mulss	%xmm1, %xmm2
+	movss	1132(%rsp), %xmm1
+	mulss	%xmm3, %xmm1
+	subss	%xmm1, %xmm2
+	movss	1136(%rsp), %xmm1
+	mulss	1144(%rsp), %xmm1
+	subss	%xmm1, %xmm2
+	movaps	%xmm2, %xmm1
+	mulss	1124(%rsp), %xmm2
+	unpcklps	%xmm3, %xmm1
+	movlps	%xmm1, 1140(%rsp)
+	movaps	%xmm2, %xmm1
+.L672:
+	mulss	.LC60(%rip), %xmm0
+	addss	%xmm1, %xmm0
+	jmp	.L704
+.L1629:
+	movss	%xmm6, 160(%rsp)
+	jmp	.L624
+.L631:
+	cmpl	$1, %ebx
+	je	.L1065
+	movq	544(%rsp), %xmm4
+	movl	%ebx, %edx
+	xorl	%edi, %edi
+	xorl	%ebp, %ebp
+	movq	.LC205(%rip), %rax
+	pxor	%xmm3, %xmm3
+	movaps	%xmm3, %xmm2
+	shrl	%edx
+	movq	%xmm4, %xmm5
+	cmpl	$1, %edx
+	movq	496(%rsp), %xmm0
+	movq	%rdi, 844(%rsp)
+	cmpltps	%xmm5, %xmm2
+	movq	%rbp, 876(%rsp)
+	movq	%rax, %xmm5
+	andps	%xmm2, %xmm4
+	andnps	%xmm5, %xmm2
+	orps	%xmm2, %xmm4
+	movq	448(%rsp), %xmm5
+	movss	%xmm4, 256(%rsp)
+	psrlq	$32, %xmm4
+	movaps	%xmm5, %xmm2
+	movlps	%xmm4, 868(%rsp)
+	unpcklps	%xmm0, %xmm5
+	shufps	$78, %xmm5, %xmm5
+	unpcklps	%xmm0, %xmm2
+	movlps	%xmm2, 828(%rsp)
+	movss	256(%rsp), %xmm2
+	movlps	%xmm5, 860(%rsp)
+	movlps	%xmm2, 836(%rsp)
+	je	.L646
+	movq	552(%rsp), %xmm4
+	movaps	%xmm3, %xmm2
+	xorl	%r11d, %r11d
+	xorl	%esi, %esi
+	movq	504(%rsp), %xmm0
+	cmpl	$2, %edx
+	movq	%r11, 908(%rsp)
+	movq	%xmm4, %xmm5
+	movq	%rsi, 940(%rsp)
+	cmpltps	%xmm5, %xmm2
+	movq	%rax, %xmm5
+	andps	%xmm2, %xmm4
+	andnps	%xmm5, %xmm2
+	orps	%xmm2, %xmm4
+	movq	456(%rsp), %xmm5
+	movss	%xmm4, 256(%rsp)
+	psrlq	$32, %xmm4
+	movaps	%xmm5, %xmm2
+	movlps	%xmm4, 932(%rsp)
+	unpcklps	%xmm0, %xmm5
+	shufps	$78, %xmm5, %xmm5
+	unpcklps	%xmm0, %xmm2
+	movlps	%xmm2, 892(%rsp)
+	movss	256(%rsp), %xmm2
+	movlps	%xmm5, 924(%rsp)
+	movlps	%xmm2, 900(%rsp)
+	je	.L646
+	movq	560(%rsp), %xmm4
+	movaps	%xmm3, %xmm2
+	xorl	%r9d, %r9d
+	xorl	%r10d, %r10d
+	movq	512(%rsp), %xmm0
+	cmpl	$3, %edx
+	movq	%r9, 972(%rsp)
+	movq	%xmm4, %xmm5
+	movq	%r10, 1004(%rsp)
+	cmpltps	%xmm5, %xmm2
+	movq	%rax, %xmm5
+	andps	%xmm2, %xmm4
+	andnps	%xmm5, %xmm2
+	orps	%xmm2, %xmm4
+	movq	464(%rsp), %xmm5
+	movss	%xmm4, 256(%rsp)
+	psrlq	$32, %xmm4
+	movaps	%xmm5, %xmm2
+	movlps	%xmm4, 996(%rsp)
+	unpcklps	%xmm0, %xmm5
+	shufps	$78, %xmm5, %xmm5
+	unpcklps	%xmm0, %xmm2
+	movlps	%xmm2, 956(%rsp)
+	movss	256(%rsp), %xmm2
+	movlps	%xmm5, 988(%rsp)
+	movlps	%xmm2, 964(%rsp)
+	je	.L646
+	movq	568(%rsp), %xmm4
+	movaps	%xmm3, %xmm2
+	xorl	%ecx, %ecx
 	xorl	%r8d, %r8d
-	jmp	.L697
+	movq	520(%rsp), %xmm0
+	cmpl	$4, %edx
+	movq	%rcx, 1036(%rsp)
+	movq	%xmm4, %xmm5
+	movq	%r8, 1068(%rsp)
+	cmpltps	%xmm5, %xmm2
+	movq	%rax, %xmm5
+	andps	%xmm2, %xmm4
+	andnps	%xmm5, %xmm2
+	orps	%xmm2, %xmm4
+	movq	472(%rsp), %xmm5
+	movss	%xmm4, 256(%rsp)
+	psrlq	$32, %xmm4
+	movaps	%xmm5, %xmm2
+	movlps	%xmm4, 1060(%rsp)
+	unpcklps	%xmm0, %xmm5
+	shufps	$78, %xmm5, %xmm5
+	unpcklps	%xmm0, %xmm2
+	movlps	%xmm2, 1020(%rsp)
+	movss	256(%rsp), %xmm2
+	movlps	%xmm5, 1052(%rsp)
+	movlps	%xmm2, 1028(%rsp)
+	je	.L646
+	movq	576(%rsp), %xmm2
+	movq	528(%rsp), %xmm5
+	movq	%xmm2, %xmm4
+	cmpltps	%xmm4, %xmm3
+	movq	%rax, %xmm4
+	xorl	%eax, %eax
+	movq	%rax, 1100(%rsp)
+	xorl	%eax, %eax
+	movq	%rax, 1132(%rsp)
+	andps	%xmm3, %xmm2
+	andnps	%xmm4, %xmm3
+	orps	%xmm2, %xmm3
+	movq	480(%rsp), %xmm4
+	movss	%xmm3, 256(%rsp)
+	psrlq	$32, %xmm3
+	movaps	%xmm4, %xmm2
+	movlps	%xmm3, 1124(%rsp)
+	unpcklps	%xmm5, %xmm4
+	shufps	$78, %xmm4, %xmm4
+	unpcklps	%xmm5, %xmm2
+	movlps	%xmm2, 1084(%rsp)
+	movss	256(%rsp), %xmm2
+	movlps	%xmm4, 1116(%rsp)
+	movlps	%xmm2, 1092(%rsp)
+.L646:
+	testb	$1, %bl
+	je	.L637
+	movl	%ebx, %eax
+	andl	$-2, %eax
+.L645:
+	cltq
+	movss	544(%rsp,%rax,4), %xmm2
+	comiss	%xmm7, %xmm2
+	ja	.L648
+	movaps	%xmm6, %xmm2
+.L648:
+	movq	64(%rsp), %rdi
+	movq	%rax, %rdx
+	movss	496(%rsp,%rax,4), %xmm3
+	salq	$5, %rdx
+	movss	448(%rsp,%rax,4), %xmm4
+	xorl	%eax, %eax
+	unpcklps	%xmm3, %xmm4
+	movlps	%xmm4, 28(%rdi,%rdx)
+	movss	%xmm2, 836(%rsp,%rdx)
+	movl	$0x00000000, 840(%rsp,%rdx)
+	movq	%rax, 44(%rdi,%rdx)
+	jmp	.L637
+.L1730:
+	movl	72(%rsp), %eax
+	pxor	%xmm1, %xmm1
+	pxor	%xmm2, %xmm2
+	cvtsi2ssl	308(%rsp), %xmm2
+	subl	%r12d, %eax
+	cvtsi2ssl	%eax, %xmm1
+	movq	184(%rsp), %rax
+	divss	%xmm2, %xmm1
+	mulss	%xmm0, %xmm1
+	movss	%xmm1, (%rax,%r12,4)
+	addq	$1, %r12
+	cmpl	%r12d, 192(%rsp)
+	jg	.L757
+	movl	320(%rsp), %edi
+	movq	%rax, %rsi
+	movl	308(%rsp), %r14d
+	movl	192(%rsp), %r11d
+	movl	324(%rsp), %ebp
+	movq	328(%rsp), %rcx
+	jmp	.L758
+.L1064:
+	movaps	%xmm2, %xmm1
+	jmp	.L626
+.L667:
+	movss	248(%rsp), %xmm0
+	movss	252(%rsp), %xmm5
+	mulss	%xmm2, %xmm0
+	addss	224(%rsp), %xmm0
+	mulss	%xmm7, %xmm2
+	mulss	%xmm0, %xmm5
+	movaps	%xmm2, %xmm4
+	subss	%xmm5, %xmm4
+	addss	204(%rsp), %xmm4
+	movss	%xmm4, 224(%rsp)
+	movss	264(%rsp), %xmm4
+	mulss	%xmm0, %xmm4
+	subss	%xmm4, %xmm2
+	movss	%xmm2, 204(%rsp)
+	jmp	.L668
+.L1718:
+	movslq	1280(%rsp), %rax
+	movss	0(%r13,%rax,4), %xmm0
+	movq	%rax, %rcx
+	comiss	%xmm2, %xmm0
+	jbe	.L592
+	subl	$1, %ecx
+	js	.L592
+	xorl	%r8d, %r8d
+	jmp	.L599
 	.p2align 6
-.L1327:
+.L1733:
 	leal	-1(%rax), %ecx
-.L694:
+.L596:
 	cmpl	%r8d, %ecx
-	jl	.L690
-.L697:
-	leal	(%rcx,%r8), %edx
+	jl	.L592
+.L599:
+	leal	(%r8,%rcx), %edx
 	movl	%edx, %eax
 	shrl	$31, %eax
 	addl	%edx, %eax
 	sarl	%eax
-	movslq	%eax, %rbx
-	movss	(%r12,%rbx,4), %xmm0
-	comiss	%xmm12, %xmm0
-	ja	.L1327
-	comiss	4(%r12,%rbx,4), %xmm12
-	jb	.L1226
+	movslq	%eax, %rdi
+	movss	0(%r13,%rdi,4), %xmm0
+	comiss	%xmm2, %xmm0
+	ja	.L1733
+	comiss	4(%r13,%rdi,4), %xmm2
+	jb	.L1625
 	leal	1(%rax), %r8d
-	jmp	.L694
-.L1243:
-	movl	176(%rsp), %r15d
-	movq	192(%rsp), %rbx
-	jmp	.L838
-.L1308:
-	cmpl	$1, 56(%rsp)
-	je	.L1328
-	movss	4(%r14), %xmm11
-	jmp	.L658
-.L690:
-	movq	.LC196(%rip), %rax
-	pxor	%xmm15, %xmm15
-	movaps	%xmm15, %xmm13
-	movss	%xmm6, 144(%rsp)
-	movss	.LC95(%rip), %xmm0
-	movaps	%xmm15, %xmm11
-	movss	%xmm15, 168(%rsp)
-	movaps	.LC55(%rip), %xmm3
+	jmp	.L596
+.L1635:
+	pxor	%xmm2, %xmm2
+	jmp	.L705
+.L1717:
+	cmpl	$1, 76(%rsp)
+	je	.L1734
+	movss	4(%r15), %xmm1
+	jmp	.L561
+.L592:
+	testl	%ebx, %ebx
+	jle	.L1666
+	cmpl	$2, 268(%rsp)
+	jbe	.L1061
+	movl	%ebx, %eax
+	movss	.LC96(%rip), %xmm2
+	movss	.LC61(%rip), %xmm1
+	shrl	$2, %eax
+	movss	.LC43(%rip), %xmm0
+	subl	$1, %eax
+	shufps	$0, %xmm2, %xmm2
+	movaps	%xmm2, 448(%rsp)
+	shufps	$0, %xmm1, %xmm1
+	movaps	%xmm1, 496(%rsp)
 	shufps	$0, %xmm0, %xmm0
-	movaps	%xmm0, 368(%rsp)
-	movq	%rax, 400(%rsp)
-	movq	.LC197(%rip), %rax
-	movaps	%xmm0, 384(%rsp)
+	movaps	%xmm0, 544(%rsp)
+	jne	.L1735
+.L614:
+	movl	%ebx, %eax
+	andl	$-4, %eax
+	testb	$3, %bl
+	je	.L1666
+.L613:
+	movss	.LC96(%rip), %xmm1
+	cltq
 	movss	.LC61(%rip), %xmm0
-	movaps	%xmm3, 464(%rsp)
-	shufps	$0, %xmm0, %xmm0
-	movaps	%xmm3, 480(%rsp)
-	movq	%rax, 448(%rsp)
-	movq	.LC54(%rip), %rax
-	movaps	%xmm0, 416(%rsp)
-	movaps	%xmm0, 432(%rsp)
-	movq	%rax, 496(%rsp)
-	jmp	.L661
-.L959:
-	pxor	%xmm2, %xmm2
-	jmp	.L832
-.L1315:
-	movss	.LC206(%rip), %xmm1
-	comiss	%xmm0, %xmm1
-	jbe	.L1232
-	movaps	%xmm0, %xmm5
-	movaps	%xmm6, %xmm0
-	divss	%xmm1, %xmm5
-	subss	%xmm5, %xmm0
-	jmp	.L740
-.L1322:
-	pxor	%xmm4, %xmm4
-	jmp	.L788
-.L1324:
-	pxor	%xmm5, %xmm5
-	jmp	.L798
-.L1325:
-	pxor	%xmm15, %xmm15
-	jmp	.L803
-.L1323:
-	pxor	%xmm4, %xmm4
-	jmp	.L793
-.L1316:
-	pxor	%xmm13, %xmm13
-	jmp	.L758
-.L1317:
-	pxor	%xmm1, %xmm1
-	jmp	.L763
-.L950:
-	pxor	%xmm2, %xmm2
-	jmp	.L805
-.L1318:
-	pxor	%xmm1, %xmm1
-	jmp	.L768
-.L1319:
-	pxor	%xmm1, %xmm1
-	jmp	.L773
-.L1320:
-	pxor	%xmm4, %xmm4
-	jmp	.L778
-.L1321:
-	pxor	%xmm4, %xmm4
-	jmp	.L783
-.L951:
-	pxor	%xmm2, %xmm2
-	jmp	.L808
-.L952:
-	pxor	%xmm2, %xmm2
-	jmp	.L811
-.L953:
-	pxor	%xmm2, %xmm2
-	jmp	.L814
-.L954:
-	pxor	%xmm2, %xmm2
-	jmp	.L817
-.L955:
-	pxor	%xmm2, %xmm2
-	jmp	.L820
-.L956:
-	pxor	%xmm2, %xmm2
-	jmp	.L823
-.L957:
-	pxor	%xmm2, %xmm2
-	jmp	.L826
-.L958:
-	pxor	%xmm2, %xmm2
-	jmp	.L829
-.L927:
-	pxor	%xmm2, %xmm2
-	jmp	.L643
-.L1292:
+	leaq	544(%rsp), %rcx
+	leaq	448(%rsp), %rbp
+	leaq	496(%rsp), %rdi
+.L616:
+	movss	%xmm1, 0(%rbp,%rax,4)
+	movss	%xmm0, (%rdi,%rax,4)
+	movss	%xmm6, (%rcx,%rax,4)
+	addq	$1, %rax
+	cmpl	%eax, %ebx
+	jg	.L616
+.L1666:
 	pxor	%xmm12, %xmm12
-	jmp	.L569
-.L1291:
-	movss	.LC206(%rip), %xmm1
+	movaps	%xmm12, %xmm13
+	movaps	%xmm12, %xmm1
+	movss	%xmm6, 120(%rsp)
+	movl	$0x00000000, 112(%rsp)
+	jmp	.L563
+.L1045:
+	movss	.LC51(%rip), %xmm7
+	xorl	%r12d, %r12d
+	movl	$0x00000000, 196(%rsp)
+	xorl	%r11d, %r11d
+	leal	-1(%rbx), %eax
+	movslq	%ebx, %rcx
+	movl	$0x00000000, 200(%rsp)
+	movss	%xmm7, 100(%rsp)
+	movss	.LC204(%rip), %xmm7
+	movl	$0x00000000, 204(%rsp)
+	movl	$0x00000000, 224(%rsp)
+	movl	$0x00000000, 108(%rsp)
+	movl	$0x00000000, 128(%rsp)
+	movl	%r12d, 156(%rsp)
+	movl	%eax, 268(%rsp)
+	movss	%xmm7, 104(%rsp)
+.L538:
+	movl	268(%rsp), %eax
+	movslq	%r11d, %r12
+	pxor	%xmm7, %xmm7
+	movl	%r14d, 184(%rsp)
+	movl	%ebp, 296(%rsp)
+	leaq	0(,%rcx,4), %r14
+	movq	%rsi, 120(%rsp)
+	leaq	4(,%rax,4), %rax
+	movq	%rax, 160(%rsp)
+.L980:
 	pxor	%xmm2, %xmm2
-	comiss	%xmm0, %xmm1
-	jbe	.L553
-	divss	%xmm1, %xmm0
+	cvtsi2ssl	%r12d, %xmm2
+	testl	%ebx, %ebx
+	divss	%xmm8, %xmm2
+	mulss	100(%rsp), %xmm2
+	jle	.L760
+	movss	828(%rsp), %xmm0
+	cmpl	$1, %ebx
+	movss	%xmm0, 448(%rsp)
+	je	.L1736
+	movss	860(%rsp), %xmm0
+	cmpl	$2, %ebx
+	movss	%xmm0, 452(%rsp)
+	je	.L1737
+	movss	892(%rsp), %xmm0
+	cmpl	$3, %ebx
+	movss	%xmm0, 456(%rsp)
+	je	.L1669
+	movss	924(%rsp), %xmm0
+	cmpl	$4, %ebx
+	movss	%xmm0, 460(%rsp)
+	je	.L1669
+	movss	956(%rsp), %xmm0
+	cmpl	$5, %ebx
+	movss	%xmm0, 464(%rsp)
+	je	.L1669
+	movss	988(%rsp), %xmm0
+	cmpl	$6, %ebx
+	movss	%xmm0, 468(%rsp)
+	je	.L1669
+	movss	1020(%rsp), %xmm0
+	cmpl	$7, %ebx
+	movss	%xmm0, 472(%rsp)
+	je	.L1669
+	movss	1052(%rsp), %xmm0
+	cmpl	$8, %ebx
+	movss	%xmm0, 476(%rsp)
+	je	.L1669
+	movss	1084(%rsp), %xmm0
+	cmpl	$9, %ebx
+	movss	%xmm0, 480(%rsp)
+	je	.L1669
+	movss	1116(%rsp), %xmm0
+	movss	%xmm0, 484(%rsp)
+.L1669:
+	movss	832(%rsp), %xmm0
+	cmpl	$3, %ebx
+	movss	%xmm0, 496(%rsp)
+	movss	864(%rsp), %xmm0
+	movss	%xmm0, 500(%rsp)
+	movss	896(%rsp), %xmm0
+	movss	%xmm0, 504(%rsp)
+	je	.L762
+	movss	928(%rsp), %xmm0
+	cmpl	$4, %ebx
+	movss	%xmm0, 508(%rsp)
+	je	.L762
+	movss	960(%rsp), %xmm0
+	cmpl	$5, %ebx
+	movss	%xmm0, 512(%rsp)
+	je	.L762
+	movss	992(%rsp), %xmm0
+	cmpl	$6, %ebx
+	movss	%xmm0, 516(%rsp)
+	je	.L762
+	movss	1024(%rsp), %xmm0
+	cmpl	$7, %ebx
+	movss	%xmm0, 520(%rsp)
+	je	.L762
+	movss	1056(%rsp), %xmm0
+	cmpl	$8, %ebx
+	movss	%xmm0, 524(%rsp)
+	je	.L762
+	movss	1088(%rsp), %xmm0
+	cmpl	$9, %ebx
+	movss	%xmm0, 528(%rsp)
+	je	.L762
+	movss	1120(%rsp), %xmm0
+	movss	%xmm0, 532(%rsp)
+.L762:
+	movq	160(%rsp), %r8
+	leaq	544(%rsp), %rcx
+	movss	%xmm2, 112(%rsp)
+	leaq	1148(%rsp), %rdx
+	call	memcpy
+	movss	112(%rsp), %xmm2
+.L760:
+	testq	%r15, %r15
+	je	.L772
+	movl	1240(%rsp), %edx
+	testl	%edx, %edx
+	jle	.L772
+	movss	(%r15), %xmm0
+	comiss	%xmm2, %xmm0
+	jnb	.L1738
+	cmpl	$1, 76(%rsp)
+	je	.L780
+	movq	%r15, %rcx
+	movss	%xmm2, 112(%rsp)
+	call	contour_f0.part.0
+	movss	112(%rsp), %xmm2
+	movaps	%xmm0, %xmm1
+.L779:
+	cmpb	$0, 150(%rsp)
+	jne	.L1739
+	movss	140(%rsp), %xmm5
+	movaps	%xmm6, %xmm14
+	movss	144(%rsp), %xmm13
+	movss	136(%rsp), %xmm12
+	movss	%xmm5, 112(%rsp)
+.L782:
+	movss	48(%rsp), %xmm5
+	comiss	%xmm7, %xmm5
+	jbe	.L839
+	movss	.LC192(%rip), %xmm0
+	mulss	1204(%rsp), %xmm0
+	divss	%xmm8, %xmm0
+	addss	2388(%rsp), %xmm0
+	comiss	.LC192(%rip), %xmm0
+	jb	.L841
+	subss	.LC192(%rip), %xmm0
+.L841:
+	movss	%xmm1, 132(%rsp)
+	movss	%xmm0, 2388(%rsp)
+	call	sinf
+	mulss	48(%rsp), %xmm0
+	movss	132(%rsp), %xmm1
+	addss	%xmm0, %xmm1
+.L839:
+	movss	80(%rsp), %xmm5
+	comiss	%xmm7, %xmm5
+	jbe	.L843
+	movl	g_noise_state(%rip), %edx
+	pxor	%xmm0, %xmm0
+	divss	.LC2(%rip), %xmm5
+	movl	%edx, %eax
+	sall	$13, %eax
+	xorl	%edx, %eax
+	movl	%eax, %edx
+	shrl	$17, %edx
+	xorl	%eax, %edx
+	movl	%edx, %eax
+	sall	$5, %eax
+	xorl	%edx, %eax
+	cvtsi2ssl	%eax, %xmm0
+	mulss	.LC203(%rip), %xmm0
+	movl	%eax, g_noise_state(%rip)
+	mulss	%xmm5, %xmm0
+	addss	%xmm6, %xmm0
+	mulss	%xmm0, %xmm1
+.L843:
+	movss	84(%rsp), %xmm5
+	comiss	%xmm7, %xmm5
+	jbe	.L1644
+	movl	g_noise_state(%rip), %edx
+	pxor	%xmm0, %xmm0
+	divss	.LC2(%rip), %xmm5
+	movl	%edx, %eax
+	sall	$13, %eax
+	xorl	%edx, %eax
+	movl	%eax, %edx
+	shrl	$17, %edx
+	xorl	%eax, %edx
+	movl	%edx, %eax
+	sall	$5, %eax
+	xorl	%edx, %eax
+	cvtsi2ssl	%eax, %xmm0
+	mulss	.LC203(%rip), %xmm0
+	movl	%eax, g_noise_state(%rip)
+	mulss	%xmm5, %xmm0
+	addss	%xmm6, %xmm0
+	movss	%xmm0, 132(%rsp)
+.L845:
+	comiss	%xmm7, %xmm1
+	jbe	.L847
+	movss	.LC98(%rip), %xmm2
+	comiss	%xmm1, %xmm2
+	ja	.L1099
+	movss	.LC93(%rip), %xmm2
+	movaps	%xmm2, %xmm3
+	cmpltss	%xmm1, %xmm3
+	andps	%xmm3, %xmm2
+	andnps	%xmm1, %xmm3
+	orps	%xmm2, %xmm3
+	movaps	%xmm3, %xmm1
+.L847:
+	testl	%ebx, %ebx
+	jle	.L849
+	comiss	%xmm8, %xmm7
+	jnb	.L1740
+	movq	64(%rsp), %rax
+	xorl	%edi, %edi
+	movq	%r12, 208(%rsp)
+	cmpl	$0, 56(%rsp)
+	leaq	448(%rsp), %rbp
+	movl	%ebx, 288(%rsp)
+	movss	%xmm9, 192(%rsp)
+	movq	%rbp, %rbx
+	movss	%xmm10, 216(%rsp)
+	leaq	544(%rsp), %rbp
+	movss	%xmm1, 256(%rsp)
+	movq	%rax, %rsi
+	leaq	496(%rsp), %r12
+	je	.L868
+	jmp	.L860
+	.p2align 4,,10
+	.p2align 3
+.L1741:
+	comiss	%xmm0, %xmm7
+	jnb	.L858
+	mulss	.LC185(%rip), %xmm0
+	divss	%xmm8, %xmm0
+	call	expf
+	movss	.LC192(%rip), %xmm3
+	movaps	%xmm0, %xmm9
+	mulss	%xmm10, %xmm3
+	divss	%xmm8, %xmm3
+	movaps	%xmm3, %xmm0
+	call	cosf
+	movss	.LC191(%rip), %xmm1
+	movaps	%xmm0, %xmm3
+	movaps	%xmm9, %xmm0
+	mulss	%xmm9, %xmm0
+	mulss	%xmm9, %xmm1
+	movss	%xmm0, 48(%rsi)
+	movaps	%xmm6, %xmm0
+	mulss	%xmm3, %xmm1
+	subss	%xmm9, %xmm0
+	unpcklps	%xmm1, %xmm0
+	movlps	%xmm0, 40(%rsi)
+.L859:
+	addq	$4, %rdi
+	addq	$4, %rbp
+	addq	$32, %rsi
+	cmpq	%r14, %rdi
+	je	.L1673
+.L860:
+	movss	0(%rbp), %xmm1
+	movaps	%xmm7, %xmm0
+	movss	(%rbx,%rdi), %xmm10
+	cmpltss	%xmm1, %xmm0
+	comiss	%xmm10, %xmm7
+	movaps	%xmm10, %xmm4
+	andps	%xmm0, %xmm1
+	andnps	%xmm6, %xmm0
+	orps	%xmm0, %xmm1
+	movss	(%r12,%rdi), %xmm0
+	movss	%xmm1, 36(%rsi)
+	unpcklps	%xmm0, %xmm4
+	movlps	%xmm4, 28(%rsi)
+	jb	.L1741
+.L858:
+	movq	$0, 40(%rsi)
+	movl	$0x00000000, 48(%rsi)
+	jmp	.L859
+	.p2align 4,,10
+	.p2align 3
+.L1646:
+	comiss	%xmm0, %xmm7
+	jnb	.L865
+	mulss	.LC185(%rip), %xmm0
+	divss	%xmm8, %xmm0
+	call	expf
+	movss	.LC192(%rip), %xmm3
+	movaps	%xmm0, %xmm9
+	mulss	%xmm10, %xmm3
+	divss	%xmm8, %xmm3
+	movaps	%xmm3, %xmm0
+	call	cosf
+	movaps	%xmm9, %xmm1
+	mulss	%xmm9, %xmm1
+	movaps	%xmm0, %xmm3
+	movss	.LC191(%rip), %xmm0
+	mulss	%xmm9, %xmm0
+	mulss	%xmm3, %xmm0
+	movaps	%xmm0, %xmm3
+	addss	%xmm6, %xmm0
+	unpcklps	%xmm1, %xmm3
+	movlps	%xmm3, 44(%rsi)
+	addss	%xmm1, %xmm0
+	movss	.LC166(%rip), %xmm1
+	maxss	%xmm0, %xmm1
+	movss	%xmm1, 40(%rsi)
+.L864:
+	addq	$4, %rdi
+	addq	$4, %rbp
+	addq	$32, %rsi
+	cmpq	%rdi, %r14
+	je	.L1673
+.L868:
+	movss	0(%rbp), %xmm1
+	movaps	%xmm7, %xmm0
+	movss	(%rbx,%rdi), %xmm10
+	cmpltss	%xmm1, %xmm0
+	comiss	%xmm10, %xmm7
+	movaps	%xmm10, %xmm4
+	andps	%xmm0, %xmm1
+	andnps	%xmm6, %xmm0
+	orps	%xmm0, %xmm1
+	movss	(%r12,%rdi), %xmm0
+	movss	%xmm1, 36(%rsi)
+	unpcklps	%xmm0, %xmm4
+	movlps	%xmm4, 28(%rsi)
+	jb	.L1646
+.L865:
+	movq	$0, 40(%rsi)
+	movl	$0x00000000, 48(%rsi)
+	jmp	.L864
+.L1673:
+	movq	208(%rsp), %r12
+	movl	288(%rsp), %ebx
+	movss	192(%rsp), %xmm9
+	movss	216(%rsp), %xmm10
+	movss	256(%rsp), %xmm1
+.L849:
 	movaps	%xmm6, %xmm2
+	movss	104(%rsp), %xmm5
+	movaps	%xmm15, %xmm3
+	subss	%xmm15, %xmm2
+	mulss	%xmm11, %xmm3
+	mulss	%xmm15, %xmm9
+	comiss	%xmm11, %xmm5
+	mulss	%xmm15, %xmm10
+	mulss	%xmm2, %xmm12
+	mulss	%xmm2, %xmm13
+	mulss	112(%rsp), %xmm2
+	addss	%xmm3, %xmm12
+	addss	%xmm13, %xmm9
+	addss	%xmm2, %xmm10
+	jbe	.L869
+	comiss	.LC204(%rip), %xmm12
+	jb	.L869
+	movss	%xmm7, 2384(%rsp)
+	comiss	%xmm7, %xmm1
+	jbe	.L883
+.L872:
+	movaps	%xmm8, %xmm2
+	divss	%xmm1, %xmm2
+	movaps	%xmm6, %xmm1
+	divss	%xmm2, %xmm1
+	addss	2384(%rsp), %xmm1
+	comiss	%xmm6, %xmm1
+	jb	.L874
+	subss	%xmm6, %xmm1
+.L874:
+	movss	%xmm1, 2384(%rsp)
+	movl	808(%rsp), %eax
+	cmpl	$2, %eax
+	je	.L1742
+	movss	.LC208(%rip), %xmm2
+	comiss	%xmm1, %xmm2
+	jbe	.L1648
+	movaps	%xmm1, %xmm3
+	divss	%xmm2, %xmm3
+.L881:
+	subl	$1, %eax
+	je	.L882
+	addss	%xmm3, %xmm3
+	subss	%xmm6, %xmm3
+.L877:
+	mulss	%xmm12, %xmm3
+	mulss	132(%rsp), %xmm3
+.L873:
+	comiss	.LC206(%rip), %xmm9
+	pxor	%xmm1, %xmm1
+	jbe	.L885
+	movl	g_noise_state(%rip), %edx
+	pxor	%xmm0, %xmm0
+	movss	168(%rsp), %xmm2
+	movss	128(%rsp), %xmm1
+	movss	176(%rsp), %xmm4
+	movl	%edx, %eax
+	sall	$13, %eax
+	xorl	%edx, %eax
+	movl	%eax, %edx
+	shrl	$17, %edx
+	xorl	%eax, %edx
+	movl	%edx, %eax
+	sall	$5, %eax
+	xorl	%edx, %eax
+	cvtsi2ssl	%eax, %xmm0
+	mulss	.LC203(%rip), %xmm0
+	movl	%eax, g_noise_state(%rip)
+	mulss	%xmm0, %xmm2
+	mulss	172(%rsp), %xmm0
+	addss	%xmm2, %xmm1
+	mulss	%xmm1, %xmm4
+	subss	%xmm4, %xmm0
+	addss	108(%rsp), %xmm0
+	movss	%xmm0, 128(%rsp)
+	movss	180(%rsp), %xmm0
+	mulss	%xmm1, %xmm0
+	mulss	%xmm9, %xmm1
 	subss	%xmm0, %xmm2
-	jmp	.L553
-.L1300:
-	pxor	%xmm5, %xmm5
-	jmp	.L609
-.L1301:
-	pxor	%xmm15, %xmm15
-	jmp	.L614
-.L1294:
-	pxor	%xmm1, %xmm1
-	jmp	.L579
-.L1295:
-	pxor	%xmm1, %xmm1
-	jmp	.L584
-.L1296:
-	pxor	%xmm4, %xmm4
-	jmp	.L589
-.L1297:
-	pxor	%xmm4, %xmm4
-	jmp	.L594
-.L1298:
-	pxor	%xmm4, %xmm4
-	jmp	.L599
-.L1299:
-	pxor	%xmm4, %xmm4
-	jmp	.L604
-.L1293:
-	pxor	%xmm1, %xmm1
-	jmp	.L574
+	movss	%xmm2, 108(%rsp)
+.L885:
+	comiss	.LC206(%rip), %xmm10
+	pxor	%xmm0, %xmm0
+	jbe	.L887
+	movl	g_noise_state(%rip), %edx
+	pxor	%xmm2, %xmm2
+	movl	%edx, %eax
+	sall	$13, %eax
+	xorl	%edx, %eax
+	movl	%eax, %edx
+	shrl	$17, %edx
+	xorl	%eax, %edx
+	movl	%edx, %eax
+	sall	$5, %eax
+	xorl	%edx, %eax
+	cmpl	$0, 156(%rsp)
+	cvtsi2ssl	%eax, %xmm2
+	mulss	.LC203(%rip), %xmm2
+	je	.L889
+	movss	232(%rsp), %xmm4
+	movss	200(%rsp), %xmm0
+	movss	240(%rsp), %xmm5
+	mulss	%xmm2, %xmm4
+	mulss	236(%rsp), %xmm2
+	addss	%xmm4, %xmm0
+	mulss	%xmm0, %xmm5
+	subss	%xmm5, %xmm2
+	addss	196(%rsp), %xmm2
+	movss	%xmm2, 200(%rsp)
+	movss	244(%rsp), %xmm2
+	mulss	%xmm0, %xmm2
+	subss	%xmm2, %xmm4
+	movss	%xmm4, 196(%rsp)
+.L890:
+	mulss	%xmm10, %xmm0
+	movl	%eax, g_noise_state(%rip)
+.L887:
+	movl	56(%rsp), %edx
+	addss	%xmm3, %xmm1
+	testl	%edx, %edx
+	je	.L891
+	testl	%ebx, %ebx
+	jle	.L1105
+	movss	828(%rsp), %xmm2
+	comiss	%xmm7, %xmm2
+	jbe	.L1651
+	movss	840(%rsp), %xmm2
+	ucomiss	%xmm7, %xmm2
+	jp	.L895
+	je	.L1743
+.L895:
+	movss	852(%rsp), %xmm3
+	mulss	%xmm1, %xmm2
+	movss	844(%rsp), %xmm4
+	mulss	%xmm3, %xmm4
+	subss	%xmm4, %xmm2
+	movss	848(%rsp), %xmm4
+	mulss	856(%rsp), %xmm4
+	subss	%xmm4, %xmm2
+	movaps	%xmm2, %xmm4
+	mulss	836(%rsp), %xmm2
+	unpcklps	%xmm3, %xmm4
+	movlps	%xmm4, 852(%rsp)
+.L897:
+	addss	%xmm7, %xmm2
+.L893:
+	cmpl	$1, %ebx
+	je	.L892
+	movss	860(%rsp), %xmm3
+	comiss	%xmm7, %xmm3
+	jbe	.L899
+	movss	872(%rsp), %xmm5
+	ucomiss	%xmm7, %xmm5
+	jp	.L901
+	je	.L1744
+.L901:
+	movss	884(%rsp), %xmm4
+	mulss	%xmm1, %xmm5
+	movss	876(%rsp), %xmm3
+	mulss	%xmm4, %xmm3
+	subss	%xmm3, %xmm5
+	movss	880(%rsp), %xmm3
+	mulss	888(%rsp), %xmm3
+	subss	%xmm3, %xmm5
+	movaps	%xmm5, %xmm3
+	mulss	868(%rsp), %xmm5
+	unpcklps	%xmm4, %xmm3
+	movlps	%xmm3, 884(%rsp)
+	movaps	%xmm5, %xmm3
+.L903:
+	addss	%xmm3, %xmm2
+.L899:
+	cmpl	$2, %ebx
+	je	.L892
+	movss	892(%rsp), %xmm3
+	comiss	%xmm7, %xmm3
+	jbe	.L904
+	movss	904(%rsp), %xmm5
+	ucomiss	%xmm7, %xmm5
+	jp	.L906
+	je	.L1745
+.L906:
+	movss	916(%rsp), %xmm4
+	mulss	%xmm1, %xmm5
+	movss	908(%rsp), %xmm3
+	mulss	%xmm4, %xmm3
+	subss	%xmm3, %xmm5
+	movss	912(%rsp), %xmm3
+	mulss	920(%rsp), %xmm3
+	subss	%xmm3, %xmm5
+	movaps	%xmm5, %xmm3
+	mulss	900(%rsp), %xmm5
+	unpcklps	%xmm4, %xmm3
+	movlps	%xmm3, 916(%rsp)
+	movaps	%xmm5, %xmm3
+.L908:
+	addss	%xmm3, %xmm2
+.L904:
+	cmpl	$3, %ebx
+	je	.L892
+	movss	924(%rsp), %xmm3
+	comiss	%xmm7, %xmm3
+	jbe	.L909
+	movss	936(%rsp), %xmm5
+	ucomiss	%xmm7, %xmm5
+	jp	.L911
+	je	.L1746
+.L911:
+	movss	948(%rsp), %xmm4
+	mulss	%xmm1, %xmm5
+	movss	940(%rsp), %xmm3
+	mulss	%xmm4, %xmm3
+	subss	%xmm3, %xmm5
+	movss	944(%rsp), %xmm3
+	mulss	952(%rsp), %xmm3
+	subss	%xmm3, %xmm5
+	movaps	%xmm5, %xmm3
+	mulss	932(%rsp), %xmm5
+	unpcklps	%xmm4, %xmm3
+	movlps	%xmm3, 948(%rsp)
+	movaps	%xmm5, %xmm3
+.L913:
+	addss	%xmm3, %xmm2
+.L909:
+	cmpl	$4, %ebx
+	je	.L892
+	movss	956(%rsp), %xmm3
+	comiss	%xmm7, %xmm3
+	jbe	.L914
+	movss	968(%rsp), %xmm5
+	ucomiss	%xmm7, %xmm5
+	jp	.L916
+	je	.L1747
+.L916:
+	movss	980(%rsp), %xmm4
+	mulss	%xmm1, %xmm5
+	movss	972(%rsp), %xmm3
+	mulss	%xmm4, %xmm3
+	subss	%xmm3, %xmm5
+	movss	976(%rsp), %xmm3
+	mulss	984(%rsp), %xmm3
+	subss	%xmm3, %xmm5
+	movaps	%xmm5, %xmm3
+	mulss	964(%rsp), %xmm5
+	unpcklps	%xmm4, %xmm3
+	movlps	%xmm3, 980(%rsp)
+	movaps	%xmm5, %xmm3
 .L918:
-	pxor	%xmm2, %xmm2
-	jmp	.L616
-.L919:
-	pxor	%xmm2, %xmm2
-	jmp	.L619
-.L920:
-	pxor	%xmm2, %xmm2
-	jmp	.L622
-.L925:
-	pxor	%xmm2, %xmm2
-	jmp	.L637
-.L926:
-	pxor	%xmm2, %xmm2
-	jmp	.L640
+	addss	%xmm3, %xmm2
+.L914:
+	cmpl	$5, %ebx
+	je	.L892
+	movss	988(%rsp), %xmm3
+	comiss	%xmm7, %xmm3
+	jbe	.L919
+	movss	1000(%rsp), %xmm5
+	ucomiss	%xmm7, %xmm5
+	jp	.L921
+	je	.L1748
 .L921:
-	pxor	%xmm2, %xmm2
-	jmp	.L625
-.L922:
-	pxor	%xmm2, %xmm2
-	jmp	.L628
+	movss	1012(%rsp), %xmm4
+	mulss	%xmm1, %xmm5
+	movss	1004(%rsp), %xmm3
+	mulss	%xmm4, %xmm3
+	subss	%xmm3, %xmm5
+	movss	1008(%rsp), %xmm3
+	mulss	1016(%rsp), %xmm3
+	subss	%xmm3, %xmm5
+	movaps	%xmm5, %xmm3
+	mulss	996(%rsp), %xmm5
+	unpcklps	%xmm4, %xmm3
+	movlps	%xmm3, 1012(%rsp)
+	movaps	%xmm5, %xmm3
 .L923:
-	pxor	%xmm2, %xmm2
-	jmp	.L631
+	addss	%xmm3, %xmm2
+.L919:
+	cmpl	$6, %ebx
+	je	.L892
+	movss	1020(%rsp), %xmm3
+	comiss	%xmm7, %xmm3
+	jbe	.L924
+	movss	1032(%rsp), %xmm5
+	ucomiss	%xmm7, %xmm5
+	jp	.L926
+	je	.L1749
+.L926:
+	movss	1044(%rsp), %xmm4
+	mulss	%xmm1, %xmm5
+	movss	1036(%rsp), %xmm3
+	mulss	%xmm4, %xmm3
+	subss	%xmm3, %xmm5
+	movss	1040(%rsp), %xmm3
+	mulss	1048(%rsp), %xmm3
+	subss	%xmm3, %xmm5
+	movaps	%xmm5, %xmm3
+	mulss	1028(%rsp), %xmm5
+	unpcklps	%xmm4, %xmm3
+	movlps	%xmm3, 1044(%rsp)
+	movaps	%xmm5, %xmm3
+.L928:
+	addss	%xmm3, %xmm2
 .L924:
+	cmpl	$7, %ebx
+	je	.L892
+	movss	1052(%rsp), %xmm4
+	pxor	%xmm3, %xmm3
+	comiss	%xmm3, %xmm4
+	jbe	.L929
+	movss	1064(%rsp), %xmm5
+	ucomiss	%xmm3, %xmm5
+	jp	.L931
+	je	.L933
+.L931:
+	movss	1076(%rsp), %xmm4
+	mulss	%xmm1, %xmm5
+	movss	1068(%rsp), %xmm3
+	mulss	%xmm4, %xmm3
+	subss	%xmm3, %xmm5
+	movss	1072(%rsp), %xmm3
+	mulss	1080(%rsp), %xmm3
+	subss	%xmm3, %xmm5
+	movaps	%xmm5, %xmm3
+	mulss	1060(%rsp), %xmm5
+	unpcklps	%xmm4, %xmm3
+	movlps	%xmm3, 1076(%rsp)
+	movaps	%xmm5, %xmm3
+.L933:
+	addss	%xmm3, %xmm2
+.L929:
+	cmpl	$8, %ebx
+	je	.L892
+	movss	1084(%rsp), %xmm4
+	pxor	%xmm3, %xmm3
+	comiss	%xmm3, %xmm4
+	jbe	.L934
+	movss	1096(%rsp), %xmm5
+	ucomiss	%xmm3, %xmm5
+	jp	.L936
+	je	.L938
+.L936:
+	movss	1108(%rsp), %xmm4
+	mulss	%xmm1, %xmm5
+	movss	1100(%rsp), %xmm3
+	mulss	%xmm4, %xmm3
+	subss	%xmm3, %xmm5
+	movss	1104(%rsp), %xmm3
+	mulss	1112(%rsp), %xmm3
+	subss	%xmm3, %xmm5
+	movaps	%xmm5, %xmm3
+	mulss	1092(%rsp), %xmm5
+	unpcklps	%xmm4, %xmm3
+	movlps	%xmm3, 1108(%rsp)
+	movaps	%xmm5, %xmm3
+.L938:
+	addss	%xmm3, %xmm2
+.L934:
+	cmpl	$9, %ebx
+	je	.L892
+	movss	1116(%rsp), %xmm3
+	pxor	%xmm4, %xmm4
+	comiss	%xmm4, %xmm3
+	jbe	.L892
+	movss	1128(%rsp), %xmm3
+	ucomiss	%xmm4, %xmm3
+	jp	.L1234
+	je	.L1107
+.L1234:
+	movss	1140(%rsp), %xmm4
+	mulss	%xmm3, %xmm1
+	movss	1132(%rsp), %xmm5
+	mulss	%xmm4, %xmm5
+	subss	%xmm5, %xmm1
+	movss	1144(%rsp), %xmm5
+	mulss	1136(%rsp), %xmm5
+	subss	%xmm5, %xmm1
+	movaps	%xmm1, %xmm3
+	mulss	1124(%rsp), %xmm1
+	unpcklps	%xmm4, %xmm3
+	movlps	%xmm3, 1140(%rsp)
+.L941:
+	addss	%xmm1, %xmm2
+.L892:
+	mulss	.LC210(%rip), %xmm0
+	addss	%xmm2, %xmm0
+.L943:
+	movl	88(%rsp), %eax
+	testl	%eax, %eax
+	je	.L976
+	movss	.LC211(%rip), %xmm1
+	mulss	2392(%rsp), %xmm1
+	movss	%xmm0, 2392(%rsp)
+	subss	%xmm1, %xmm0
+.L976:
+	movss	92(%rsp), %xmm1
+	cmpl	%r12d, 96(%rsp)
+	mulss	%xmm14, %xmm1
+	mulss	%xmm1, %xmm0
+	jg	.L977
+	cmpb	$0, 151(%rsp)
+	jne	.L1750
+.L977:
+	movq	120(%rsp), %rax
+	movss	%xmm0, (%rax,%r12,4)
+	addq	$1, %r12
+	cmpl	%r12d, 72(%rsp)
+	jle	.L1657
+.L978:
+	movaps	%xmm12, %xmm11
+	jmp	.L980
+.L869:
+	comiss	%xmm7, %xmm1
+	jbe	.L883
+	comiss	.LC206(%rip), %xmm12
+	ja	.L872
+.L883:
+	pxor	%xmm3, %xmm3
+	jmp	.L873
+.L772:
+	cmpl	$1, 76(%rsp)
+	movss	152(%rsp), %xmm1
+	jne	.L779
+	movl	1256(%rsp), %eax
+	testl	%eax, %eax
+	je	.L1086
+.L1670:
+	movq	1248(%rsp), %rdx
+	movss	(%rdx), %xmm4
+	comiss	%xmm2, %xmm4
+	jnb	.L783
+	leal	-1(%rax), %ecx
+	movslq	%eax, %r8
+	subq	$1, %r8
+	movl	%ecx, %eax
+	imulq	$148, %r8, %r8
+	comiss	(%rdx,%r8), %xmm2
+	jnb	.L784
+	testl	%ecx, %ecx
+	jle	.L1088
+	movq	%rdx, %r8
+	xorl	%eax, %eax
+.L788:
+	comiss	(%r8), %xmm2
+	jb	.L785
+	movss	148(%r8), %xmm0
+	comiss	%xmm2, %xmm0
+	jnb	.L1751
+.L785:
+	addl	$1, %eax
+	addq	$148, %r8
+	cmpl	%ecx, %eax
+	jl	.L788
+.L1088:
+	xorl	%eax, %eax
+.L784:
+	movslq	%eax, %r9
+	movslq	%ecx, %rax
+	imulq	$148, %r9, %r9
+	imulq	$148, %rax, %rax
+	addq	%rdx, %r9
+	addq	%rax, %rdx
+	testl	%ebx, %ebx
+	movss	(%r9), %xmm4
+	movss	(%rdx), %xmm0
+	jle	.L1021
+	comiss	%xmm0, %xmm4
+	movl	144(%r9), %r10d
+	movl	144(%rdx), %r8d
+	jnb	.L1019
+	movaps	%xmm2, %xmm3
+	subss	%xmm4, %xmm0
+	testl	%r10d, %r10d
+	subss	%xmm4, %xmm3
+	je	.L1752
+	movaps	%xmm3, %xmm5
+	xorl	%eax, %eax
+	movss	%xmm0, 112(%rsp)
+	movd	%xmm3, %esi
+	divss	%xmm0, %xmm5
+	pxor	%xmm12, %xmm12
+	leaq	544(%rsp), %rcx
+	leaq	448(%rsp), %rbp
+	leaq	496(%rsp), %rdi
+	jmp	.L810
+.L1754:
+	movaps	%xmm6, %xmm13
+	movaps	%xmm6, %xmm0
+	cmpltss	%xmm5, %xmm13
+	andps	%xmm13, %xmm0
+	andnps	%xmm5, %xmm13
+	orps	%xmm0, %xmm13
+	mulss	%xmm13, %xmm4
+	addss	%xmm4, %xmm14
+.L812:
+	subss	%xmm3, %xmm1
+	testl	%r8d, %r8d
+	movss	104(%r9,%rax,4), %xmm4
+	movss	%xmm14, 0(%rbp,%rax,4)
+	mulss	%xmm13, %xmm1
+	addss	%xmm3, %xmm1
+	movss	%xmm1, (%rdi,%rax,4)
+	jne	.L809
+	movaps	%xmm6, %xmm1
+.L811:
+	subss	%xmm4, %xmm1
+	mulss	%xmm13, %xmm1
+	addss	%xmm4, %xmm1
+	movss	%xmm1, (%rcx,%rax,4)
+	addq	$1, %rax
+	cmpl	%eax, %ebx
+	jle	.L1753
+.L810:
+	comiss	%xmm5, %xmm12
+	movss	4(%r9,%rax,4), %xmm14
+	movss	4(%rdx,%rax,4), %xmm4
+	movss	44(%r9,%rax,4), %xmm3
+	subss	%xmm14, %xmm4
+	movss	44(%rdx,%rax,4), %xmm1
+	jbe	.L1754
+	mulss	%xmm12, %xmm4
+	pxor	%xmm13, %xmm13
+	addss	%xmm4, %xmm14
+	jmp	.L812
+.L891:
+	testl	%ebx, %ebx
+	jle	.L944
+	movss	828(%rsp), %xmm2
+	comiss	%xmm7, %xmm2
+	jbe	.L945
+	movss	840(%rsp), %xmm2
+	ucomiss	%xmm7, %xmm2
+	jp	.L1236
+	je	.L1108
+.L1236:
+	movss	852(%rsp), %xmm3
+	mulss	%xmm1, %xmm2
+	movss	844(%rsp), %xmm1
+	mulss	%xmm3, %xmm1
+	subss	%xmm1, %xmm2
+	movss	848(%rsp), %xmm1
+	mulss	856(%rsp), %xmm1
+	subss	%xmm1, %xmm2
+	movaps	%xmm2, %xmm1
+	mulss	836(%rsp), %xmm2
+	unpcklps	%xmm3, %xmm1
+	movlps	%xmm1, 852(%rsp)
+	movaps	%xmm2, %xmm1
+.L945:
+	cmpl	$1, %ebx
+	je	.L944
+	movss	860(%rsp), %xmm2
+	comiss	%xmm7, %xmm2
+	jbe	.L949
+	movss	872(%rsp), %xmm2
+	ucomiss	%xmm7, %xmm2
+	jp	.L1238
+	je	.L1109
+.L1238:
+	movss	884(%rsp), %xmm3
+	mulss	%xmm1, %xmm2
+	movss	876(%rsp), %xmm1
+	mulss	%xmm3, %xmm1
+	subss	%xmm1, %xmm2
+	movss	888(%rsp), %xmm1
+	mulss	880(%rsp), %xmm1
+	subss	%xmm1, %xmm2
+	movaps	%xmm2, %xmm1
+	mulss	868(%rsp), %xmm2
+	unpcklps	%xmm3, %xmm1
+	movlps	%xmm1, 884(%rsp)
+	movaps	%xmm2, %xmm1
+.L949:
+	cmpl	$2, %ebx
+	je	.L944
+	movss	892(%rsp), %xmm2
+	comiss	%xmm7, %xmm2
+	jbe	.L952
+	movss	904(%rsp), %xmm2
+	ucomiss	%xmm7, %xmm2
+	jp	.L1240
+	je	.L1110
+.L1240:
+	movss	916(%rsp), %xmm3
+	mulss	%xmm1, %xmm2
+	movss	908(%rsp), %xmm1
+	mulss	%xmm3, %xmm1
+	subss	%xmm1, %xmm2
+	movss	912(%rsp), %xmm1
+	mulss	920(%rsp), %xmm1
+	subss	%xmm1, %xmm2
+	movaps	%xmm2, %xmm1
+	mulss	900(%rsp), %xmm2
+	unpcklps	%xmm3, %xmm1
+	movlps	%xmm1, 916(%rsp)
+	movaps	%xmm2, %xmm1
+.L952:
+	cmpl	$3, %ebx
+	je	.L944
+	movss	924(%rsp), %xmm2
+	comiss	%xmm7, %xmm2
+	jbe	.L955
+	movss	936(%rsp), %xmm2
+	ucomiss	%xmm7, %xmm2
+	jp	.L1242
+	je	.L1111
+.L1242:
+	movss	948(%rsp), %xmm3
+	mulss	%xmm1, %xmm2
+	movss	940(%rsp), %xmm1
+	mulss	%xmm3, %xmm1
+	subss	%xmm1, %xmm2
+	movss	952(%rsp), %xmm1
+	mulss	944(%rsp), %xmm1
+	subss	%xmm1, %xmm2
+	movaps	%xmm2, %xmm1
+	mulss	932(%rsp), %xmm2
+	unpcklps	%xmm3, %xmm1
+	movlps	%xmm1, 948(%rsp)
+	movaps	%xmm2, %xmm1
+.L955:
+	cmpl	$4, %ebx
+	je	.L944
+	movss	956(%rsp), %xmm2
+	comiss	%xmm7, %xmm2
+	jbe	.L958
+	movss	968(%rsp), %xmm2
+	ucomiss	%xmm7, %xmm2
+	jp	.L1244
+	je	.L1112
+.L1244:
+	movss	980(%rsp), %xmm3
+	mulss	%xmm1, %xmm2
+	movss	972(%rsp), %xmm1
+	mulss	%xmm3, %xmm1
+	subss	%xmm1, %xmm2
+	movss	976(%rsp), %xmm1
+	mulss	984(%rsp), %xmm1
+	subss	%xmm1, %xmm2
+	movaps	%xmm2, %xmm1
+	mulss	964(%rsp), %xmm2
+	unpcklps	%xmm3, %xmm1
+	movlps	%xmm1, 980(%rsp)
+	movaps	%xmm2, %xmm1
+.L958:
+	cmpl	$5, %ebx
+	je	.L944
+	movss	988(%rsp), %xmm2
+	comiss	%xmm7, %xmm2
+	jbe	.L961
+	movss	1000(%rsp), %xmm2
+	ucomiss	%xmm7, %xmm2
+	jp	.L1246
+	je	.L1113
+.L1246:
+	movss	1012(%rsp), %xmm3
+	mulss	%xmm1, %xmm2
+	movss	1004(%rsp), %xmm1
+	mulss	%xmm3, %xmm1
+	subss	%xmm1, %xmm2
+	movss	1008(%rsp), %xmm1
+	mulss	1016(%rsp), %xmm1
+	subss	%xmm1, %xmm2
+	movaps	%xmm2, %xmm1
+	mulss	996(%rsp), %xmm2
+	unpcklps	%xmm3, %xmm1
+	movlps	%xmm1, 1012(%rsp)
+	movaps	%xmm2, %xmm1
+.L961:
+	cmpl	$6, %ebx
+	je	.L944
+	movss	1020(%rsp), %xmm2
+	comiss	%xmm7, %xmm2
+	jbe	.L964
+	movss	1032(%rsp), %xmm2
+	ucomiss	%xmm7, %xmm2
+	jp	.L1248
+	je	.L1114
+.L1248:
+	movss	1044(%rsp), %xmm3
+	mulss	%xmm1, %xmm2
+	movss	1036(%rsp), %xmm1
+	mulss	%xmm3, %xmm1
+	subss	%xmm1, %xmm2
+	movss	1040(%rsp), %xmm1
+	mulss	1048(%rsp), %xmm1
+	subss	%xmm1, %xmm2
+	movaps	%xmm2, %xmm1
+	mulss	1028(%rsp), %xmm2
+	unpcklps	%xmm3, %xmm1
+	movlps	%xmm1, 1044(%rsp)
+	movaps	%xmm2, %xmm1
+.L964:
+	cmpl	$7, %ebx
+	je	.L944
+	movss	1052(%rsp), %xmm3
 	pxor	%xmm2, %xmm2
-	jmp	.L634
-.L1217:
+	comiss	%xmm2, %xmm3
+	jbe	.L967
+	movss	1064(%rsp), %xmm3
+	ucomiss	%xmm2, %xmm3
+	jp	.L1250
+	je	.L1115
+.L1250:
+	movss	1076(%rsp), %xmm2
+	mulss	%xmm3, %xmm1
+	movss	1068(%rsp), %xmm3
+	mulss	%xmm2, %xmm3
+	subss	%xmm3, %xmm1
+	movss	1072(%rsp), %xmm3
+	mulss	1080(%rsp), %xmm3
+	subss	%xmm3, %xmm1
+	movaps	%xmm1, %xmm3
+	mulss	1060(%rsp), %xmm1
+	unpcklps	%xmm2, %xmm3
+	movlps	%xmm3, 1076(%rsp)
+.L967:
+	cmpl	$8, %ebx
+	je	.L944
+	movss	1084(%rsp), %xmm2
+	pxor	%xmm3, %xmm3
+	comiss	%xmm3, %xmm2
+	jbe	.L970
+	movss	1096(%rsp), %xmm2
+	ucomiss	%xmm3, %xmm2
+	jp	.L1252
+	je	.L1116
+.L1252:
+	movss	1108(%rsp), %xmm3
+	mulss	%xmm1, %xmm2
+	movss	1100(%rsp), %xmm1
+	mulss	%xmm3, %xmm1
+	subss	%xmm1, %xmm2
+	movss	1104(%rsp), %xmm1
+	mulss	1112(%rsp), %xmm1
+	subss	%xmm1, %xmm2
+	movaps	%xmm2, %xmm1
+	mulss	1092(%rsp), %xmm2
+	unpcklps	%xmm3, %xmm1
+	movlps	%xmm1, 1108(%rsp)
+	movaps	%xmm2, %xmm1
+.L970:
+	cmpl	$9, %ebx
+	je	.L944
+	movss	1116(%rsp), %xmm2
+	pxor	%xmm3, %xmm3
+	comiss	%xmm3, %xmm2
+	jbe	.L944
+	movss	1128(%rsp), %xmm2
+	ucomiss	%xmm3, %xmm2
+	jp	.L1254
+	je	.L1117
+.L1254:
+	movss	1140(%rsp), %xmm3
+	mulss	%xmm1, %xmm2
+	movss	1132(%rsp), %xmm1
+	mulss	%xmm3, %xmm1
+	subss	%xmm1, %xmm2
+	movss	1144(%rsp), %xmm1
+	mulss	1136(%rsp), %xmm1
+	subss	%xmm1, %xmm2
+	movaps	%xmm2, %xmm1
+	mulss	1124(%rsp), %xmm2
+	unpcklps	%xmm3, %xmm1
+	movlps	%xmm1, 1140(%rsp)
+	movaps	%xmm2, %xmm1
+.L944:
+	mulss	.LC60(%rip), %xmm0
+	addss	%xmm1, %xmm0
+	jmp	.L943
+.L1644:
+	movss	%xmm6, 132(%rsp)
+	jmp	.L845
+.L1740:
+	cmpl	$1, %ebx
+	je	.L1100
+	movq	.LC205(%rip), %rax
+	pxor	%xmm3, %xmm3
+	movaps	%xmm3, %xmm2
+	movl	%ebx, %edx
+	movq	544(%rsp), %xmm4
+	shrl	%edx
+	xorl	%r8d, %r8d
+	xorl	%r9d, %r9d
+	movq	496(%rsp), %xmm0
+	cmpl	$1, %edx
+	movq	%r8, 844(%rsp)
+	movq	%xmm4, %xmm5
+	movq	%r9, 876(%rsp)
+	cmpltps	%xmm5, %xmm2
+	movq	%rax, %xmm5
+	andps	%xmm2, %xmm4
+	andnps	%xmm5, %xmm2
+	orps	%xmm2, %xmm4
+	movq	448(%rsp), %xmm5
+	movss	%xmm4, 192(%rsp)
+	psrlq	$32, %xmm4
+	movaps	%xmm5, %xmm2
+	movlps	%xmm4, 868(%rsp)
+	unpcklps	%xmm0, %xmm5
+	shufps	$78, %xmm5, %xmm5
+	unpcklps	%xmm0, %xmm2
+	movlps	%xmm2, 828(%rsp)
+	movss	192(%rsp), %xmm2
+	movlps	%xmm5, 860(%rsp)
+	movlps	%xmm2, 836(%rsp)
+	je	.L853
+	movq	552(%rsp), %xmm4
+	movaps	%xmm3, %xmm2
+	xorl	%ebp, %ebp
+	xorl	%ecx, %ecx
+	movq	504(%rsp), %xmm0
+	cmpl	$2, %edx
+	movq	%rbp, 908(%rsp)
+	movq	%xmm4, %xmm5
+	movq	%rcx, 940(%rsp)
+	cmpltps	%xmm5, %xmm2
+	movq	%rax, %xmm5
+	andps	%xmm2, %xmm4
+	andnps	%xmm5, %xmm2
+	orps	%xmm2, %xmm4
+	movq	456(%rsp), %xmm5
+	movss	%xmm4, 192(%rsp)
+	psrlq	$32, %xmm4
+	movaps	%xmm5, %xmm2
+	movlps	%xmm4, 932(%rsp)
+	unpcklps	%xmm0, %xmm5
+	shufps	$78, %xmm5, %xmm5
+	unpcklps	%xmm0, %xmm2
+	movlps	%xmm2, 892(%rsp)
+	movss	192(%rsp), %xmm2
+	movlps	%xmm5, 924(%rsp)
+	movlps	%xmm2, 900(%rsp)
+	je	.L853
+	movq	560(%rsp), %xmm4
+	movaps	%xmm3, %xmm2
+	xorl	%esi, %esi
+	xorl	%edi, %edi
+	movq	512(%rsp), %xmm0
+	cmpl	$3, %edx
+	movq	%rsi, 972(%rsp)
+	movq	%xmm4, %xmm5
+	movq	%rdi, 1004(%rsp)
+	cmpltps	%xmm5, %xmm2
+	movq	%rax, %xmm5
+	andps	%xmm2, %xmm4
+	andnps	%xmm5, %xmm2
+	orps	%xmm2, %xmm4
+	movq	464(%rsp), %xmm5
+	movss	%xmm4, 192(%rsp)
+	psrlq	$32, %xmm4
+	movaps	%xmm5, %xmm2
+	movlps	%xmm4, 996(%rsp)
+	unpcklps	%xmm0, %xmm5
+	shufps	$78, %xmm5, %xmm5
+	unpcklps	%xmm0, %xmm2
+	movlps	%xmm2, 956(%rsp)
+	movss	192(%rsp), %xmm2
+	movlps	%xmm5, 988(%rsp)
+	movlps	%xmm2, 964(%rsp)
+	je	.L853
+	movq	568(%rsp), %xmm4
+	movaps	%xmm3, %xmm2
+	xorl	%r10d, %r10d
+	xorl	%r11d, %r11d
+	movq	520(%rsp), %xmm0
+	cmpl	$4, %edx
+	movq	%r10, 1036(%rsp)
+	movq	%xmm4, %xmm5
+	movq	%r11, 1068(%rsp)
+	cmpltps	%xmm5, %xmm2
+	movq	%rax, %xmm5
+	andps	%xmm2, %xmm4
+	andnps	%xmm5, %xmm2
+	orps	%xmm2, %xmm4
+	movq	472(%rsp), %xmm5
+	movss	%xmm4, 192(%rsp)
+	psrlq	$32, %xmm4
+	movaps	%xmm5, %xmm2
+	movlps	%xmm4, 1060(%rsp)
+	unpcklps	%xmm0, %xmm5
+	shufps	$78, %xmm5, %xmm5
+	unpcklps	%xmm0, %xmm2
+	movlps	%xmm2, 1020(%rsp)
+	movss	192(%rsp), %xmm2
+	movlps	%xmm5, 1052(%rsp)
+	movlps	%xmm2, 1028(%rsp)
+	je	.L853
+	movq	576(%rsp), %xmm2
+	xorl	%r8d, %r8d
+	xorl	%r9d, %r9d
+	movq	%r8, 1100(%rsp)
+	movq	%xmm2, %xmm4
+	movq	%r9, 1132(%rsp)
+	cmpltps	%xmm4, %xmm3
+	movq	%rax, %xmm4
+	andps	%xmm3, %xmm2
+	andnps	%xmm4, %xmm3
+	orps	%xmm2, %xmm3
+	movq	480(%rsp), %xmm2
+	movq	528(%rsp), %xmm4
+	movss	%xmm3, 192(%rsp)
+	psrlq	$32, %xmm3
+	movaps	%xmm2, %xmm5
+	movlps	%xmm3, 1124(%rsp)
+	unpcklps	%xmm4, %xmm5
+	movlps	%xmm5, 1084(%rsp)
+	unpcklps	%xmm4, %xmm2
+	movss	192(%rsp), %xmm5
+	shufps	$78, %xmm2, %xmm2
+	movlps	%xmm2, 1116(%rsp)
+	movlps	%xmm5, 1092(%rsp)
+.L853:
+	movl	%ebx, %eax
+	andl	$-2, %eax
+	testb	$1, %bl
+	je	.L849
+.L852:
+	cltq
+	movss	544(%rsp,%rax,4), %xmm2
+	comiss	%xmm7, %xmm2
+	ja	.L855
 	movaps	%xmm6, %xmm2
-	subss	%xmm1, %xmm0
-	divss	.LC208(%rip), %xmm0
-	subss	%xmm0, %xmm2
-	jmp	.L557
-.L1233:
-	movaps	%xmm6, %xmm4
-	subss	%xmm1, %xmm0
-	divss	.LC208(%rip), %xmm0
-	subss	%xmm0, %xmm4
-	jmp	.L744
-.L1285:
-	cmpl	$0, 1200(%rsp)
-	jle	.L462
-	movq	1192(%rsp), %rax
-	movss	8084(%rax), %xmm14
-	movss	8088(%rax), %xmm10
-	movss	8092(%rax), %xmm9
-	jmp	.L463
-.L1284:
-	movl	1200(%rsp), %esi
-	testl	%esi, %esi
-	jle	.L895
-	leal	1(%rsi), %ecx
-	movslq	%esi, %rdi
+.L855:
+	movq	64(%rsp), %rsi
+	movq	%rax, %rdx
+	xorl	%ecx, %ecx
+	movss	496(%rsp,%rax,4), %xmm4
+	salq	$5, %rdx
+	movss	448(%rsp,%rax,4), %xmm3
+	unpcklps	%xmm4, %xmm3
+	movlps	%xmm3, 28(%rsi,%rdx)
+	movss	%xmm2, 836(%rsp,%rdx)
+	movl	$0x00000000, 840(%rsp,%rdx)
+	movq	%rcx, 44(%rsi,%rdx)
+	jmp	.L849
+.L1099:
+	movaps	%xmm2, %xmm1
+	jmp	.L847
+.L1750:
+	movl	72(%rsp), %edi
+	pxor	%xmm1, %xmm1
+	pxor	%xmm2, %xmm2
+	cvtsi2ssl	184(%rsp), %xmm2
+	movl	%edi, %eax
+	subl	%r12d, %eax
+	cvtsi2ssl	%eax, %xmm1
+	movq	120(%rsp), %rax
+	divss	%xmm2, %xmm1
+	mulss	%xmm0, %xmm1
+	movss	%xmm1, (%rax,%r12,4)
+	addq	$1, %r12
+	cmpl	%r12d, %edi
+	jg	.L978
+	movl	296(%rsp), %ebp
+	movq	%rax, %rsi
+.L979:
+	testl	%ebp, %ebp
+	jne	.L1014
+.L983:
+	movss	.LC43(%rip), %xmm2
+	xorl	%eax, %eax
+	.p2align 6
+	.p2align 4,,10
+	.p2align 3
+.L993:
+	movss	(%rsi,%rax,4), %xmm1
+	movss	.LC99(%rip), %xmm5
+	comiss	%xmm1, %xmm5
+	ja	.L990
+	movaps	%xmm2, %xmm0
+	movaps	%xmm2, %xmm3
+	cmpltss	%xmm1, %xmm0
+	andps	%xmm0, %xmm3
+	andnps	%xmm1, %xmm0
+	orps	%xmm3, %xmm0
+	movss	%xmm0, (%rsi,%rax,4)
+	addq	$1, %rax
+	cmpl	%eax, 72(%rsp)
+	jg	.L993
+.L992:
+	movq	%r13, %rcx
+	call	free
+	movq	272(%rsp), %rcx
+	call	free
+	movq	280(%rsp), %rcx
+	call	free
+	cmpl	$0, 2380(%rsp)
+	jne	.L1755
+	movl	2368(%rsp), %eax
+	cmpl	$2, %eax
+	je	.L996
+	ja	.L1013
+.L1675:
+	testl	%eax, %eax
+	je	.L1756
+	leaq	.LC216(%rip), %rdx
+	movl	812(%rsp), %ebp
+	leaq	1312(%rsp), %rcx
+	call	fopen
+	testq	%rax, %rax
+	movq	%rax, %rbx
+	je	.L1677
+	movl	72(%rsp), %r15d
+	movq	%rax, %r9
+	movl	$4, %r8d
+	movl	$1, %edx
+	leaq	544(%rsp), %rcx
+	movl	$1179011410, 544(%rsp)
+	call	fwrite
+	movq	%rbx, %rcx
+	leal	0(,%r15,4), %r12d
+	leal	52(%r12), %edx
+	call	w32
+	movq	%rbx, %r9
+	movl	$4, %r8d
+	movl	$1, %edx
+	leaq	544(%rsp), %rcx
+	movl	$1163280727, 544(%rsp)
+	call	fwrite
+	movq	%rbx, %r9
+	movl	$4, %r8d
+	movl	$1, %edx
+	leaq	544(%rsp), %rcx
+	movl	$544501094, 544(%rsp)
+	call	fwrite
+	movq	%rbx, %r9
+	movl	$4, %r8d
+	movl	$1, %edx
+	leaq	544(%rsp), %rcx
+	movl	$18, 544(%rsp)
+	call	fwrite
+	movq	%rbx, %r9
+	movl	$2, %r8d
+	movl	$1, %edx
+	leaq	544(%rsp), %rcx
+	movw	$3, 544(%rsp)
+	call	fwrite
+	movq	%rbx, %r9
+	movl	$2, %r8d
+	movl	$1, %edx
+	leaq	544(%rsp), %rcx
+	movw	$1, 544(%rsp)
+	call	fwrite
+	movl	%ebp, %edx
+	movq	%rbx, %rcx
+	call	w32
+	leal	0(,%rbp,4), %edx
+	movq	%rbx, %rcx
+	call	w32
+	movq	%rbx, %r9
+	movl	$2, %r8d
+	movl	$1, %edx
+	leaq	544(%rsp), %rcx
+	movw	$4, 544(%rsp)
+	call	fwrite
+	movq	%rbx, %r9
+	movl	$2, %r8d
+	movl	$1, %edx
+	leaq	544(%rsp), %rcx
+	movw	$32, 544(%rsp)
+	call	fwrite
+	movq	%rbx, %r9
+	movl	$2, %r8d
+	movl	$1, %edx
+	leaq	544(%rsp), %rcx
+	movw	$0, 544(%rsp)
+	call	fwrite
+	movq	%rbx, %r9
+	movl	$4, %r8d
+	movl	$1, %edx
+	leaq	544(%rsp), %rcx
+	movl	$1952670054, 544(%rsp)
+	call	fwrite
+	movq	%rbx, %r9
+	movl	$4, %r8d
+	movl	$1, %edx
+	leaq	544(%rsp), %rcx
+	movl	$4, 544(%rsp)
+	call	fwrite
+	movl	%r15d, %edx
+	movq	%rbx, %rcx
+	call	w32
+	leaq	544(%rsp), %rcx
+	movq	%rbx, %r9
+	movl	$4, %r8d
+	movl	$1635017060, 544(%rsp)
+	movl	$1, %edx
+	call	fwrite
+	movl	%r12d, %edx
+	movq	%rbx, %rcx
+	call	w32
+	jmp	.L1655
+	.p2align 4,,10
+	.p2align 3
+.L990:
+	movl	$0xbf800000, (%rsi,%rax,4)
+	addq	$1, %rax
+	cmpl	%eax, 72(%rsp)
+	jg	.L993
+	jmp	.L992
+.L889:
+	movss	248(%rsp), %xmm0
+	movss	252(%rsp), %xmm5
+	mulss	%xmm2, %xmm0
+	addss	224(%rsp), %xmm0
+	mulss	%xmm7, %xmm2
+	mulss	%xmm0, %xmm5
+	movaps	%xmm2, %xmm4
+	subss	%xmm5, %xmm4
+	addss	204(%rsp), %xmm4
+	movss	%xmm4, 224(%rsp)
+	movss	264(%rsp), %xmm4
+	mulss	%xmm0, %xmm4
+	subss	%xmm4, %xmm2
+	movss	%xmm2, 204(%rsp)
+	jmp	.L890
+.L1739:
+	movslq	1280(%rsp), %rax
+	movss	0(%r13,%rax,4), %xmm0
+	movq	%rax, %rcx
+	comiss	%xmm2, %xmm0
+	jbe	.L814
+	subl	$1, %ecx
+	js	.L814
+	xorl	%r8d, %r8d
+	jmp	.L821
+	.p2align 6
+.L1757:
+	leal	-1(%rax), %ecx
+.L818:
+	cmpl	%r8d, %ecx
+	jl	.L814
+.L821:
+	leal	(%r8,%rcx), %edx
+	movl	%edx, %eax
+	shrl	$31, %eax
+	addl	%edx, %eax
+	sarl	%eax
+	movslq	%eax, %rdi
+	movss	0(%r13,%rdi,4), %xmm0
+	comiss	%xmm2, %xmm0
+	ja	.L1757
+	comiss	4(%r13,%rdi,4), %xmm2
+	jb	.L1641
+	leal	1(%rax), %r8d
+	jmp	.L818
+.L1651:
+	pxor	%xmm2, %xmm2
+	jmp	.L893
+.L1657:
+	movl	296(%rsp), %ebp
+	movq	120(%rsp), %rsi
+	jmp	.L979
+.L1738:
+	cmpl	$1, 76(%rsp)
+	je	.L1758
+	movss	4(%r15), %xmm1
+	jmp	.L779
+.L814:
+	testl	%ebx, %ebx
+	jle	.L838
+	cmpl	$2, 268(%rsp)
+	jbe	.L1096
+	movl	%ebx, %eax
+	movss	.LC96(%rip), %xmm2
+	movss	.LC61(%rip), %xmm1
+	shrl	$2, %eax
+	movss	.LC43(%rip), %xmm0
+	subl	$1, %eax
+	shufps	$0, %xmm2, %xmm2
+	movaps	%xmm2, 448(%rsp)
+	shufps	$0, %xmm1, %xmm1
+	movaps	%xmm1, 496(%rsp)
+	shufps	$0, %xmm0, %xmm0
+	movaps	%xmm0, 544(%rsp)
+	jne	.L1759
+.L835:
+	movl	%ebx, %eax
+	andl	$-4, %eax
+	testb	$3, %bl
+	je	.L838
+.L834:
+	movss	.LC96(%rip), %xmm1
+	cltq
+	movss	.LC61(%rip), %xmm0
+	leaq	544(%rsp), %rcx
+	leaq	448(%rsp), %rbp
+	leaq	496(%rsp), %rdi
+.L837:
+	movss	%xmm1, 0(%rbp,%rax,4)
+	movss	%xmm0, (%rdi,%rax,4)
+	movss	%xmm6, (%rcx,%rax,4)
+	addq	$1, %rax
+	cmpl	%eax, %ebx
+	jg	.L837
+.L838:
+	pxor	%xmm13, %xmm13
+	movaps	%xmm6, %xmm14
+	movaps	%xmm13, %xmm12
+	movl	$0x00000000, 112(%rsp)
+	movaps	%xmm13, %xmm1
+	jmp	.L782
+.L1742:
+	movss	.LC207(%rip), %xmm2
+	pxor	%xmm3, %xmm3
+	comiss	%xmm1, %xmm2
+	jbe	.L877
+	divss	%xmm2, %xmm1
+	movaps	%xmm6, %xmm3
+	subss	%xmm1, %xmm3
+	jmp	.L877
+.L1720:
+	movss	.LC207(%rip), %xmm2
+	pxor	%xmm3, %xmm3
+	comiss	%xmm1, %xmm2
+	jbe	.L657
+	divss	%xmm2, %xmm1
+	movaps	%xmm6, %xmm3
+	subss	%xmm1, %xmm3
+	jmp	.L657
+.L1715:
+	movss	832(%rsp), %xmm0
+	movss	%xmm0, 496(%rsp)
+	jmp	.L543
+.L1736:
+	movss	832(%rsp), %xmm0
+	movss	%xmm0, 496(%rsp)
+	jmp	.L762
+.L1632:
+	movaps	%xmm6, %xmm3
+	subss	%xmm2, %xmm1
+	divss	.LC209(%rip), %xmm1
+	subss	%xmm1, %xmm3
+	jmp	.L661
+.L1648:
+	movaps	%xmm6, %xmm3
+	subss	%xmm2, %xmm1
+	divss	.LC209(%rip), %xmm1
+	subss	%xmm1, %xmm3
+	jmp	.L881
+.L1743:
+	pxor	%xmm2, %xmm2
+	jmp	.L897
+.L1108:
+	pxor	%xmm1, %xmm1
+	jmp	.L945
+.L1721:
+	pxor	%xmm2, %xmm2
+	jmp	.L709
+.L1069:
+	pxor	%xmm1, %xmm1
+	jmp	.L673
+.L1716:
+	movss	832(%rsp), %xmm0
+	movss	%xmm0, 496(%rsp)
+	movss	864(%rsp), %xmm0
+	movss	%xmm0, 500(%rsp)
+	jmp	.L543
+.L1737:
+	movss	832(%rsp), %xmm0
+	movss	%xmm0, 496(%rsp)
+	movss	864(%rsp), %xmm0
+	movss	%xmm0, 500(%rsp)
+	jmp	.L762
+.L519:
+	movl	1280(%rsp), %ebx
+	testl	%ebx, %ebx
+	jle	.L1044
+	leal	1(%rbx), %ecx
+	movslq	%ebx, %rbp
+	imulq	$40, %rbp, %rbp
 	movslq	%ecx, %rcx
 	salq	$2, %rcx
 	call	malloc
-	imulq	$40, %rdi, %rcx
-	movq	%rax, %r12
+	movq	%rax, %r13
+	movq	%rbp, %rcx
 	call	malloc
-	imulq	$40, %rdi, %rcx
-	movq	%rax, 312(%rsp)
+	movq	%rbp, %rcx
+	movq	%rax, 272(%rsp)
 	call	malloc
-	movl	$0x00000000, (%r12)
-	xorl	%edx, %edx
-	movq	%rax, 320(%rsp)
-	movq	1192(%rsp), %rax
-.L453:
-	imulq	$8100, %rdx, %rcx
-	movss	16(%rax,%rcx), %xmm0
-	addss	(%r12,%rdx,4), %xmm0
-	movss	%xmm0, 4(%r12,%rdx,4)
-	addq	$1, %rdx
-	cmpl	%edx, %esi
-	jg	.L453
-	movq	64(%rsp), %rcx
-	xorl	%edx, %edx
+	movq	1272(%rsp), %rdx
+	movl	$0x00000000, 0(%r13)
+	movq	%rax, 280(%rsp)
+	xorl	%eax, %eax
+.L525:
+	imulq	$8100, %rax, %rcx
+	movss	16(%rdx,%rcx), %xmm0
+	addss	0(%r13,%rax,4), %xmm0
+	movss	%xmm0, 4(%r13,%rax,4)
+	addq	$1, %rax
+	cmpl	%eax, %ebx
+	jg	.L525
+	movq	64(%rsp), %rdx
+	xorl	%eax, %eax
 	pxor	%xmm1, %xmm1
-	movq	312(%rsp), %r8
-	movq	320(%rsp), %r9
-.L456:
-	movss	28(%rcx), %xmm0
+	movq	272(%rsp), %rcx
+	movq	280(%rsp), %r8
+	jmp	.L526
+.L529:
+	movss	28(%rdx), %xmm0
 	comiss	%xmm1, %xmm0
-	ja	.L454
-	movss	.LC95(%rip), %xmm0
-.L454:
-	movss	%xmm0, (%r8,%rdx)
-	movss	32(%rcx), %xmm0
+	ja	.L527
+	movss	.LC96(%rip), %xmm0
+.L527:
+	movss	%xmm0, (%rcx,%rax,4)
+	movss	32(%rdx), %xmm0
 	comiss	%xmm1, %xmm0
-	ja	.L455
+	ja	.L528
 	movss	.LC61(%rip), %xmm0
-.L455:
-	movss	%xmm0, (%r9,%rdx)
-	addq	$4, %rdx
-	addq	$32, %rcx
-	cmpq	$40, %rdx
-	jne	.L456
-	movq	312(%rsp), %rdi
-	leal	-1(%rsi), %edx
-	movq	%r12, 48(%rsp)
-	movq	320(%rsp), %rcx
-	movq	%rbx, 56(%rsp)
+.L528:
+	movss	%xmm0, (%r8,%rax,4)
+	addq	$32, %rdx
+	addq	$1, %rax
+.L526:
+	cmpl	%eax, %edi
+	jg	.L529
+	movq	272(%rsp), %rax
+	leal	-1(%rbx), %r12d
+	movq	%r13, 48(%rsp)
 	xorl	%ebx, %ebx
-	imulq	$8100, %rdx, %r12
-	leaq	40(%rdi), %r14
-	leaq	40(%rcx), %rbp
-	jmp	.L457
-.L1330:
-	leaq	.LC185(%rip), %rdx
+	imulq	$8100, %r12, %r12
+	movq	%rsi, 56(%rsp)
+	leaq	40(%rax), %rbp
+	movq	280(%rsp), %rax
+	leaq	40(%rax), %rdi
+	jmp	.L530
+.L1761:
+	movl	FORMANTS(%rip), %r14d
+	testl	%r14d, %r14d
+	jle	.L1661
+	leaq	.LC187(%rip), %rdx
 	movq	%rsi, %rcx
 	call	strcmp
-	movl	%eax, %ecx
-	movq	1192(%rsp), %rax
-	leaq	(%rax,%rbx), %rdx
-	addq	$8100, %rbx
-	testl	%ecx, %ecx
-	je	.L459
-.L870:
-	leaq	280(%rdx), %rsi
-	movq	%r14, %rdi
-	movl	$10, %ecx
-	rep movsl
-	movq	%rbp, %rdi
-	movl	$10, %ecx
-	addq	$40, %r14
-	leaq	320(%rdx), %rsi
+	movq	1272(%rsp), %r9
+	testl	%eax, %eax
+	leaq	(%r9,%rbx), %rsi
+	je	.L533
+	leaq	280(%rsi), %rdx
+	movq	%rbp, %rcx
+	leaq	0(,%r14,4), %r8
+	call	memcpy
+	leaq	320(%rsi), %rdx
+	movq	%rdi, %rcx
+	leaq	0(,%r14,4), %r8
+	call	memcpy
+	leaq	8100(%rbx), %rsi
+.L534:
 	addq	$40, %rbp
-	rep movsl
-.L457:
+	addq	$40, %rdi
+	movq	%rsi, %rbx
+.L530:
 	cmpq	%rbx, %r12
-	je	.L1329
-	leaq	(%rax,%rbx), %rsi
-	leaq	.LC184(%rip), %rdx
+	je	.L1760
+	movq	1272(%rsp), %rsi
+	leaq	.LC186(%rip), %rdx
+	addq	%rbx, %rsi
 	movq	%rsi, %rcx
 	call	*__imp__stricmp(%rip)
 	testl	%eax, %eax
-	jne	.L1330
-	movq	1192(%rsp), %rax
-	addq	$8100, %rbx
-	leaq	(%rax,%rbx), %rdx
-	jmp	.L870
-.L1282:
-	movl	1200(%rsp), %r8d
+	jne	.L1761
+	movl	FORMANTS(%rip), %r14d
+	testl	%r14d, %r14d
+	jle	.L1661
+	movq	1272(%rsp), %r13
+	leaq	8100(%rbx), %rsi
+	addq	%rsi, %r13
+.L1016:
+	leaq	280(%r13), %rdx
+	movl	%r14d, %ebx
+	movq	%rbp, %rcx
+	leaq	0(,%rbx,4), %r8
+	call	memcpy
+	leaq	320(%r13), %rdx
+	movq	%rdi, %rcx
+	leaq	0(,%rbx,4), %r8
+	call	memcpy
+	jmp	.L534
+.L1711:
+	movl	1280(%rsp), %r8d
 	testl	%r8d, %r8d
-	jle	.L441
-	movq	1192(%rsp), %r9
+	jle	.L507
+	movq	1272(%rsp), %r9
 	xorl	%eax, %eax
 	pxor	%xmm1, %xmm1
-.L442:
+.L508:
 	imulq	$8100, %rax, %rdx
 	addq	$1, %rax
 	cmpl	%eax, %r8d
 	addss	16(%r9,%rdx), %xmm1
-	jg	.L442
-	movss	.LC50(%rip), %xmm7
-	divss	%xmm7, %xmm1
-	addss	.LC180(%rip), %xmm1
+	jg	.L508
+	movss	.LC51(%rip), %xmm6
+	divss	%xmm6, %xmm1
+	addss	.LC182(%rip), %xmm1
 	movaps	%xmm1, %xmm2
 	maxss	%xmm0, %xmm2
 	movaps	%xmm2, %xmm0
-	jmp	.L441
-.L1281:
+	jmp	.L507
+.L1713:
+	cmpl	$0, 1280(%rsp)
+	jle	.L536
+	movq	1272(%rsp), %rax
+	movss	8084(%rax), %xmm11
+	movss	8088(%rax), %xmm9
+	movss	8092(%rax), %xmm10
+	jmp	.L537
+.L1710:
+	leaq	.LC114(%rip), %r8
 	leaq	.LC115(%rip), %rdx
-	leaq	.LC165(%rip), %rcx
-	call	printf
-	movl	720(%rsp), %eax
-	testl	%eax, %eax
-	jne	.L1331
-	leaq	.LC85(%rip), %rdx
-.L435:
-	leaq	.LC166(%rip), %rcx
-	call	printf
-	cmpl	$0, 724(%rsp)
-	jne	.L891
-	leaq	.LC88(%rip), %rdx
-.L436:
 	leaq	.LC167(%rip), %rcx
 	call	printf
-	movl	728(%rsp), %eax
+	movl	800(%rsp), %eax
 	testl	%eax, %eax
-	je	.L892
-	leaq	.LC91(%rip), %rdx
-	subl	$1, %eax
-	jne	.L437
-	leaq	.LC90(%rip), %rdx
-.L437:
+	jne	.L1762
+	leaq	.LC86(%rip), %rdx
+.L500:
 	leaq	.LC168(%rip), %rcx
-	pxor	%xmm7, %xmm7
-	xorl	%ebx, %ebx
 	call	printf
-	movl	732(%rsp), %edx
+	cmpl	$0, 804(%rsp)
+	jne	.L1040
+	leaq	.LC89(%rip), %rdx
+.L501:
 	leaq	.LC169(%rip), %rcx
 	call	printf
+	movl	808(%rsp), %eax
+	testl	%eax, %eax
+	je	.L1041
+	leaq	.LC92(%rip), %rdx
+	subl	$1, %eax
+	jne	.L502
+	leaq	.LC91(%rip), %rdx
+.L502:
 	leaq	.LC170(%rip), %rcx
-	pxor	%xmm1, %xmm1
-	cvtss2sd	736(%rsp), %xmm1
-	movq	%xmm1, %rdx
+	pxor	%xmm6, %xmm6
+	xorl	%ebx, %ebx
 	call	printf
+	movl	812(%rsp), %edx
 	leaq	.LC171(%rip), %rcx
-	pxor	%xmm1, %xmm1
-	cvtss2sd	740(%rsp), %xmm1
-	movq	%xmm1, %rdx
 	call	printf
 	leaq	.LC172(%rip), %rcx
 	pxor	%xmm1, %xmm1
-	cvtss2sd	1116(%rsp), %xmm7
-	cvtss2sd	1108(%rsp), %xmm1
-	movq	%xmm7, %r9
+	cvtss2sd	816(%rsp), %xmm1
 	movq	%xmm1, %rdx
-	pxor	%xmm7, %xmm7
-	cvtss2sd	1112(%rsp), %xmm7
-	movq	%r9, %xmm3
-	movq	%xmm7, %r8
-	movapd	%xmm7, %xmm2
 	call	printf
-	pxor	%xmm7, %xmm7
 	leaq	.LC173(%rip), %rcx
-	cvtss2sd	1124(%rsp), %xmm7
 	pxor	%xmm1, %xmm1
-	movq	%xmm7, %r8
-	movapd	%xmm7, %xmm2
-	cvtss2sd	1120(%rsp), %xmm1
+	cvtss2sd	820(%rsp), %xmm1
 	movq	%xmm1, %rdx
-	pxor	%xmm7, %xmm7
 	call	printf
 	leaq	.LC174(%rip), %rcx
 	pxor	%xmm1, %xmm1
-	cvtss2sd	1132(%rsp), %xmm7
-	cvtss2sd	1128(%rsp), %xmm1
-	movq	%xmm7, %r8
-	movapd	%xmm7, %xmm2
+	cvtss2sd	1196(%rsp), %xmm6
+	cvtss2sd	1188(%rsp), %xmm1
+	movq	%xmm6, %r9
+	movq	%xmm1, %rdx
+	pxor	%xmm6, %xmm6
+	cvtss2sd	1192(%rsp), %xmm6
+	movq	%r9, %xmm3
+	movq	%xmm6, %r8
+	movapd	%xmm6, %xmm2
+	call	printf
+	pxor	%xmm6, %xmm6
+	leaq	.LC175(%rip), %rcx
+	cvtss2sd	1204(%rsp), %xmm6
+	pxor	%xmm1, %xmm1
+	movq	%xmm6, %r8
+	movapd	%xmm6, %xmm2
+	cvtss2sd	1200(%rsp), %xmm1
+	movq	%xmm1, %rdx
+	pxor	%xmm6, %xmm6
+	call	printf
+	leaq	.LC176(%rip), %rcx
+	pxor	%xmm1, %xmm1
+	cvtss2sd	1212(%rsp), %xmm6
+	cvtss2sd	1208(%rsp), %xmm1
+	movq	%xmm6, %r8
+	movapd	%xmm6, %xmm2
 	movq	%xmm1, %rdx
 	call	printf
-	leaq	.LC175(%rip), %rcx
-	call	puts
-	movq	64(%rsp), %rsi
-	movq	%rsi, %rdi
-	.p2align 4,,10
-	.p2align 3
-.L438:
-	addl	$1, %ebx
-	pxor	%xmm7, %xmm7
-	pxor	%xmm0, %xmm0
-	addq	$4, %rdi
-	cvtss2sd	32(%rsi), %xmm7
-	movq	%xmm7, %r9
-	movl	%ebx, %edx
-	cvtss2sd	344(%rdi), %xmm0
-	movq	%r9, %xmm3
-	pxor	%xmm7, %xmm7
-	cvtss2sd	28(%rsi), %xmm7
-	movapd	%xmm7, %xmm2
-	movq	%xmm7, %r8
-	movsd	%xmm0, 32(%rsp)
-	addq	$32, %rsi
-	leaq	.LC176(%rip), %rcx
-	call	printf
-	cmpl	$10, %ebx
-	jne	.L438
-	leaq	1232(%rsp), %rdx
 	leaq	.LC177(%rip), %rcx
-	call	printf
+	call	puts
+	movq	64(%rsp), %rdi
+	movq	%rdi, %rsi
+	jmp	.L503
+.L504:
+	addq	$32, %rsi
+	pxor	%xmm6, %xmm6
+	pxor	%xmm0, %xmm0
+	movl	%ebx, %edx
+	cvtss2sd	(%rsi), %xmm6
+	movq	%xmm6, %r9
+	cvtss2sd	344(%rdi,%rbx,4), %xmm0
+	pxor	%xmm6, %xmm6
+	movq	%r9, %xmm3
+	cvtss2sd	-4(%rsi), %xmm6
+	movsd	%xmm0, 32(%rsp)
+	movq	%xmm6, %r8
 	leaq	.LC178(%rip), %rcx
-	call	puts
-	cmpl	$0, 2300(%rsp)
-	je	.L434
+	movapd	%xmm6, %xmm2
+	call	printf
+.L503:
+	addq	$1, %rbx
+	leal	-1(%rbx), %eax
+	cmpl	%eax, FORMANTS(%rip)
+	jg	.L504
+	leaq	1312(%rsp), %rdx
 	leaq	.LC179(%rip), %rcx
+	call	printf
+	leaq	.LC180(%rip), %rcx
 	call	puts
-	jmp	.L434
-.L1242:
-	movl	332(%rsp), %r15d
-	movl	348(%rsp), %r8d
-	movl	232(%rsp), %r11d
-	movl	192(%rsp), %r13d
-	movq	224(%rsp), %rbx
-	movss	236(%rsp), %xmm15
-.L649:
-	cmpl	%r8d, %r15d
-	jg	.L464
-	jmp	.L838
-.L1304:
+	cmpl	$0, 2380(%rsp)
+	je	.L499
+	leaq	.LC181(%rip), %rcx
+	call	puts
+	jmp	.L499
+.L1714:
+	testl	%ebp, %ebp
+	je	.L992
+.L1014:
+	movl	72(%rsp), %edx
+	xorl	%eax, %eax
+	pxor	%xmm1, %xmm1
+	jmp	.L984
+	.p2align 5
+.L985:
+	movss	(%rsi,%rax,4), %xmm0
+	andps	.LC212(%rip), %xmm0
+	maxss	%xmm1, %xmm0
+	addq	$1, %rax
+	movaps	%xmm0, %xmm1
+.L984:
+	cmpl	%eax, %edx
+	jg	.L985
+	comiss	.LC213(%rip), %xmm1
+	jbe	.L986
+	movss	.LC214(%rip), %xmm2
+	xorl	%eax, %eax
+	movl	72(%rsp), %edx
+	divss	%xmm1, %xmm2
+	jmp	.L988
+	.p2align 5
+.L989:
+	movss	(%rsi,%rax,4), %xmm0
+	mulss	%xmm2, %xmm0
+	movss	%xmm0, (%rsi,%rax,4)
+	addq	$1, %rax
+.L988:
+	cmpl	%eax, %edx
+	jg	.L989
+.L986:
+	cmpl	$0, 228(%rsp)
+	jg	.L983
+	jmp	.L992
+.L1744:
+	pxor	%xmm3, %xmm3
+	jmp	.L903
+.L1109:
+	pxor	%xmm1, %xmm1
+	jmp	.L949
+.L1070:
+	pxor	%xmm1, %xmm1
+	jmp	.L677
+.L1722:
+	pxor	%xmm3, %xmm3
+	jmp	.L715
+.L1656:
+	movl	320(%rsp), %edi
+	movl	308(%rsp), %r14d
+	movl	192(%rsp), %r11d
+	movl	324(%rsp), %ebp
+	movq	328(%rsp), %rcx
+	movq	184(%rsp), %rsi
+.L758:
+	cmpl	%edi, 72(%rsp)
+	jg	.L538
+	jmp	.L979
+.L1755:
+	movl	72(%rsp), %edx
 	pxor	%xmm0, %xmm0
 	pxor	%xmm1, %xmm1
-	cvtsi2ssl	%r15d, %xmm0
-	movl	%r15d, %edx
-	cvtsi2ssl	732(%rsp), %xmm1
+	cvtsi2ssl	812(%rsp), %xmm1
 	leaq	.LC215(%rip), %rcx
-	pxor	%xmm7, %xmm7
+	pxor	%xmm6, %xmm6
+	cvtsi2ssl	%edx, %xmm0
 	divss	%xmm1, %xmm0
-	cvtss2sd	%xmm0, %xmm7
-	movq	%xmm7, %r8
-	movapd	%xmm7, %xmm2
+	cvtss2sd	%xmm0, %xmm6
+	movq	%xmm6, %r8
+	movapd	%xmm6, %xmm2
 	call	printf
-	movl	2288(%rsp), %eax
+	movl	2368(%rsp), %eax
 	cmpl	$2, %eax
-	je	.L851
-	jbe	.L1256
+	je	.L996
+	jbe	.L1675
 	cmpl	$3, %eax
-	jne	.L856
-.L855:
-	leaq	1232(%rsp), %rcx
+	jne	.L1001
+.L1000:
+	leaq	1312(%rsp), %rcx
 	leaq	.LC216(%rip), %rdx
 	call	fopen
 	testq	%rax, %rax
-	movq	%rax, %rsi
-	jne	.L1239
-.L1257:
-	movq	__imp___acrt_iob_func(%rip), %rsi
-.L858:
-	movl	$2, %ecx
-	call	*%rsi
-	movl	$30, %r8d
-	movl	$1, %edx
-	leaq	.LC233(%rip), %rcx
-	movq	%rax, %r9
+	movq	%rax, %rbx
+	je	.L1676
+.L1655:
+	movq	312(%rsp), %r8
+	movq	%rbx, %r9
+	movl	$4, %edx
+	movq	%rsi, %rcx
 	call	fwrite
+.L1678:
 	movq	%rbx, %rcx
+	call	fclose
+.L1001:
+	cmpl	$0, 2380(%rsp)
+	je	.L1012
+	leaq	1312(%rsp), %rdx
+	leaq	.LC234(%rip), %rcx
+	call	printf
+.L1012:
+	movq	%rsi, %rcx
 	call	free
-	jmp	.L282
-.L1312:
-	leal	-1(%rax), %r8d
-	movslq	%eax, %rdx
-	subq	$1, %rdx
-	movl	%r8d, %eax
-	imulq	$148, %rdx, %rdx
-	comiss	(%rcx,%rdx), %xmm12
-	jnb	.L663
-	testl	%r8d, %r8d
-	jle	.L935
-	movq	%rcx, %rdx
-	xorl	%eax, %eax
-.L667:
-	comiss	(%rdx), %xmm12
-	jb	.L664
-	movss	148(%rdx), %xmm0
-	comiss	%xmm12, %xmm0
-	jnb	.L1332
-.L664:
-	addl	$1, %eax
-	addq	$148, %rdx
-	cmpl	%r8d, %eax
-	jl	.L667
-.L935:
-	xorl	%eax, %eax
-.L663:
-	cltq
-	movslq	%r8d, %rdx
-	imulq	$148, %rdx, %rdx
-	imulq	$148, %rax, %rax
-	addq	%rcx, %rax
-	addq	%rdx, %rcx
-	movss	(%rax), %xmm0
-	movss	(%rcx), %xmm1
-	movl	144(%rax), %edx
-	comiss	%xmm1, %xmm0
-	movl	144(%rcx), %r10d
-	jnb	.L668
-	movaps	%xmm12, %xmm15
-	subss	%xmm0, %xmm1
-	testl	%edx, %edx
-	subss	%xmm0, %xmm15
-	je	.L1333
-	movaps	%xmm15, %xmm5
-	xorl	%edx, %edx
-	pxor	%xmm11, %xmm11
-	movss	%xmm1, 168(%rsp)
-	divss	%xmm1, %xmm5
-	jmp	.L686
-.L1334:
-	movaps	%xmm6, %xmm2
-	movaps	%xmm6, %xmm1
-	cmpltss	%xmm5, %xmm2
-	andps	%xmm2, %xmm1
-	andnps	%xmm5, %xmm2
-	orps	%xmm1, %xmm2
-	mulss	%xmm2, %xmm4
-	addss	%xmm4, %xmm13
-.L688:
-	subss	%xmm3, %xmm0
-	testl	%r10d, %r10d
-	movss	%xmm13, 368(%rsp,%rdx)
-	mulss	%xmm2, %xmm0
-	addss	%xmm3, %xmm0
-	movss	104(%rax,%rdx), %xmm3
-	movss	%xmm0, 416(%rsp,%rdx)
-	jne	.L685
-	movaps	%xmm6, %xmm0
-.L687:
-	subss	%xmm3, %xmm0
-	mulss	%xmm2, %xmm0
-	addss	%xmm3, %xmm0
-	movss	%xmm0, 464(%rsp,%rdx)
-	addq	$4, %rdx
-	cmpq	$40, %rdx
-	je	.L1260
-.L686:
-	movss	4(%rcx,%rdx), %xmm0
-	comiss	%xmm5, %xmm11
-	movss	4(%rax,%rdx), %xmm13
-	movaps	%xmm0, %xmm4
-	movss	44(%rax,%rdx), %xmm3
-	subss	%xmm13, %xmm4
-	movss	44(%rcx,%rdx), %xmm0
-	jbe	.L1334
-	mulss	%xmm11, %xmm4
-	pxor	%xmm2, %xmm2
-	addss	%xmm4, %xmm13
-	jmp	.L688
-.L1290:
-	leal	-1(%rax), %edx
-	movslq	%eax, %r8
-	subq	$1, %r8
-	movl	%edx, %eax
-	imulq	$148, %r8, %r8
-	comiss	(%rcx,%r8), %xmm12
-	jnb	.L477
-	testl	%edx, %edx
-	jle	.L904
-	movq	%rcx, %r8
-	xorl	%eax, %eax
-.L481:
-	comiss	(%r8), %xmm12
-	jb	.L478
-	movss	148(%r8), %xmm0
-	comiss	%xmm12, %xmm0
-	jnb	.L1335
-.L478:
-	addl	$1, %eax
-	addq	$148, %r8
-	cmpl	%eax, %edx
-	jg	.L481
-.L904:
-	xorl	%eax, %eax
-.L477:
-	cltq
-	movslq	%edx, %rdx
-	imulq	$148, %rdx, %rdx
-	imulq	$148, %rax, %rax
-	addq	%rcx, %rax
-	addq	%rdx, %rcx
-	movss	(%rax), %xmm0
-	movss	(%rcx), %xmm1
-	movl	144(%rax), %edx
-	comiss	%xmm1, %xmm0
-	movl	144(%rcx), %r8d
-	jnb	.L482
-	movaps	%xmm12, %xmm15
-	subss	%xmm0, %xmm1
-	testl	%edx, %edx
-	subss	%xmm0, %xmm15
-	jne	.L483
-	movaps	%xmm15, %xmm11
-	xorl	%edx, %edx
-	pxor	%xmm5, %xmm5
-	movss	%xmm1, 168(%rsp)
-	divss	%xmm1, %xmm11
-	leaq	368(%rsp), %r10
-	leaq	416(%rsp), %r9
-	jmp	.L489
-.L1336:
-	movaps	%xmm6, %xmm4
-	subss	%xmm2, %xmm13
-	movaps	%xmm6, %xmm1
-	cmpltss	%xmm11, %xmm4
-	testl	%r8d, %r8d
-	andps	%xmm4, %xmm1
-	andnps	%xmm11, %xmm4
-	orps	%xmm1, %xmm4
-	mulss	%xmm4, %xmm0
-	mulss	%xmm4, %xmm13
-	addss	%xmm3, %xmm0
-	addss	%xmm2, %xmm13
-	movss	%xmm0, (%r10,%rdx)
-	movaps	%xmm6, %xmm0
-	movss	%xmm13, (%r9,%rdx)
-	je	.L486
-	movss	104(%rcx,%rdx), %xmm0
-.L486:
-	movaps	%xmm6, %xmm2
-	movaps	%xmm6, %xmm3
-	cmpltss	%xmm11, %xmm2
-	andps	%xmm2, %xmm3
-	andnps	%xmm11, %xmm2
-	orps	%xmm3, %xmm2
-.L488:
-	subss	%xmm6, %xmm0
-	mulss	%xmm2, %xmm0
-	addss	%xmm6, %xmm0
-	movss	%xmm0, 464(%rsp,%rdx)
-	addq	$4, %rdx
-	cmpq	$40, %rdx
-	je	.L1261
-.L489:
-	comiss	%xmm11, %xmm5
-	movss	4(%rax,%rdx), %xmm3
-	movss	4(%rcx,%rdx), %xmm0
-	movss	44(%rax,%rdx), %xmm2
-	subss	%xmm3, %xmm0
-	movss	44(%rcx,%rdx), %xmm13
-	jbe	.L1336
-	subss	%xmm2, %xmm13
-	mulss	%xmm5, %xmm0
-	testl	%r8d, %r8d
-	mulss	%xmm5, %xmm13
-	addss	%xmm3, %xmm0
-	addss	%xmm2, %xmm13
-	movss	%xmm0, (%r10,%rdx)
-	movss	%xmm13, (%r9,%rdx)
-	jne	.L487
-	movaps	%xmm6, %xmm0
-	pxor	%xmm2, %xmm2
-	jmp	.L488
-.L1210:
-	addl	$1, %ecx
-	jl	.L501
-	imulq	$8100, %rsi, %rax
-	movaps	%xmm12, %xmm1
-	movaps	%xmm6, %xmm0
-	addq	1192(%rsp), %rax
-	subss	(%r12,%rsi,4), %xmm1
-	movss	16(%rax), %xmm2
-	movaps	%xmm1, %xmm5
-	movq	%rax, %rdi
-	movq	%rax, %rcx
-	cmpltss	%xmm2, %xmm0
-	andps	%xmm0, %xmm2
-	andnps	%xmm6, %xmm0
-	orps	%xmm2, %xmm0
-	divss	%xmm0, %xmm5
-	call	phon_pitch
-	movss	8084(%rdi), %xmm2
-	movss	200(%rsp), %xmm3
-	movaps	%xmm0, %xmm11
-	pxor	%xmm0, %xmm0
-	movl	8096(%rdi), %edx
-	movss	8088(%rdi), %xmm13
-	mulss	%xmm2, %xmm3
-	movss	8092(%rdi), %xmm15
-	movss	%xmm3, 168(%rsp)
-	comiss	%xmm5, %xmm0
-	jbe	.L1337
-	testl	%edx, %edx
+	movq	1248(%rsp), %rcx
+	call	free
+	movq	1272(%rsp), %rcx
+	call	free
+	movq	1232(%rsp), %rcx
+	call	free
+	jmp	.L322
+.L1071:
 	pxor	%xmm1, %xmm1
-	jle	.L1248
-.L869:
-	cmpl	$2, %edx
-	pxor	%xmm15, %xmm15
-	movaps	%xmm15, %xmm13
-	je	.L908
-	movss	%xmm15, 168(%rsp)
+	jmp	.L680
+.L1110:
+	pxor	%xmm1, %xmm1
+	jmp	.L952
+.L1745:
+	pxor	%xmm3, %xmm3
+	jmp	.L908
+.L1723:
+	pxor	%xmm3, %xmm3
+	jmp	.L720
+.L1704:
+	movl	$2, %ecx
+	call	*__imp___acrt_iob_func(%rip)
+	movl	$10, %r9d
+	movl	%ebx, %r8d
+	leaq	.LC165(%rip), %rdx
+	movq	%rax, %rcx
+	call	fprintf
+	jmp	.L330
+.L564:
+	testl	%ebx, %ebx
+	jle	.L1763
+	movl	144(%rdx), %r10d
+	movq	%rdx, %r9
+.L573:
+	movq	216(%rsp), %rsi
+	leaq	4(%r9), %rdx
+	movss	%xmm2, 160(%rsp)
+	leaq	448(%rsp), %rbp
+	movl	%r10d, 120(%rsp)
+	movq	%rbp, %rcx
+	movq	%r9, 112(%rsp)
+	movq	%rsi, %r8
+	call	memcpy
+	movq	112(%rsp), %r9
+	leaq	496(%rsp), %rcx
+	movq	%rsi, %r8
+	leaq	44(%r9), %rdx
+	call	memcpy
+	movq	112(%rsp), %r9
 	xorl	%eax, %eax
-	movaps	%xmm15, %xmm11
-	movl	%eax, 220(%rsp)
-.L511:
-	imulq	$40, %rsi, %rdx
-	movq	312(%rsp), %rax
-	movaps	%xmm1, %xmm0
-	movsldup	%xmm1, %xmm3
-	movups	296(%rdi), %xmm4
-	shufps	$0, %xmm0, %xmm0
-	movups	320(%rdi), %xmm2
-	leaq	(%rax,%rdx), %rcx
-	addq	320(%rsp), %rdx
-	testq	%r14, %r14
-	movups	16(%rcx), %xmm1
-	movq	.LC54(%rip), %rax
-	subps	%xmm1, %xmm4
-	movups	16(%rdx), %xmm5
-	mulps	%xmm0, %xmm4
-	addps	%xmm1, %xmm4
-	movups	(%rdx), %xmm1
-	subps	%xmm1, %xmm2
-	movaps	%xmm4, 384(%rsp)
-	mulps	%xmm0, %xmm2
-	addps	%xmm1, %xmm2
-	movups	336(%rdi), %xmm1
-	subps	%xmm5, %xmm1
-	movaps	%xmm2, 416(%rsp)
-	movq	%xmm3, %xmm2
-	mulps	%xmm0, %xmm1
-	addps	%xmm5, %xmm1
-	movups	280(%rdi), %xmm5
-	movaps	%xmm1, 176(%rsp)
-	movq	(%rcx), %xmm1
-	movhps	8(%rcx), %xmm1
-	subps	%xmm1, %xmm5
-	movq	(%rcx), %xmm1
-	movhps	8(%rcx), %xmm1
-	mulps	%xmm0, %xmm5
-	addps	%xmm1, %xmm5
-	movq	32(%rdx), %xmm1
-	movaps	%xmm5, 368(%rsp)
-	movaps	176(%rsp), %xmm5
-	movaps	%xmm5, 432(%rsp)
-	movaps	.LC55(%rip), %xmm5
-	movaps	%xmm5, 464(%rsp)
-	movaps	%xmm5, 480(%rsp)
-	movq	352(%rdi), %xmm0
-	subps	%xmm1, %xmm0
-	movq	%xmm0, %xmm0
-	mulps	%xmm2, %xmm0
-	movq	%xmm0, %xmm0
-	addps	%xmm1, %xmm0
-	movq	32(%rcx), %xmm1
-	movq	%xmm0, %rdx
-	movq	312(%rdi), %xmm0
-	movq	%rax, 496(%rsp)
-	movq	%rdx, 448(%rsp)
-	subps	%xmm1, %xmm0
-	movq	%xmm0, %xmm0
-	mulps	%xmm0, %xmm2
-	movq	%xmm2, %xmm2
-	addps	%xmm1, %xmm2
-	movlps	%xmm2, 400(%rsp)
-	je	.L909
-	movss	%xmm6, 176(%rsp)
-	movl	1160(%rsp), %edx
-	testl	%edx, %edx
-	jg	.L1265
-	jmp	.L475
-.L1226:
-	addl	$1, %edx
-	jl	.L690
-	imulq	$8100, %rbx, %rdi
-	movaps	%xmm12, %xmm1
-	movaps	%xmm6, %xmm2
-	addq	1192(%rsp), %rdi
-	subss	(%r12,%rbx,4), %xmm1
-	movss	16(%rdi), %xmm0
-	movaps	%xmm1, %xmm5
-	movq	%rdi, %rcx
-	cmpltss	%xmm0, %xmm2
-	andps	%xmm2, %xmm0
-	andnps	%xmm6, %xmm2
-	orps	%xmm0, %xmm2
-	divss	%xmm2, %xmm5
-	call	phon_pitch
-	movss	8084(%rdi), %xmm2
-	movss	200(%rsp), %xmm3
-	movaps	%xmm0, %xmm11
-	pxor	%xmm0, %xmm0
-	movl	8096(%rdi), %eax
-	movss	8088(%rdi), %xmm13
-	mulss	%xmm2, %xmm3
-	movss	8092(%rdi), %xmm15
-	movss	%xmm3, 168(%rsp)
-	comiss	%xmm5, %xmm0
-	ja	.L698
+	movl	120(%rsp), %r10d
+	leaq	544(%rsp), %rcx
+	movss	160(%rsp), %xmm2
+.L588:
+	testl	%r10d, %r10d
 	movaps	%xmm6, %xmm0
-	xorl	%edx, %edx
-	movaps	%xmm6, %xmm1
-	cmpltss	%xmm5, %xmm0
-	testl	%eax, %eax
-	movl	%edx, 220(%rsp)
-	andps	%xmm0, %xmm1
-	andnps	%xmm5, %xmm0
-	orps	%xmm0, %xmm1
-	jle	.L699
-	movss	.LC198(%rip), %xmm4
-	comiss	%xmm1, %xmm4
-	ja	.L700
-	movss	.LC199(%rip), %xmm0
-	comiss	%xmm1, %xmm0
-	jbe	.L1227
-	movaps	%xmm1, %xmm0
-	pxor	%xmm13, %xmm13
-	movaps	%xmm13, %xmm11
-	movss	%xmm1, 144(%rsp)
-	subss	%xmm4, %xmm0
-	divss	.LC200(%rip), %xmm0
-	mulss	.LC187(%rip), %xmm0
-	call	sinf
-	mulss	.LC201(%rip), %xmm0
-	movss	%xmm13, 168(%rsp)
-	movss	144(%rsp), %xmm1
-	movl	$1, 220(%rsp)
-	movaps	%xmm0, %xmm15
-.L699:
-	imulq	$40, %rbx, %rax
-	movq	312(%rsp), %rbx
-	movaps	%xmm1, %xmm0
-	movsldup	%xmm1, %xmm3
-	movups	296(%rdi), %xmm4
-	shufps	$0, %xmm0, %xmm0
-	movups	320(%rdi), %xmm2
-	leaq	(%rbx,%rax), %rdx
-	addq	320(%rsp), %rax
-	testq	%r14, %r14
-	movups	16(%rdx), %xmm1
-	subps	%xmm1, %xmm4
-	movups	16(%rax), %xmm5
-	mulps	%xmm0, %xmm4
-	addps	%xmm1, %xmm4
-	movups	(%rax), %xmm1
-	subps	%xmm1, %xmm2
-	movaps	%xmm4, 384(%rsp)
-	mulps	%xmm0, %xmm2
-	addps	%xmm1, %xmm2
-	movups	336(%rdi), %xmm1
-	subps	%xmm5, %xmm1
-	movaps	%xmm2, 416(%rsp)
-	movq	%xmm3, %xmm2
-	mulps	%xmm0, %xmm1
-	addps	%xmm5, %xmm1
-	movups	280(%rdi), %xmm5
-	movaps	%xmm1, 144(%rsp)
-	movq	(%rdx), %xmm1
-	movhps	8(%rdx), %xmm1
-	subps	%xmm1, %xmm5
-	movq	(%rdx), %xmm1
-	movhps	8(%rdx), %xmm1
-	mulps	%xmm0, %xmm5
-	addps	%xmm1, %xmm5
-	movq	32(%rax), %xmm1
-	movaps	%xmm5, 368(%rsp)
-	movaps	144(%rsp), %xmm5
-	movaps	%xmm5, 432(%rsp)
-	movaps	.LC55(%rip), %xmm5
-	movaps	%xmm5, 464(%rsp)
-	movaps	%xmm5, 480(%rsp)
-	movq	352(%rdi), %xmm0
-	subps	%xmm1, %xmm0
-	movq	%xmm0, %xmm0
-	mulps	%xmm2, %xmm0
-	movq	%xmm0, %xmm0
-	addps	%xmm1, %xmm0
-	movq	32(%rdx), %xmm1
-	movq	%xmm0, %rax
-	movq	312(%rdi), %xmm0
-	movq	%rax, 448(%rsp)
-	movq	.LC54(%rip), %rax
-	subps	%xmm1, %xmm0
-	movq	%xmm0, %xmm0
-	movq	%rax, 496(%rsp)
-	mulps	%xmm0, %xmm2
-	movq	%xmm2, %xmm2
-	addps	%xmm1, %xmm2
-	movlps	%xmm2, 400(%rsp)
-	je	.L939
-	movss	%xmm6, 144(%rsp)
-	movl	1160(%rsp), %edx
+	je	.L587
+	movss	104(%r9,%rax,4), %xmm0
+.L587:
+	movss	%xmm0, (%rcx,%rax,4)
+	addq	$1, %rax
+	cmpl	%eax, %ebx
+	jg	.L588
+	movss	92(%r9), %xmm4
+	movss	84(%r9), %xmm13
+	movss	%xmm4, 112(%rsp)
+	movss	100(%r9), %xmm4
+	movss	88(%r9), %xmm12
+	movss	96(%r9), %xmm1
+	movss	%xmm4, 120(%rsp)
+.L571:
+	testq	%r15, %r15
+	je	.L563
+	movl	1240(%rsp), %edx
 	testl	%edx, %edx
-	jle	.L661
-.L1269:
-	movss	(%r14), %xmm0
-	comiss	%xmm12, %xmm0
-	jnb	.L1253
-.L1228:
-	movaps	%xmm12, %xmm2
-	movq	%r14, %rcx
+	jle	.L563
+.L1683:
+	movss	(%r15), %xmm0
+	comiss	%xmm2, %xmm0
+	jnb	.L1667
+.L1628:
+	movq	%r15, %rcx
 	call	contour_f0.part.0
-	movaps	%xmm0, %xmm11
-	jmp	.L661
-.L659:
-	movl	1176(%rsp), %eax
-	testl	%eax, %eax
-	jne	.L1251
-	movss	200(%rsp), %xmm3
-	movss	%xmm6, 144(%rsp)
-	movss	208(%rsp), %xmm13
-	movss	204(%rsp), %xmm15
-	movss	%xmm3, 168(%rsp)
-	jmp	.L1228
-.L472:
-	movl	1176(%rsp), %eax
-	testl	%eax, %eax
-	jne	.L1247
-	movss	200(%rsp), %xmm3
-	movss	%xmm6, 176(%rsp)
-	movss	204(%rsp), %xmm15
-	movss	208(%rsp), %xmm13
-	movss	%xmm3, 168(%rsp)
-	jmp	.L1213
-.L1279:
-	leaq	1168(%rsp), %rdx
-	leaq	1744(%rsp), %rcx
-	call	spec_parse
-	addl	$1, %eax
-	je	.L282
-	movl	1180(%rsp), %eax
-	cmpl	$22050, %eax
-	je	.L426
-	movl	%eax, 732(%rsp)
-.L426:
-	movl	1184(%rsp), %eax
-	testl	%eax, %eax
-	je	.L427
-	movl	%eax, 724(%rsp)
-.L427:
-	movss	.LC50(%rip), %xmm7
-	movss	1188(%rsp), %xmm0
-	divss	%xmm7, %xmm0
-	addss	.LC83(%rip), %xmm0
-	comiss	736(%rsp), %xmm0
-	jbe	.L429
-	movss	%xmm0, 736(%rsp)
-	jmp	.L429
-.L1232:
-	pxor	%xmm0, %xmm0
-	jmp	.L740
-.L868:
-	cmpl	$3, %eax
-	je	.L855
-	jmp	.L867
-.L483:
-	movaps	%xmm15, %xmm5
-	xorl	%edx, %edx
-	pxor	%xmm11, %xmm11
-	movss	%xmm1, 168(%rsp)
-	divss	%xmm1, %xmm5
-	jmp	.L496
-.L1338:
-	mulss	%xmm11, %xmm4
-	pxor	%xmm2, %xmm2
-	addss	%xmm4, %xmm13
-.L495:
-	subss	%xmm3, %xmm0
-	testl	%r8d, %r8d
-	movss	%xmm13, 368(%rsp,%rdx)
-	mulss	%xmm2, %xmm0
-	addss	%xmm3, %xmm0
-	movss	104(%rax,%rdx), %xmm3
-	movss	%xmm0, 416(%rsp,%rdx)
+	movaps	%xmm0, %xmm1
+	jmp	.L563
+.L783:
+	testl	%ebx, %ebx
+	jle	.L1764
+	movl	144(%rdx), %r10d
+	movq	%rdx, %r9
+.L1019:
+	movq	160(%rsp), %rsi
+	leaq	4(%r9), %rdx
+	movss	%xmm2, 192(%rsp)
+	leaq	448(%rsp), %rbp
+	movl	%r10d, 132(%rsp)
+	movq	%rbp, %rcx
+	movq	%r9, 112(%rsp)
+	movq	%rsi, %r8
+	call	memcpy
+	movq	112(%rsp), %r9
+	leaq	496(%rsp), %rcx
+	movq	%rsi, %r8
+	leaq	44(%r9), %rdx
+	call	memcpy
+	movl	132(%rsp), %r10d
+	xorl	%eax, %eax
+	movq	112(%rsp), %r9
+	leaq	544(%rsp), %rcx
+	movss	192(%rsp), %xmm2
+	jmp	.L796
+	.p2align 5
+.L1766:
 	movaps	%xmm6, %xmm0
-	je	.L494
-	movss	104(%rcx,%rdx), %xmm0
-.L494:
-	subss	%xmm3, %xmm0
-	mulss	%xmm2, %xmm0
-	addss	%xmm3, %xmm0
-	movss	%xmm0, 464(%rsp,%rdx)
-	addq	$4, %rdx
-	cmpq	$40, %rdx
-	je	.L1261
-.L496:
-	movss	4(%rcx,%rdx), %xmm0
-	comiss	%xmm5, %xmm11
-	movss	4(%rax,%rdx), %xmm13
-	movaps	%xmm0, %xmm4
-	movss	44(%rax,%rdx), %xmm3
-	subss	%xmm13, %xmm4
-	movss	44(%rcx,%rdx), %xmm0
-	ja	.L1338
-	movaps	%xmm6, %xmm2
-	movaps	%xmm6, %xmm1
-	cmpltss	%xmm5, %xmm2
-	andps	%xmm2, %xmm1
-	andnps	%xmm5, %xmm2
-	orps	%xmm1, %xmm2
-	mulss	%xmm2, %xmm4
-	addss	%xmm4, %xmm13
-	jmp	.L495
-.L1333:
-	movaps	%xmm15, %xmm4
-	xorl	%edx, %edx
-	pxor	%xmm11, %xmm11
-	movss	%xmm1, 168(%rsp)
-	divss	%xmm1, %xmm4
-	leaq	368(%rsp), %r9
-	leaq	416(%rsp), %r8
-	jmp	.L679
-.L1339:
-	subss	%xmm2, %xmm13
-	mulss	%xmm11, %xmm0
+.L798:
+	movss	%xmm0, (%rcx,%rax,4)
+	addq	$1, %rax
+	cmpl	%eax, %ebx
+	jle	.L1765
+.L796:
 	testl	%r10d, %r10d
-	mulss	%xmm11, %xmm13
-	addss	%xmm3, %xmm0
-	addss	%xmm2, %xmm13
-	movss	%xmm0, (%r9,%rdx)
-	movss	%xmm13, (%r8,%rdx)
-	jne	.L678
-	movaps	%xmm6, %xmm0
-	pxor	%xmm2, %xmm2
-.L681:
-	subss	%xmm6, %xmm0
-	mulss	%xmm2, %xmm0
-	addss	%xmm6, %xmm0
-	movss	%xmm0, 464(%rsp,%rdx)
-	addq	$4, %rdx
-	cmpq	$40, %rdx
-	je	.L1260
-.L679:
-	comiss	%xmm4, %xmm11
-	movss	4(%rax,%rdx), %xmm3
-	movss	4(%rcx,%rdx), %xmm0
-	movss	44(%rax,%rdx), %xmm2
-	subss	%xmm3, %xmm0
-	movss	44(%rcx,%rdx), %xmm13
-	ja	.L1339
-	movaps	%xmm6, %xmm5
-	subss	%xmm2, %xmm13
-	movaps	%xmm6, %xmm1
-	cmpltss	%xmm4, %xmm5
-	testl	%r10d, %r10d
-	andps	%xmm5, %xmm1
-	andnps	%xmm4, %xmm5
-	orps	%xmm1, %xmm5
-	mulss	%xmm5, %xmm0
-	mulss	%xmm5, %xmm13
-	addss	%xmm3, %xmm0
-	addss	%xmm2, %xmm13
-	movss	%xmm0, (%r9,%rdx)
-	movaps	%xmm6, %xmm0
-	movss	%xmm13, (%r8,%rdx)
-	je	.L682
-	movss	104(%rcx,%rdx), %xmm0
-.L682:
-	movaps	%xmm6, %xmm2
-	movaps	%xmm6, %xmm3
-	cmpltss	%xmm4, %xmm2
-	andps	%xmm2, %xmm3
-	andnps	%xmm4, %xmm2
-	orps	%xmm3, %xmm2
-	jmp	.L681
-.L1331:
-	leaq	.LC87(%rip), %rdx
-	subl	$1, %eax
-	jne	.L435
-	leaq	.LC86(%rip), %rdx
-	jmp	.L435
-.L1278:
+	je	.L1766
+	movss	104(%r9,%rax,4), %xmm0
+	jmp	.L798
+.L662:
+	movl	g_noise_state(%rip), %edx
+	pxor	%xmm3, %xmm3
+	movl	%edx, %eax
+	sall	$13, %eax
+	xorl	%edx, %eax
+	movl	%eax, %edx
+	shrl	$17, %edx
+	xorl	%eax, %edx
+	movl	%edx, %eax
+	sall	$5, %eax
+	xorl	%edx, %eax
+	cvtsi2ssl	%eax, %xmm3
+	movl	%eax, g_noise_state(%rip)
+	mulss	.LC203(%rip), %xmm3
+	mulss	.LC200(%rip), %xmm3
+	jmp	.L657
+.L882:
+	movl	g_noise_state(%rip), %edx
+	pxor	%xmm3, %xmm3
+	movl	%edx, %eax
+	sall	$13, %eax
+	xorl	%edx, %eax
+	movl	%eax, %edx
+	shrl	$17, %edx
+	xorl	%eax, %edx
+	movl	%edx, %eax
+	sall	$5, %eax
+	xorl	%edx, %eax
+	cvtsi2ssl	%eax, %xmm3
+	movl	%eax, g_noise_state(%rip)
+	mulss	.LC203(%rip), %xmm3
+	mulss	.LC200(%rip), %xmm3
+	jmp	.L877
+.L1724:
+	pxor	%xmm3, %xmm3
+	jmp	.L725
+.L1072:
+	pxor	%xmm1, %xmm1
+	jmp	.L683
+.L1111:
+	pxor	%xmm1, %xmm1
+	jmp	.L955
+.L1746:
+	pxor	%xmm3, %xmm3
+	jmp	.L913
+.L1700:
+	movss	40(%rax), %xmm0
+	movss	%xmm0, 832(%rsp)
+	jmp	.L447
+.L1759:
+	movaps	%xmm2, 464(%rsp)
+	movaps	%xmm1, 512(%rsp)
+	movaps	%xmm0, 560(%rsp)
+	jmp	.L835
+.L1735:
+	movaps	%xmm2, 464(%rsp)
+	movaps	%xmm1, 512(%rsp)
+	movaps	%xmm0, 560(%rsp)
+	jmp	.L614
+.L1705:
+	movss	.LC43(%rip), %xmm0
+	movss	%xmm0, 1176(%rsp)
+	jmp	.L483
+.L1701:
+	movss	44(%rax), %xmm0
+	movss	%xmm0, 864(%rsp)
+	jmp	.L450
+.L1706:
+	movss	.LC43(%rip), %xmm0
+	movss	%xmm0, 1180(%rsp)
+	jmp	.L485
+.L1697:
 	cmpl	%ebx, %esi
-	jle	.L1245
+	jle	.L1659
 	movq	8(%rdi,%r14,8), %r12
-	leaq	.LC88(%rip), %rdx
+	leaq	.LC89(%rip), %rdx
 	movq	__imp__stricmp(%rip), %r13
 	movq	%r12, %rcx
 	call	*%r13
 	testl	%eax, %eax
-	jne	.L308
-	xorl	%eax, %eax
-	movl	%eax, 724(%rsp)
-	jmp	.L284
-.L1289:
+	jne	.L357
+	xorl	%edx, %edx
+	movl	%edx, 804(%rsp)
+	jmp	.L332
+.L1702:
+	movss	48(%rax), %xmm0
+	movss	%xmm0, 896(%rsp)
+	jmp	.L452
+.L1698:
+	movl	FORMANTS(%rip), %ebx
+	jmp	.L438
+.L1707:
+	movss	.LC43(%rip), %xmm0
+	movss	%xmm0, 1184(%rsp)
+	jmp	.L487
+.L1762:
+	leaq	.LC88(%rip), %rdx
+	subl	$1, %eax
+	jne	.L500
+	leaq	.LC87(%rip), %rdx
+	jmp	.L500
+.L1699:
 	leaq	g_preset_natural(%rip), %rax
-	jmp	.L400
-.L698:
-	testl	%eax, %eax
-	pxor	%xmm1, %xmm1
-	jle	.L1252
-.L700:
-	cmpl	$2, %eax
-	pxor	%xmm15, %xmm15
-	movaps	%xmm15, %xmm13
-	je	.L938
-	movss	%xmm15, 168(%rsp)
+	jmp	.L435
+.L574:
+	movaps	%xmm4, %xmm5
 	xorl	%eax, %eax
-	movaps	%xmm15, %xmm11
-	movl	%eax, 220(%rsp)
-	jmp	.L699
-.L1337:
+	movss	%xmm2, 112(%rsp)
+	pxor	%xmm12, %xmm12
+	divss	%xmm3, %xmm5
+	movss	%xmm3, 120(%rsp)
+	leaq	544(%rsp), %rcx
+	leaq	448(%rsp), %rbp
+	leaq	496(%rsp), %rdi
+	jmp	.L586
+.L1767:
+	movaps	%xmm0, %xmm1
+	mulss	%xmm12, %xmm1
+	addss	%xmm1, %xmm4
+	pxor	%xmm1, %xmm1
+.L585:
+	subss	%xmm13, %xmm3
+	testl	%r8d, %r8d
+	movss	%xmm4, 0(%rbp,%rax,4)
+	movss	104(%r9,%rax,4), %xmm4
+	movaps	%xmm3, %xmm0
+	mulss	%xmm1, %xmm0
+	addss	%xmm13, %xmm0
+	movss	%xmm0, (%rdi,%rax,4)
 	movaps	%xmm6, %xmm0
-	xorl	%ecx, %ecx
-	movaps	%xmm6, %xmm1
-	cmpltss	%xmm5, %xmm0
-	testl	%edx, %edx
-	movl	%ecx, 220(%rsp)
-	andps	%xmm0, %xmm1
-	andnps	%xmm5, %xmm0
-	orps	%xmm0, %xmm1
-	jle	.L511
-	movss	.LC198(%rip), %xmm4
-	comiss	%xmm1, %xmm4
-	ja	.L869
-	movss	.LC199(%rip), %xmm0
-	comiss	%xmm1, %xmm0
-	jbe	.L1212
-	movaps	%xmm1, %xmm0
-	pxor	%xmm13, %xmm13
-	movaps	%xmm13, %xmm11
-	movss	%xmm1, 176(%rsp)
-	subss	%xmm4, %xmm0
-	divss	.LC200(%rip), %xmm0
-	mulss	.LC187(%rip), %xmm0
-	call	sinf
-	mulss	.LC201(%rip), %xmm0
-	movss	%xmm13, 168(%rsp)
-	movss	176(%rsp), %xmm1
-	movl	$1, 220(%rsp)
-	movaps	%xmm0, %xmm15
-	jmp	.L511
-.L685:
-	movss	104(%rcx,%rdx), %xmm0
-	jmp	.L687
-.L487:
-	movss	104(%rcx,%rdx), %xmm0
-	pxor	%xmm2, %xmm2
-	jmp	.L488
-.L1261:
-	movss	168(%rsp), %xmm1
-	movss	84(%rax), %xmm13
-	divss	%xmm1, %xmm15
-	pxor	%xmm1, %xmm1
-	movss	100(%rax), %xmm2
-	movss	96(%rax), %xmm5
-	movss	92(%rax), %xmm4
-	movss	88(%rax), %xmm11
-	movss	84(%rcx), %xmm0
-	comiss	%xmm15, %xmm1
-	ja	.L875
-	movaps	%xmm6, %xmm1
-	movaps	%xmm6, %xmm3
-	cmpltss	%xmm15, %xmm1
-	andps	%xmm1, %xmm3
-	andnps	%xmm15, %xmm1
-	orps	%xmm3, %xmm1
-.L875:
-	subss	%xmm13, %xmm0
-	movss	92(%rcx), %xmm15
-	subss	%xmm4, %xmm15
-	mulss	%xmm1, %xmm0
-	mulss	%xmm1, %xmm15
-	addss	%xmm13, %xmm0
-	movss	88(%rcx), %xmm13
-	subss	%xmm11, %xmm13
-	movss	%xmm0, 168(%rsp)
-	movss	100(%rcx), %xmm0
-	addss	%xmm4, %xmm15
-	mulss	%xmm1, %xmm13
-	subss	%xmm2, %xmm0
-	mulss	%xmm1, %xmm0
-	addss	%xmm11, %xmm13
-	movss	96(%rcx), %xmm11
-	subss	%xmm5, %xmm11
-	addss	%xmm2, %xmm0
-	mulss	%xmm1, %xmm11
-	movss	%xmm0, 176(%rsp)
-	addss	%xmm5, %xmm11
-	jmp	.L874
-.L1260:
-	movss	168(%rsp), %xmm1
-	movss	84(%rax), %xmm13
-	divss	%xmm1, %xmm15
-	pxor	%xmm1, %xmm1
-	movss	100(%rax), %xmm4
-	movss	96(%rax), %xmm5
-	movss	92(%rax), %xmm2
-	movss	88(%rax), %xmm11
-	movss	84(%rcx), %xmm0
-	comiss	%xmm15, %xmm1
-	ja	.L871
-	movaps	%xmm6, %xmm1
-	movaps	%xmm6, %xmm3
-	cmpltss	%xmm15, %xmm1
-	andps	%xmm1, %xmm3
-	andnps	%xmm15, %xmm1
-	orps	%xmm3, %xmm1
-.L871:
-	subss	%xmm13, %xmm0
-	movss	92(%rcx), %xmm15
-	subss	%xmm2, %xmm15
-	mulss	%xmm1, %xmm0
-	mulss	%xmm1, %xmm15
-	addss	%xmm13, %xmm0
-	movss	88(%rcx), %xmm13
-	subss	%xmm11, %xmm13
-	movss	%xmm0, 168(%rsp)
-	movss	100(%rcx), %xmm0
-	addss	%xmm2, %xmm15
-	mulss	%xmm1, %xmm13
+	je	.L584
+	movss	104(%rdx,%rax,4), %xmm0
+.L584:
 	subss	%xmm4, %xmm0
 	mulss	%xmm1, %xmm0
-	addss	%xmm11, %xmm13
-	movss	96(%rcx), %xmm11
-	subss	%xmm5, %xmm11
 	addss	%xmm4, %xmm0
-	mulss	%xmm1, %xmm11
-	movss	%xmm0, 144(%rsp)
-	addss	%xmm5, %xmm11
-.L873:
-	testq	%r14, %r14
-	je	.L661
-	movl	1160(%rsp), %edx
+	movss	%xmm0, (%rcx,%rax,4)
+	addq	$1, %rax
+	cmpl	%eax, %ebx
+	jle	.L1679
+.L586:
+	comiss	%xmm5, %xmm12
+	movss	4(%r9,%rax,4), %xmm4
+	movss	4(%rdx,%rax,4), %xmm0
+	movss	44(%r9,%rax,4), %xmm13
+	subss	%xmm4, %xmm0
+	movss	44(%rdx,%rax,4), %xmm3
+	ja	.L1767
+	movaps	%xmm6, %xmm1
+	movaps	%xmm6, %xmm2
+	cmpltss	%xmm5, %xmm1
+	andps	%xmm1, %xmm2
+	andnps	%xmm5, %xmm1
+	orps	%xmm2, %xmm1
+	mulss	%xmm1, %xmm0
+	addss	%xmm0, %xmm4
+	jmp	.L585
+.L1752:
+	movaps	%xmm3, %xmm4
+	xorl	%eax, %eax
+	movss	%xmm2, 112(%rsp)
+	pxor	%xmm12, %xmm12
+	divss	%xmm0, %xmm4
+	movss	%xmm0, 132(%rsp)
+	leaq	544(%rsp), %rcx
+	leaq	448(%rsp), %rbp
+	leaq	496(%rsp), %rdi
+	jmp	.L803
+.L1769:
+	mulss	%xmm12, %xmm1
+	testl	%r8d, %r8d
+	addss	%xmm5, %xmm1
+	movss	%xmm1, 0(%rbp,%rax,4)
+	movaps	%xmm0, %xmm1
+	subss	%xmm14, %xmm1
+	mulss	%xmm12, %xmm1
+	addss	%xmm14, %xmm1
+	movss	%xmm1, (%rdi,%rax,4)
+	jne	.L802
+	movaps	%xmm6, %xmm1
+	pxor	%xmm5, %xmm5
+.L805:
+	subss	%xmm6, %xmm1
+	mulss	%xmm5, %xmm1
+	addss	%xmm6, %xmm1
+	movss	%xmm1, (%rcx,%rax,4)
+	addq	$1, %rax
+	cmpl	%eax, %ebx
+	jle	.L1768
+.L803:
+	comiss	%xmm4, %xmm12
+	movss	4(%r9,%rax,4), %xmm5
+	movss	4(%rdx,%rax,4), %xmm1
+	movss	44(%r9,%rax,4), %xmm14
+	subss	%xmm5, %xmm1
+	movss	44(%rdx,%rax,4), %xmm0
+	ja	.L1769
+	movaps	%xmm6, %xmm13
+	movaps	%xmm6, %xmm2
+	testl	%r8d, %r8d
+	cmpltss	%xmm4, %xmm13
+	andps	%xmm13, %xmm2
+	andnps	%xmm4, %xmm13
+	orps	%xmm2, %xmm13
+	mulss	%xmm13, %xmm1
+	addss	%xmm5, %xmm1
+	movss	%xmm1, 0(%rbp,%rax,4)
+	movaps	%xmm0, %xmm1
+	subss	%xmm14, %xmm1
+	mulss	%xmm13, %xmm1
+	addss	%xmm14, %xmm1
+	movss	%xmm1, (%rdi,%rax,4)
+	movaps	%xmm6, %xmm1
+	je	.L806
+	movss	104(%rdx,%rax,4), %xmm1
+.L806:
+	movaps	%xmm6, %xmm5
+	movaps	%xmm6, %xmm13
+	cmpltss	%xmm4, %xmm5
+	andps	%xmm5, %xmm13
+	andnps	%xmm4, %xmm5
+	orps	%xmm13, %xmm5
+	jmp	.L805
+.L1703:
+	movss	52(%rax), %xmm0
+	movss	%xmm0, 928(%rsp)
+	jmp	.L454
+.L1117:
+	pxor	%xmm1, %xmm1
+	jmp	.L944
+.L1107:
+	pxor	%xmm1, %xmm1
+	jmp	.L941
+.L1080:
+	pxor	%xmm1, %xmm1
+	jmp	.L753
+.L1078:
+	pxor	%xmm1, %xmm1
+	jmp	.L672
+.L1763:
+	movaps	%xmm0, %xmm3
+	movq	%rdx, %r9
+.L1023:
+	movss	92(%r9), %xmm4
+	comiss	%xmm3, %xmm0
+	movss	84(%r9), %xmm13
+	movss	%xmm4, 112(%rsp)
+	movss	100(%r9), %xmm4
+	movss	88(%r9), %xmm12
+	movss	96(%r9), %xmm1
+	movss	%xmm4, 120(%rsp)
+	jnb	.L571
+	movaps	%xmm2, %xmm4
+	subss	%xmm0, %xmm3
+	subss	%xmm0, %xmm4
+	movd	%xmm4, %r10d
+.L572:
+	movd	%r10d, %xmm0
+	movss	84(%rdx), %xmm4
+	divss	%xmm3, %xmm0
+	pxor	%xmm3, %xmm3
+	comiss	%xmm0, %xmm3
+	ja	.L590
+	movaps	%xmm6, %xmm3
+	movaps	%xmm6, %xmm5
+	cmpltss	%xmm0, %xmm3
+	andps	%xmm3, %xmm5
+	andnps	%xmm0, %xmm3
+	orps	%xmm5, %xmm3
+.L590:
+	subss	%xmm13, %xmm4
+	movaps	%xmm4, %xmm0
+	movss	112(%rsp), %xmm4
+	mulss	%xmm3, %xmm0
+	addss	%xmm0, %xmm13
+	movss	88(%rdx), %xmm0
+	subss	%xmm12, %xmm0
+	mulss	%xmm3, %xmm0
+	addss	%xmm0, %xmm12
+	movss	92(%rdx), %xmm0
+	subss	%xmm4, %xmm0
+	mulss	%xmm3, %xmm0
+	addss	%xmm4, %xmm0
+	movss	120(%rsp), %xmm4
+	movss	%xmm0, 112(%rsp)
+	movss	96(%rdx), %xmm0
+	subss	%xmm1, %xmm0
+	mulss	%xmm3, %xmm0
+	addss	%xmm0, %xmm1
+	movss	100(%rdx), %xmm0
+	subss	%xmm4, %xmm0
+	mulss	%xmm3, %xmm0
+	addss	%xmm4, %xmm0
+	movss	%xmm0, 120(%rsp)
+	jmp	.L571
+.L1764:
+	movaps	%xmm4, %xmm0
+	movq	%rdx, %r9
+.L1021:
+	comiss	%xmm0, %xmm4
+	movss	92(%r9), %xmm5
+	movss	84(%r9), %xmm12
+	movss	88(%r9), %xmm13
+	movss	%xmm5, 112(%rsp)
+	movss	96(%r9), %xmm1
+	movss	100(%r9), %xmm14
+	jnb	.L790
+	movaps	%xmm2, %xmm3
+	subss	%xmm4, %xmm0
+	subss	%xmm4, %xmm3
+.L1018:
+	movaps	%xmm3, %xmm4
+	movss	84(%rdx), %xmm5
+	divss	%xmm0, %xmm4
+	pxor	%xmm0, %xmm0
+	comiss	%xmm4, %xmm0
+	ja	.L791
+	movaps	%xmm6, %xmm0
+	movaps	%xmm6, %xmm3
+	cmpltss	%xmm4, %xmm0
+	andps	%xmm0, %xmm3
+	andnps	%xmm4, %xmm0
+	orps	%xmm3, %xmm0
+.L791:
+	subss	%xmm12, %xmm5
+	movaps	%xmm5, %xmm3
+	movss	112(%rsp), %xmm5
+	mulss	%xmm0, %xmm3
+	addss	%xmm3, %xmm12
+	movss	88(%rdx), %xmm3
+	subss	%xmm13, %xmm3
+	mulss	%xmm0, %xmm3
+	addss	%xmm3, %xmm13
+	movss	92(%rdx), %xmm3
+	subss	%xmm5, %xmm3
+	mulss	%xmm0, %xmm3
+	addss	%xmm5, %xmm3
+	movss	%xmm3, 112(%rsp)
+	movss	96(%rdx), %xmm3
+	subss	%xmm1, %xmm3
+	mulss	%xmm0, %xmm3
+	addss	%xmm3, %xmm1
+	movss	100(%rdx), %xmm3
+	subss	%xmm14, %xmm3
+	mulss	%xmm3, %xmm0
+	addss	%xmm0, %xmm14
+.L790:
+	testq	%r15, %r15
+	je	.L782
+	movl	1240(%rsp), %edx
 	testl	%edx, %edx
-	jg	.L1269
-	jmp	.L661
-.L678:
-	movss	104(%rcx,%rdx), %xmm0
-	pxor	%xmm2, %xmm2
-	jmp	.L681
-.L851:
-	leaq	1232(%rsp), %rcx
+	jle	.L782
+.L1687:
+	movss	(%r15), %xmm0
+	comiss	%xmm2, %xmm0
+	jnb	.L1672
+.L1643:
+	movq	%r15, %rcx
+	call	contour_f0.part.0
+	movaps	%xmm0, %xmm1
+	jmp	.L782
+.L996:
+	leaq	1312(%rsp), %rcx
 	leaq	.LC216(%rip), %rdx
 	call	fopen
 	testq	%rax, %rax
-	movq	%rax, %rbp
-	je	.L1257
-	movss	.LC226(%rip), %xmm7
-	xorl	%esi, %esi
-	jmp	.L864
-.L866:
-	movss	(%rbx,%rsi,4), %xmm1
-	movss	.LC98(%rip), %xmm0
+	movq	%rax, %rdi
+	je	.L1676
+	movl	72(%rsp), %ebp
+	xorl	%ebx, %ebx
+	movss	.LC43(%rip), %xmm7
+	movss	.LC226(%rip), %xmm6
+	jmp	.L1009
+.L1011:
+	movss	(%rsi,%rbx,4), %xmm1
+	movss	.LC99(%rip), %xmm0
 	comiss	%xmm1, %xmm0
-	ja	.L865
-	movaps	%xmm6, %xmm0
-	movaps	%xmm6, %xmm2
+	ja	.L1010
+	movaps	%xmm7, %xmm0
+	movaps	%xmm7, %xmm2
 	cmpltss	%xmm1, %xmm0
 	andps	%xmm0, %xmm2
 	andnps	%xmm1, %xmm0
 	orps	%xmm2, %xmm0
-.L865:
-	mulss	%xmm7, %xmm0
-	movq	%rbp, %r9
+.L1010:
+	mulss	%xmm6, %xmm0
+	movq	%rdi, %r9
 	movl	$2, %r8d
+	leaq	544(%rsp), %rcx
 	movl	$1, %edx
-	addq	$1, %rsi
-	leaq	464(%rsp), %rcx
+	addq	$1, %rbx
 	cvttss2sil	%xmm0, %eax
-	movw	%ax, 464(%rsp)
+	movw	%ax, 544(%rsp)
 	call	fwrite
-.L864:
-	cmpl	%esi, %r15d
-	jg	.L866
-	movq	%rbp, %rcx
+.L1009:
+	cmpl	%ebx, %ebp
+	jg	.L1011
+	movq	%rdi, %rcx
 	call	fclose
-	jmp	.L856
-.L1305:
+	jmp	.L1001
+.L809:
+	movss	104(%rdx,%rax,4), %xmm1
+	jmp	.L811
+.L1679:
+	movss	92(%r9), %xmm4
+	movss	112(%rsp), %xmm2
+	movss	%xmm4, 112(%rsp)
+	movss	100(%r9), %xmm4
+	movss	120(%rsp), %xmm3
+	movss	84(%r9), %xmm13
+	movss	%xmm4, 120(%rsp)
+	movss	88(%r9), %xmm12
+	movss	96(%r9), %xmm1
+	jmp	.L572
+.L1054:
+	movaps	%xmm6, %xmm0
+	pxor	%xmm1, %xmm1
+	jmp	.L578
+.L802:
+	movss	104(%rdx,%rax,4), %xmm1
+	pxor	%xmm5, %xmm5
+	jmp	.L805
+.L1641:
+	addl	$1, %edx
+	jl	.L814
+	imulq	$8100, %rdi, %rsi
+	movaps	%xmm2, %xmm1
+	movaps	%xmm6, %xmm0
+	movss	%xmm2, 132(%rsp)
+	addq	1272(%rsp), %rsi
+	subss	0(%r13,%rdi,4), %xmm1
+	movss	16(%rsi), %xmm3
+	movaps	%xmm1, %xmm5
+	movq	%rsi, %rcx
+	cmpltss	%xmm3, %xmm0
+	andps	%xmm0, %xmm3
+	andnps	%xmm6, %xmm0
+	orps	%xmm3, %xmm0
+	divss	%xmm0, %xmm5
+	call	phon_pitch
+	pxor	%xmm3, %xmm3
+	movss	136(%rsp), %xmm12
+	movss	8092(%rsi), %xmm4
+	movaps	%xmm0, %xmm1
+	movss	8084(%rsi), %xmm0
+	movl	8096(%rsi), %eax
+	movss	%xmm4, 112(%rsp)
+	movss	8088(%rsi), %xmm13
+	mulss	%xmm0, %xmm12
+	movss	132(%rsp), %xmm2
+	comiss	%xmm5, %xmm3
+	ja	.L822
+	movaps	%xmm6, %xmm3
+	xorl	%ebp, %ebp
+	movaps	%xmm6, %xmm4
+	cmpltss	%xmm5, %xmm3
+	testl	%eax, %eax
+	movl	%ebp, 156(%rsp)
+	andps	%xmm3, %xmm4
+	andnps	%xmm5, %xmm3
+	orps	%xmm4, %xmm3
+	jle	.L823
+	movss	.LC196(%rip), %xmm5
+	comiss	%xmm3, %xmm5
+	ja	.L824
+	movss	.LC197(%rip), %xmm4
+	comiss	%xmm3, %xmm4
+	jbe	.L1642
+	movaps	%xmm3, %xmm0
+	pxor	%xmm13, %xmm13
+	movaps	%xmm13, %xmm12
+	movss	%xmm2, 192(%rsp)
+	movss	%xmm3, 132(%rsp)
+	subss	%xmm5, %xmm0
+	divss	.LC198(%rip), %xmm0
+	mulss	.LC189(%rip), %xmm0
+	call	sinf
+	mulss	.LC199(%rip), %xmm0
+	movaps	%xmm13, %xmm1
+	movl	$1, 156(%rsp)
+	movss	132(%rsp), %xmm3
+	movss	192(%rsp), %xmm2
+	movss	%xmm0, 112(%rsp)
+.L823:
+	testl	%ebx, %ebx
+	jle	.L832
+	imulq	$40, %rdi, %rdx
+	movq	272(%rsp), %rax
+	leaq	544(%rsp), %rcx
+	leaq	448(%rsp), %rbp
+	leaq	496(%rsp), %rdi
+	leaq	(%rax,%rdx), %r9
+	addq	280(%rsp), %rdx
+	xorl	%eax, %eax
+.L831:
+	movss	(%r9,%rax,4), %xmm4
+	movss	280(%rsi,%rax,4), %xmm0
+	subss	%xmm4, %xmm0
+	mulss	%xmm3, %xmm0
+	addss	%xmm4, %xmm0
+	movss	(%rdx,%rax,4), %xmm4
+	movss	%xmm0, 0(%rbp,%rax,4)
+	movss	320(%rsi,%rax,4), %xmm0
+	movss	%xmm6, (%rcx,%rax,4)
+	subss	%xmm4, %xmm0
+	mulss	%xmm3, %xmm0
+	addss	%xmm4, %xmm0
+	movss	%xmm0, (%rdi,%rax,4)
+	addq	$1, %rax
+	cmpl	%eax, %ebx
+	jg	.L831
+.L832:
+	testq	%r15, %r15
+	je	.L1093
+	movl	1240(%rsp), %edx
+	movaps	%xmm6, %xmm14
+	testl	%edx, %edx
+	jg	.L1687
+	jmp	.L782
+.L1073:
+	pxor	%xmm1, %xmm1
+	jmp	.L686
+.L1112:
+	pxor	%xmm1, %xmm1
+	jmp	.L958
+.L1625:
+	addl	$1, %edx
+	jl	.L592
+	imulq	$8100, %rdi, %r8
+	movaps	%xmm2, %xmm1
+	movaps	%xmm6, %xmm0
+	movss	%xmm2, 120(%rsp)
+	addq	1272(%rsp), %r8
+	subss	0(%r13,%rdi,4), %xmm1
+	movss	16(%r8), %xmm3
+	movaps	%xmm1, %xmm5
+	movq	%r8, %rcx
+	movq	%r8, 112(%rsp)
+	cmpltss	%xmm3, %xmm0
+	andps	%xmm0, %xmm3
+	andnps	%xmm6, %xmm0
+	orps	%xmm3, %xmm0
+	divss	%xmm0, %xmm5
+	call	phon_pitch
+	pxor	%xmm3, %xmm3
+	movq	%rcx, %r8
+	movss	136(%rsp), %xmm13
+	movss	8092(%rcx), %xmm4
+	movaps	%xmm0, %xmm1
+	movss	8084(%rcx), %xmm0
+	movl	8096(%rcx), %eax
+	movss	%xmm4, 112(%rsp)
+	mulss	%xmm0, %xmm13
+	movss	120(%rsp), %xmm2
+	movss	8088(%rcx), %xmm12
+	comiss	%xmm5, %xmm3
+	ja	.L600
+	movaps	%xmm6, %xmm3
+	xorl	%edx, %edx
+	movaps	%xmm6, %xmm4
+	cmpltss	%xmm5, %xmm3
+	testl	%eax, %eax
+	movl	%edx, 156(%rsp)
+	andps	%xmm3, %xmm4
+	andnps	%xmm5, %xmm3
+	orps	%xmm4, %xmm3
+	jle	.L601
+	movss	.LC196(%rip), %xmm4
+	comiss	%xmm3, %xmm4
+	ja	.L1015
+	movss	.LC197(%rip), %xmm5
+	comiss	%xmm3, %xmm5
+	jbe	.L1627
+	movaps	%xmm3, %xmm0
+	movss	%xmm3, 120(%rsp)
+	pxor	%xmm12, %xmm12
+	movaps	%xmm12, %xmm13
+	subss	%xmm4, %xmm0
+	divss	.LC198(%rip), %xmm0
+	mulss	.LC189(%rip), %xmm0
+	movss	%xmm2, 160(%rsp)
+	movq	%rcx, 256(%rsp)
+	call	sinf
+	movss	120(%rsp), %xmm3
+	movaps	%xmm12, %xmm1
+	movl	$1, 156(%rsp)
+	mulss	.LC199(%rip), %xmm0
+	movq	256(%rsp), %r8
+	movss	160(%rsp), %xmm2
+	movss	%xmm0, 112(%rsp)
+.L601:
+	testl	%ebx, %ebx
+	jle	.L610
+	imulq	$40, %rdi, %rdx
+	movq	272(%rsp), %rax
+	leaq	544(%rsp), %rcx
+	leaq	448(%rsp), %rbp
+	leaq	496(%rsp), %rdi
+	leaq	(%rax,%rdx), %r9
+	addq	280(%rsp), %rdx
+	xorl	%eax, %eax
+.L609:
+	movss	(%r9,%rax,4), %xmm4
+	movss	280(%r8,%rax,4), %xmm0
+	subss	%xmm4, %xmm0
+	mulss	%xmm3, %xmm0
+	addss	%xmm4, %xmm0
+	movss	(%rdx,%rax,4), %xmm4
+	movss	%xmm0, 0(%rbp,%rax,4)
+	movss	320(%r8,%rax,4), %xmm0
+	movss	%xmm6, (%rcx,%rax,4)
+	subss	%xmm4, %xmm0
+	mulss	%xmm3, %xmm0
+	addss	%xmm4, %xmm0
+	movss	%xmm0, (%rdi,%rax,4)
+	addq	$1, %rax
+	cmpl	%eax, %ebx
+	jg	.L609
+.L610:
+	testq	%r15, %r15
+	je	.L1665
+	movl	1240(%rsp), %edx
+	movss	%xmm6, 120(%rsp)
+	testl	%edx, %edx
+	jg	.L1683
+	jmp	.L563
+.L1747:
+	pxor	%xmm3, %xmm3
+	jmp	.L918
+.L1725:
+	pxor	%xmm3, %xmm3
+	jmp	.L730
+.L780:
+	movl	1256(%rsp), %eax
+	testl	%eax, %eax
+	jne	.L1670
+	movss	140(%rsp), %xmm4
+	movaps	%xmm6, %xmm14
+	movss	136(%rsp), %xmm12
+	movss	144(%rsp), %xmm13
+	movss	%xmm4, 112(%rsp)
+	jmp	.L1643
+.L1105:
+	pxor	%xmm2, %xmm2
+	jmp	.L892
+.L560:
+	movslq	1256(%rsp), %rcx
+	testl	%ecx, %ecx
+	jne	.L1663
+	movss	140(%rsp), %xmm4
+	movss	%xmm6, 120(%rsp)
+	movss	144(%rsp), %xmm12
+	movss	136(%rsp), %xmm13
+	movss	%xmm4, 112(%rsp)
+	jmp	.L1628
+.L1708:
+	leaq	1248(%rsp), %rdx
+	leaq	1824(%rsp), %rcx
+	call	spec_parse
+	addl	$1, %eax
+	je	.L330
+	movl	1260(%rsp), %eax
+	cmpl	$22050, %eax
+	je	.L491
+	movl	%eax, 812(%rsp)
+.L491:
+	movl	1264(%rsp), %eax
+	testl	%eax, %eax
+	je	.L492
+	movl	%eax, 804(%rsp)
+.L492:
+	movss	.LC51(%rip), %xmm6
+	movss	1268(%rsp), %xmm0
+	divss	%xmm6, %xmm0
+	addss	.LC84(%rip), %xmm0
+	comiss	816(%rsp), %xmm0
+	jbe	.L494
+	movss	%xmm0, 816(%rsp)
+	jmp	.L494
+.L1726:
+	pxor	%xmm3, %xmm3
+	jmp	.L735
+.L1113:
+	pxor	%xmm1, %xmm1
+	jmp	.L961
+.L1748:
+	pxor	%xmm3, %xmm3
+	jmp	.L923
+.L1074:
+	pxor	%xmm1, %xmm1
+	jmp	.L689
+.L1013:
+	cmpl	$3, %eax
+	je	.L1000
+	jmp	.L1012
+.L1756:
 	leaq	.LC216(%rip), %rdx
-	movl	732(%rsp), %ebp
-	leaq	1232(%rsp), %rcx
+	movl	812(%rsp), %ebp
+	leaq	1312(%rsp), %rcx
 	call	fopen
 	testq	%rax, %rax
-	movq	%rax, %rsi
-	je	.L1258
+	movq	%rax, %rbx
+	je	.L1677
 	movq	%rax, %r9
 	movl	$4, %r8d
 	movl	$1, %edx
-	movl	$1179011410, 464(%rsp)
-	leaq	464(%rsp), %rcx
+	movl	$1179011410, 544(%rsp)
+	leaq	544(%rsp), %rcx
 	call	fwrite
+	movl	72(%rsp), %r15d
+	movq	%rbx, %rcx
 	leal	36(%r15,%r15), %edx
-	movq	%rsi, %rcx
+	movl	%r15d, %r12d
 	call	w32
-	movq	%rsi, %r9
+	movq	%rbx, %r9
 	movl	$4, %r8d
 	movl	$1, %edx
-	leaq	464(%rsp), %rcx
-	movl	$1163280727, 464(%rsp)
+	leaq	544(%rsp), %rcx
+	movl	$1163280727, 544(%rsp)
 	call	fwrite
-	movq	%rsi, %r9
+	movq	%rbx, %r9
 	movl	$4, %r8d
 	movl	$1, %edx
-	leaq	464(%rsp), %rcx
-	movl	$544501094, 464(%rsp)
+	leaq	544(%rsp), %rcx
+	movl	$544501094, 544(%rsp)
 	call	fwrite
-	movq	%rsi, %r9
+	movq	%rbx, %r9
 	movl	$4, %r8d
 	movl	$1, %edx
-	leaq	464(%rsp), %rcx
-	movl	$16, 464(%rsp)
+	leaq	544(%rsp), %rcx
+	movl	$16, 544(%rsp)
 	call	fwrite
 	movzwl	.LC222(%rip), %r13d
-	movq	%rsi, %r9
+	movq	%rbx, %r9
 	movl	$2, %r8d
-	leaq	464(%rsp), %rcx
+	leaq	544(%rsp), %rcx
 	movl	$1, %edx
-	movw	%r13w, 464(%rsp)
+	movw	%r13w, 544(%rsp)
 	call	fwrite
-	movq	%rsi, %r9
+	movq	%rbx, %r9
 	movl	$2, %r8d
 	movl	$1, %edx
-	leaq	464(%rsp), %rcx
-	movw	%r13w, 464(%rsp)
+	leaq	544(%rsp), %rcx
+	movw	%r13w, 544(%rsp)
 	call	fwrite
 	movl	%ebp, %edx
-	movq	%rsi, %rcx
+	movq	%rbx, %rcx
 	call	w32
 	leal	(%rbp,%rbp), %edx
-	movq	%rsi, %rcx
+	movq	%rbx, %rcx
 	xorl	%ebp, %ebp
 	call	w32
-	movq	%rsi, %r9
+	movq	%rbx, %r9
 	movl	$2, %r8d
 	movl	$1, %edx
-	leaq	464(%rsp), %rcx
-	movw	$2, 464(%rsp)
+	leaq	544(%rsp), %rcx
+	movw	$2, 544(%rsp)
 	call	fwrite
-	movq	%rsi, %r9
+	movq	%rbx, %r9
 	movl	$2, %r8d
 	movl	$1, %edx
-	leaq	464(%rsp), %rcx
-	movw	$16, 464(%rsp)
+	leaq	544(%rsp), %rcx
+	movw	$16, 544(%rsp)
 	call	fwrite
-	movq	%rsi, %r9
+	movq	%rbx, %r9
 	movl	$4, %r8d
 	movl	$1, %edx
-	leaq	464(%rsp), %rcx
-	movl	$1635017060, 464(%rsp)
+	leaq	544(%rsp), %rcx
+	movl	$1635017060, 544(%rsp)
 	call	fwrite
 	leal	(%r15,%r15), %edx
-	movq	%rsi, %rcx
+	movq	%rbx, %rcx
 	call	w32
-	movss	.LC226(%rip), %xmm7
-	jmp	.L859
-.L861:
-	movss	(%rbx,%rbp,4), %xmm1
-	movss	.LC98(%rip), %xmm0
+	movss	.LC43(%rip), %xmm7
+	movss	.LC226(%rip), %xmm6
+	jmp	.L1004
+.L1006:
+	movss	(%rsi,%rbp,4), %xmm1
+	movss	.LC99(%rip), %xmm0
 	comiss	%xmm1, %xmm0
-	ja	.L860
-	movaps	%xmm6, %xmm0
-	movaps	%xmm6, %xmm2
+	ja	.L1005
+	movaps	%xmm7, %xmm0
+	movaps	%xmm7, %xmm2
 	cmpltss	%xmm1, %xmm0
 	andps	%xmm0, %xmm2
 	andnps	%xmm1, %xmm0
 	orps	%xmm2, %xmm0
-.L860:
-	mulss	%xmm7, %xmm0
-	movq	%rsi, %r9
+.L1005:
+	mulss	%xmm6, %xmm0
+	movq	%rbx, %r9
 	movl	$2, %r8d
 	movl	$1, %edx
 	addq	$1, %rbp
-	leaq	464(%rsp), %rcx
+	leaq	544(%rsp), %rcx
 	cvttss2sil	%xmm0, %eax
-	movw	%ax, 464(%rsp)
+	movw	%ax, 544(%rsp)
 	call	fwrite
-.L859:
-	cmpl	%ebp, %r15d
-	jg	.L861
-	jmp	.L1259
-.L1313:
-	movss	84(%rax), %xmm3
-	movss	96(%rax), %xmm11
-	movss	%xmm3, 168(%rsp)
-	movss	100(%rax), %xmm3
-	movss	92(%rax), %xmm15
-	movss	%xmm3, 144(%rsp)
-	movss	88(%rax), %xmm13
-	jmp	.L873
-.L1280:
-	leaq	1192(%rsp), %rdx
-	leaq	1744(%rsp), %rcx
+.L1004:
+	cmpl	%ebp, %r12d
+	jg	.L1006
+	jmp	.L1678
+.L1727:
+	pxor	%xmm3, %xmm3
+	jmp	.L740
+.L1114:
+	pxor	%xmm1, %xmm1
+	jmp	.L964
+.L1749:
+	pxor	%xmm3, %xmm3
+	jmp	.L928
+.L1075:
+	pxor	%xmm1, %xmm1
+	jmp	.L692
+.L1709:
+	leaq	1272(%rsp), %rdx
+	leaq	1824(%rsp), %rcx
 	call	phoneme_parse
 	addl	$1, %eax
-	je	.L282
-	movl	1204(%rsp), %eax
+	je	.L330
+	movl	1284(%rsp), %eax
 	cmpl	$22050, %eax
-	je	.L432
-	movl	%eax, 732(%rsp)
-.L432:
-	movl	1208(%rsp), %eax
+	je	.L497
+	movl	%eax, 812(%rsp)
+.L497:
+	movl	1288(%rsp), %eax
 	testl	%eax, %eax
-	je	.L429
-	movl	%eax, 724(%rsp)
-	jmp	.L429
-.L902:
-	movss	200(%rsp), %xmm3
-	movss	%xmm6, 176(%rsp)
-	movss	204(%rsp), %xmm15
-	movss	208(%rsp), %xmm13
-	movss	%xmm3, 168(%rsp)
-	jmp	.L475
-.L892:
-	leaq	.LC89(%rip), %rdx
-	jmp	.L437
-.L891:
-	leaq	.LC48(%rip), %rdx
-	jmp	.L436
-.L933:
-	movss	200(%rsp), %xmm3
-	movss	%xmm6, 144(%rsp)
-	movss	204(%rsp), %xmm15
-	movss	208(%rsp), %xmm13
-	movss	%xmm3, 168(%rsp)
-	jmp	.L661
-.L1307:
-	movl	1176(%rsp), %eax
+	je	.L494
+	movl	%eax, 804(%rsp)
+	jmp	.L494
+.L1035:
+	leaq	g_preset_whisper(%rip), %rax
+	jmp	.L435
+.L1765:
+	movss	92(%r9), %xmm4
+	movss	84(%r9), %xmm12
+	movss	88(%r9), %xmm13
+	movss	%xmm4, 112(%rsp)
+	movss	96(%r9), %xmm1
+	movss	100(%r9), %xmm14
+	jmp	.L790
+.L1086:
+	movss	140(%rsp), %xmm4
+	movaps	%xmm6, %xmm14
+	movss	144(%rsp), %xmm13
+	movss	136(%rsp), %xmm12
+	movss	%xmm4, 112(%rsp)
+	jmp	.L782
+.L1051:
+	movss	140(%rsp), %xmm4
+	movss	%xmm6, 120(%rsp)
+	movss	144(%rsp), %xmm12
+	movss	136(%rsp), %xmm13
+	movss	%xmm4, 112(%rsp)
+	jmp	.L563
+.L1041:
+	leaq	.LC90(%rip), %rdx
+	jmp	.L502
+.L1040:
+	leaq	.LC49(%rip), %rdx
+	jmp	.L501
+.L1728:
+	pxor	%xmm3, %xmm3
+	jmp	.L745
+.L1076:
+	pxor	%xmm1, %xmm1
+	jmp	.L695
+.L1115:
+	pxor	%xmm1, %xmm1
+	jmp	.L967
+.L1753:
+	movss	112(%rsp), %xmm0
+	movd	%esi, %xmm3
+.L804:
+	movss	92(%r9), %xmm4
+	movss	84(%r9), %xmm12
+	movss	88(%r9), %xmm13
+	movss	%xmm4, 112(%rsp)
+	movss	96(%r9), %xmm1
+	movss	100(%r9), %xmm14
+	jmp	.L1018
+.L1768:
+	movss	112(%rsp), %xmm2
+	movss	132(%rsp), %xmm0
+	jmp	.L804
+.L1065:
+	xorl	%eax, %eax
+	jmp	.L645
+.L1100:
+	xorl	%eax, %eax
+	jmp	.L852
+.L1734:
+	movslq	1256(%rsp), %rcx
+	testl	%ecx, %ecx
+	jne	.L1663
+	movss	140(%rsp), %xmm4
+	movss	%xmm6, 120(%rsp)
+	movss	144(%rsp), %xmm12
+	movss	136(%rsp), %xmm13
+	movss	%xmm4, 112(%rsp)
+.L1667:
+	movss	4(%r15), %xmm1
+	jmp	.L563
+.L1758:
+	movl	1256(%rsp), %eax
 	testl	%eax, %eax
-	jne	.L1247
-	movss	200(%rsp), %xmm3
-	movss	%xmm6, 176(%rsp)
-	movss	204(%rsp), %xmm15
-	movss	208(%rsp), %xmm13
-	movss	%xmm3, 168(%rsp)
-.L1249:
-	movss	4(%r14), %xmm11
-	jmp	.L475
-.L1328:
-	movl	1176(%rsp), %eax
-	testl	%eax, %eax
-	jne	.L1251
-	movss	200(%rsp), %xmm3
-	movss	%xmm6, 144(%rsp)
-	movss	208(%rsp), %xmm13
-	movss	204(%rsp), %xmm15
-	movss	%xmm3, 168(%rsp)
-.L1253:
-	movss	4(%r14), %xmm11
-	jmp	.L661
-.L1329:
-	movq	48(%rsp), %r12
-	movq	56(%rsp), %rbx
-	jmp	.L452
-.L887:
-	leaq	g_preset_breathy(%rip), %rax
-	jmp	.L400
-.L1283:
+	jne	.L1670
+	movss	140(%rsp), %xmm4
+	movaps	%xmm6, %xmm14
+	movss	136(%rsp), %xmm12
+	movss	144(%rsp), %xmm13
+	movss	%xmm4, 112(%rsp)
+.L1672:
+	movss	4(%r15), %xmm1
+	jmp	.L782
+.L1760:
+	movq	48(%rsp), %r13
+	movq	56(%rsp), %rsi
+	jmp	.L520
+.L1077:
+	pxor	%xmm1, %xmm1
+	jmp	.L698
+.L1116:
+	pxor	%xmm1, %xmm1
+	jmp	.L970
+.L1729:
+	pxor	%xmm3, %xmm3
+	jmp	.L750
+.L1661:
+	leaq	8100(%rbx), %rsi
+	jmp	.L534
+.L1712:
 	movq	__imp___acrt_iob_func(%rip), %rbx
 	movl	$2, %ecx
 	call	*%rbx
-	leaq	.LC181(%rip), %rdx
-	movl	%r15d, %r8d
+	movl	72(%rsp), %r8d
+	leaq	.LC183(%rip), %rdx
 	movq	%rax, %rcx
 	call	fprintf
 	movl	$2, %ecx
 	call	*%rbx
 	movl	$24, %r8d
 	movl	$1, %edx
-	leaq	.LC182(%rip), %rcx
+	leaq	.LC184(%rip), %rcx
 	movq	%rax, %r9
 	call	fwrite
-	jmp	.L282
-.L311:
+	jmp	.L330
+.L822:
+	testl	%eax, %eax
+	pxor	%xmm3, %xmm3
+	jle	.L1671
+.L824:
+	cmpl	$2, %eax
+	movl	$0x00000000, 112(%rsp)
+	pxor	%xmm13, %xmm13
+	je	.L1092
+	xorl	%r11d, %r11d
+	movaps	%xmm13, %xmm12
+	movaps	%xmm13, %xmm1
+	movl	%r11d, 156(%rsp)
+	jmp	.L823
+.L600:
+	testl	%eax, %eax
+	pxor	%xmm3, %xmm3
+	jle	.L1664
+.L1015:
+	cmpl	$2, %eax
+	movl	$0x00000000, 112(%rsp)
+	pxor	%xmm12, %xmm12
+	je	.L1059
+	xorl	%eax, %eax
+	movaps	%xmm12, %xmm13
+	movaps	%xmm12, %xmm1
+	movl	%eax, 156(%rsp)
+	jmp	.L601
+.L1043:
+	xorl	%eax, %eax
+	jmp	.L521
+.L360:
 	leaq	.LC132(%rip), %rdx
 	movq	%r12, %rcx
 	call	strcmp
 	testl	%eax, %eax
-	jne	.L314
+	jne	.L363
 	cmpl	%ebx, %esi
-	jle	.L1245
+	jle	.L1659
 	movq	8(%rdi,%r14,8), %r12
-	leaq	.LC89(%rip), %rdx
+	leaq	.LC90(%rip), %rdx
 	movq	__imp__stricmp(%rip), %r13
 	movq	%r12, %rcx
 	call	*%r13
 	testl	%eax, %eax
-	jne	.L316
-	xorl	%r15d, %r15d
-	movl	%r15d, 728(%rsp)
-	jmp	.L284
-.L908:
-	movss	.LC96(%rip), %xmm3
-	movss	%xmm3, 168(%rsp)
-.L1248:
+	jne	.L365
 	xorl	%eax, %eax
-	movl	%eax, 220(%rsp)
-	jmp	.L511
-.L938:
-	movss	.LC96(%rip), %xmm3
-	movss	%xmm3, 168(%rsp)
-.L1252:
-	xorl	%eax, %eax
-	movl	%eax, 220(%rsp)
-	jmp	.L699
-.L939:
-	movss	%xmm6, 144(%rsp)
-	jmp	.L661
-.L308:
-	leaq	.LC48(%rip), %rdx
+	movl	%eax, 808(%rsp)
+	jmp	.L332
+.L357:
+	leaq	.LC49(%rip), %rdx
 	movq	%r12, %rcx
 	call	*%r13
 	testl	%eax, %eax
-	jne	.L310
-	movl	$1, 724(%rsp)
-	jmp	.L284
-.L909:
-	movss	%xmm6, 176(%rsp)
-	jmp	.L475
-.L1335:
-	leal	1(%rax), %edx
-	jmp	.L477
-.L1332:
-	leal	1(%rax), %r8d
-	jmp	.L663
-.L1212:
-	movaps	%xmm1, %xmm4
-	subl	$1, %edx
-	subss	%xmm0, %xmm4
-	divss	.LC202(%rip), %xmm4
-	je	.L1340
-	mulss	%xmm4, %xmm2
-	pxor	%xmm15, %xmm15
-	movss	%xmm2, 168(%rsp)
-	movaps	%xmm6, %xmm2
-	subss	%xmm4, %xmm2
-	mulss	%xmm2, %xmm13
-	jmp	.L511
-.L1227:
-	movaps	%xmm1, %xmm4
-	subl	$1, %eax
-	subss	%xmm0, %xmm4
-	divss	.LC202(%rip), %xmm4
-	je	.L1341
-	mulss	%xmm4, %xmm2
-	pxor	%xmm15, %xmm15
-	movss	%xmm2, 168(%rsp)
-	movaps	%xmm6, %xmm2
-	subss	%xmm4, %xmm2
-	mulss	%xmm2, %xmm13
-	jmp	.L699
-.L314:
+	jne	.L359
+	movl	$1, 804(%rsp)
+	jmp	.L332
+.L1059:
+	movss	.LC97(%rip), %xmm13
+.L1664:
+	xorl	%eax, %eax
+	movl	%eax, 156(%rsp)
+	jmp	.L601
+.L1093:
+	movaps	%xmm6, %xmm14
+	jmp	.L782
+.L1092:
+	movss	.LC97(%rip), %xmm12
+.L1671:
+	xorl	%r10d, %r10d
+	movl	%r10d, 156(%rsp)
+	jmp	.L823
+.L1061:
+	xorl	%eax, %eax
+	jmp	.L613
+.L1096:
+	xorl	%eax, %eax
+	jmp	.L834
+.L1037:
+	xorl	%ecx, %ecx
+	xorl	%edx, %edx
+	jmp	.L439
+.L1731:
+	leal	1(%r9), %eax
+	jmp	.L565
+.L1751:
+	leal	1(%rax), %ecx
+	jmp	.L784
+.L363:
 	leaq	.LC133(%rip), %rdx
 	movq	%r12, %rcx
 	call	strcmp
 	testl	%eax, %eax
-	jne	.L319
+	jne	.L368
 	cmpl	%ebx, %esi
-	jle	.L1245
+	jle	.L1659
 	movq	8(%rdi,%r14,8), %rcx
 	call	atof
 	pxor	%xmm1, %xmm1
 	cvtsd2ss	%xmm0, %xmm1
 	pxor	%xmm0, %xmm0
 	comiss	%xmm1, %xmm0
-	ja	.L321
-	movaps	%xmm6, %xmm0
-	movaps	%xmm6, %xmm2
+	ja	.L370
+	movss	.LC43(%rip), %xmm2
+	movaps	%xmm2, %xmm0
 	cmpltss	%xmm1, %xmm0
 	andps	%xmm0, %xmm2
 	andnps	%xmm1, %xmm0
 	orps	%xmm2, %xmm0
-.L321:
-	movss	%xmm0, 1108(%rsp)
-	jmp	.L284
-.L316:
-	leaq	.LC90(%rip), %rdx
-	movq	%r12, %rcx
-	call	*%r13
-	testl	%eax, %eax
-	jne	.L317
-	movl	$1, 728(%rsp)
-	jmp	.L284
-.L319:
-	leaq	.LC134(%rip), %rdx
-	movq	%r12, %rcx
-	call	strcmp
-	testl	%eax, %eax
-	jne	.L322
-	cmpl	%ebx, %esi
-	jle	.L1245
-	movq	8(%rdi,%r14,8), %rcx
-	call	atof
-	pxor	%xmm1, %xmm1
-	cvtsd2ss	%xmm0, %xmm1
-	pxor	%xmm0, %xmm0
-	comiss	%xmm1, %xmm0
-	ja	.L324
+.L370:
+	movss	%xmm0, 1188(%rsp)
+	jmp	.L332
+.L1642:
+	movaps	%xmm3, %xmm5
+	subl	$1, %eax
+	subss	%xmm4, %xmm5
+	movaps	%xmm5, %xmm4
+	divss	.LC200(%rip), %xmm4
+	je	.L1770
+	mulss	%xmm4, %xmm0
+	movl	$0x00000000, 112(%rsp)
+	movaps	%xmm0, %xmm12
 	movaps	%xmm6, %xmm0
-	movaps	%xmm6, %xmm2
-	cmpltss	%xmm1, %xmm0
-	andps	%xmm0, %xmm2
-	andnps	%xmm1, %xmm0
-	orps	%xmm2, %xmm0
-.L324:
-	movss	%xmm0, 1112(%rsp)
-	jmp	.L284
-.L1341:
-	pxor	%xmm15, %xmm15
-	mulss	%xmm4, %xmm13
-	movss	%xmm15, 168(%rsp)
-	jmp	.L699
-.L1340:
-	pxor	%xmm15, %xmm15
-	mulss	%xmm4, %xmm13
-	movss	%xmm15, 168(%rsp)
-	jmp	.L511
-.L322:
-	leaq	.LC135(%rip), %rdx
-	movq	%r12, %rcx
-	call	strcmp
-	testl	%eax, %eax
-	jne	.L325
-	cmpl	%ebx, %esi
-	jle	.L1245
-	movq	8(%rdi,%r14,8), %rcx
-	call	atof
-	pxor	%xmm1, %xmm1
-	cvtsd2ss	%xmm0, %xmm1
-	pxor	%xmm0, %xmm0
-	comiss	%xmm1, %xmm0
-	ja	.L327
+	subss	%xmm4, %xmm0
+	mulss	%xmm0, %xmm13
+	jmp	.L823
+.L1627:
+	movaps	%xmm3, %xmm4
+	subl	$1, %eax
+	subss	%xmm5, %xmm4
+	divss	.LC200(%rip), %xmm4
+	je	.L1771
+	mulss	%xmm4, %xmm0
+	movl	$0x00000000, 112(%rsp)
+	movaps	%xmm0, %xmm13
 	movaps	%xmm6, %xmm0
-	movaps	%xmm6, %xmm2
-	cmpltss	%xmm1, %xmm0
-	andps	%xmm0, %xmm2
-	andnps	%xmm1, %xmm0
-	orps	%xmm2, %xmm0
-.L327:
-	movss	%xmm0, 1116(%rsp)
-	jmp	.L284
-.L317:
+	subss	%xmm4, %xmm0
+	mulss	%xmm0, %xmm12
+	jmp	.L601
+.L365:
 	leaq	.LC91(%rip), %rdx
 	movq	%r12, %rcx
 	call	*%r13
 	testl	%eax, %eax
-	jne	.L318
-	movl	$2, 728(%rsp)
-	jmp	.L284
-.L325:
-	leaq	.LC136(%rip), %rdx
+	jne	.L366
+	movl	$1, 808(%rsp)
+	jmp	.L332
+.L368:
+	leaq	.LC134(%rip), %rdx
 	movq	%r12, %rcx
 	call	strcmp
 	testl	%eax, %eax
-	jne	.L328
+	jne	.L371
 	cmpl	%ebx, %esi
-	jle	.L1245
+	jle	.L1659
 	movq	8(%rdi,%r14,8), %rcx
 	call	atof
 	pxor	%xmm1, %xmm1
 	cvtsd2ss	%xmm0, %xmm1
 	pxor	%xmm0, %xmm0
 	comiss	%xmm1, %xmm0
-	ja	.L330
+	ja	.L373
+	movss	.LC43(%rip), %xmm2
+	movaps	%xmm2, %xmm0
+	cmpltss	%xmm1, %xmm0
+	andps	%xmm0, %xmm2
+	andnps	%xmm1, %xmm0
+	orps	%xmm2, %xmm0
+.L373:
+	movss	%xmm0, 1192(%rsp)
+	jmp	.L332
+.L1770:
+	mulss	%xmm4, %xmm13
+	movl	$0x00000000, 112(%rsp)
+	pxor	%xmm12, %xmm12
+	jmp	.L823
+.L1771:
+	mulss	%xmm4, %xmm12
+	movl	$0x00000000, 112(%rsp)
+	pxor	%xmm13, %xmm13
+	jmp	.L601
+.L371:
+	leaq	.LC135(%rip), %rdx
+	movq	%r12, %rcx
+	call	strcmp
+	testl	%eax, %eax
+	jne	.L374
+	cmpl	%ebx, %esi
+	jle	.L1659
+	movq	8(%rdi,%r14,8), %rcx
+	call	atof
+	pxor	%xmm1, %xmm1
+	cvtsd2ss	%xmm0, %xmm1
+	pxor	%xmm0, %xmm0
+	comiss	%xmm1, %xmm0
+	ja	.L376
+	movss	.LC43(%rip), %xmm2
+	movaps	%xmm2, %xmm0
+	cmpltss	%xmm1, %xmm0
+	andps	%xmm0, %xmm2
+	andnps	%xmm1, %xmm0
+	orps	%xmm2, %xmm0
+.L376:
+	movss	%xmm0, 1196(%rsp)
+	jmp	.L332
+.L366:
+	leaq	.LC92(%rip), %rdx
+	movq	%r12, %rcx
+	call	*%r13
+	testl	%eax, %eax
+	jne	.L367
+	movl	$2, 808(%rsp)
+	jmp	.L332
+.L374:
+	leaq	.LC136(%rip), %rdx
+	movq	%r12, %rcx
+	call	strcmp
+	testl	%eax, %eax
+	jne	.L377
+	cmpl	%ebx, %esi
+	jle	.L1659
+	movq	8(%rdi,%r14,8), %rcx
+	call	atof
+	pxor	%xmm1, %xmm1
+	cvtsd2ss	%xmm0, %xmm1
+	pxor	%xmm0, %xmm0
+	comiss	%xmm1, %xmm0
+	ja	.L379
 	movss	.LC137(%rip), %xmm2
 	movaps	%xmm2, %xmm0
 	cmpltss	%xmm1, %xmm0
 	andps	%xmm0, %xmm2
 	andnps	%xmm1, %xmm0
 	orps	%xmm2, %xmm0
-.L330:
-	movss	%xmm0, 1120(%rsp)
-	jmp	.L284
-.L328:
+.L379:
+	movss	%xmm0, 1200(%rsp)
+	jmp	.L332
+.L377:
 	leaq	.LC138(%rip), %rdx
 	movq	%r12, %rcx
 	call	strcmp
 	testl	%eax, %eax
-	jne	.L331
+	jne	.L380
 	cmpl	%ebx, %esi
-	jle	.L1245
+	jle	.L1659
 	movq	8(%rdi,%r14,8), %rcx
 	call	atof
 	pxor	%xmm1, %xmm1
 	cvtsd2ss	%xmm0, %xmm1
-	movss	.LC84(%rip), %xmm0
+	movss	.LC85(%rip), %xmm0
 	comiss	%xmm1, %xmm0
-	ja	.L333
+	ja	.L382
 	movss	.LC139(%rip), %xmm2
 	movaps	%xmm2, %xmm0
 	cmpltss	%xmm1, %xmm0
 	andps	%xmm0, %xmm2
 	andnps	%xmm1, %xmm0
 	orps	%xmm2, %xmm0
-.L333:
-	movss	%xmm0, 1124(%rsp)
-	jmp	.L284
-.L295:
+.L382:
+	movss	%xmm0, 1204(%rsp)
+	jmp	.L332
+.L1676:
+	movq	__imp___acrt_iob_func(%rip), %rbx
+.L1003:
+	movl	$2, %ecx
+	call	*%rbx
+	movl	$30, %r8d
+	movl	$1, %edx
+	leaq	.LC233(%rip), %rcx
+	movq	%rax, %r9
+	call	fwrite
+	movq	%rsi, %rcx
+	call	free
+	jmp	.L330
+.L343:
 	movl	$2, %ecx
 	call	*__imp___acrt_iob_func(%rip)
 	leaq	.LC123(%rip), %rdx
 	movq	%rbp, %r8
 	movq	%rax, %rcx
 	call	fprintf
-	jmp	.L282
-.L1258:
-	call	*__imp__errno(%rip)
-	movl	(%rax), %ecx
-	call	strerror
-	movq	__imp___acrt_iob_func(%rip), %rsi
-	movl	$2, %ecx
-	movq	%rax, %rbp
-	call	*%rsi
-	leaq	1232(%rsp), %r8
-	movq	%rbp, %r9
-	leaq	.LC217(%rip), %rdx
-	movq	%rax, %rcx
-	call	fprintf
-	jmp	.L858
-.L331:
-	leaq	.LC140(%rip), %rdx
-	movq	%r12, %rcx
-	call	strcmp
-	testl	%eax, %eax
-	jne	.L334
-	cmpl	%ebx, %esi
-	jle	.L1245
-	movq	8(%rdi,%r14,8), %rcx
-	call	atof
-	pxor	%xmm1, %xmm1
-	cvtsd2ss	%xmm0, %xmm1
-	pxor	%xmm0, %xmm0
-	comiss	%xmm1, %xmm0
-	ja	.L336
-	movss	.LC137(%rip), %xmm2
-	movaps	%xmm2, %xmm0
-	cmpltss	%xmm1, %xmm0
-	andps	%xmm0, %xmm2
-	andnps	%xmm1, %xmm0
-	orps	%xmm2, %xmm0
-.L336:
-	movss	%xmm0, 1128(%rsp)
-	jmp	.L284
-.L334:
-	leaq	.LC141(%rip), %rdx
-	movq	%r12, %rcx
-	call	strcmp
-	testl	%eax, %eax
-	jne	.L337
-	cmpl	%ebx, %esi
-	jle	.L1245
-	movq	8(%rdi,%r14,8), %rcx
-	call	atof
-	pxor	%xmm1, %xmm1
-	cvtsd2ss	%xmm0, %xmm1
-	pxor	%xmm0, %xmm0
-	comiss	%xmm1, %xmm0
-	ja	.L339
-	movss	.LC137(%rip), %xmm2
-	movaps	%xmm2, %xmm0
-	cmpltss	%xmm1, %xmm0
-	andps	%xmm0, %xmm2
-	andnps	%xmm1, %xmm0
-	orps	%xmm2, %xmm0
-.L339:
-	movss	%xmm0, 1132(%rsp)
-	jmp	.L284
-.L337:
-	leaq	.LC142(%rip), %rdx
-	movq	%r12, %rcx
-	call	strcmp
-	testl	%eax, %eax
-	jne	.L340
-	cmpl	%ebx, %esi
-	jle	.L1245
-	movq	8(%rdi,%r14,8), %r13
-	leaq	.LC43(%rip), %rdx
-	movq	%r13, %rcx
-	call	fopen
-	testq	%rax, %rax
-	movq	%rax, %r12
-	je	.L1342
-	movl	$65536, %ecx
-	xorl	%r14d, %r14d
-	call	malloc
-	movl	%r14d, 1160(%rsp)
-	movq	%rax, 1152(%rsp)
-.L343:
-	leaq	464(%rsp), %rcx
-	movq	%r12, %r8
-	movl	$256, %edx
-	call	fgets
-	testq	%rax, %rax
-	je	.L348
-	cmpl	$8191, 1160(%rsp)
-	jg	.L348
-	leaq	464(%rsp), %rcx
-	jmp	.L349
-.L344:
-	addq	$1, %rcx
-.L349:
-	movzbl	(%rcx), %eax
-	cmpb	$32, %al
-	je	.L344
-	cmpb	$9, %al
-	je	.L344
-	subl	$10, %eax
-	cmpb	$25, %al
-	ja	.L345
-	movl	$33554441, %edx
-	btq	%rax, %rdx
-	jc	.L343
-.L345:
-	leaq	364(%rsp), %r9
-	leaq	360(%rsp), %r8
-	leaq	.LC144(%rip), %rdx
-	call	sscanf
-	cmpl	$2, %eax
-	jne	.L343
-	movslq	1160(%rsp), %rcx
-	movq	1152(%rsp), %rdx
-	movss	364(%rsp), %xmm1
-	movss	360(%rsp), %xmm0
-	movq	%rcx, %rax
-	addl	$1, %eax
-	unpcklps	%xmm1, %xmm0
-	movlps	%xmm0, (%rdx,%rcx,8)
-	movl	%eax, 1160(%rsp)
-	jmp	.L343
-.L1342:
-	movl	$2, %ecx
-	call	*__imp___acrt_iob_func(%rip)
-	leaq	.LC143(%rip), %rdx
-	movq	%r13, %r8
-	movq	%rax, %rcx
-	call	fprintf
-	jmp	.L282
-.L340:
-	leaq	.LC145(%rip), %rdx
-	movq	%r12, %rcx
-	call	match_fi_arg
-	testl	%eax, %eax
-	movl	%eax, %r15d
-	je	.L350
-	cmpl	%ebx, %esi
-	jle	.L1245
-	movq	8(%rdi,%r14,8), %rcx
-	call	atof
-	leal	-1(%r15), %eax
-	cltq
-	cvtsd2ss	%xmm0, %xmm0
-	movl	$1, 368(%rsp,%rax,4)
-	movq	%rax, %rdx
-	salq	$5, %rdx
-	movss	%xmm0, 748(%rsp,%rdx)
-	jmp	.L284
-.L348:
-	movq	%r12, %rcx
-	call	fclose
-	jmp	.L284
-.L459:
-	leaq	(%rax,%rbx), %rdx
-	jmp	.L870
-.L318:
+	jmp	.L330
+.L367:
 	movl	$2, %ecx
 	call	*__imp___acrt_iob_func(%rip)
 	leaq	.LC123(%rip), %rdx
 	movq	%r12, %r8
 	movq	%rax, %rcx
 	call	fprintf
-	jmp	.L282
-.L310:
+	jmp	.L330
+.L380:
+	leaq	.LC140(%rip), %rdx
+	movq	%r12, %rcx
+	call	strcmp
+	testl	%eax, %eax
+	jne	.L383
+	cmpl	%ebx, %esi
+	jle	.L1659
+	movq	8(%rdi,%r14,8), %rcx
+	call	atof
+	pxor	%xmm1, %xmm1
+	cvtsd2ss	%xmm0, %xmm1
+	pxor	%xmm0, %xmm0
+	comiss	%xmm1, %xmm0
+	ja	.L385
+	movss	.LC137(%rip), %xmm2
+	movaps	%xmm2, %xmm0
+	cmpltss	%xmm1, %xmm0
+	andps	%xmm0, %xmm2
+	andnps	%xmm1, %xmm0
+	orps	%xmm2, %xmm0
+.L385:
+	movss	%xmm0, 1208(%rsp)
+	jmp	.L332
+.L383:
+	leaq	.LC141(%rip), %rdx
+	movq	%r12, %rcx
+	call	strcmp
+	testl	%eax, %eax
+	jne	.L386
+	cmpl	%ebx, %esi
+	jle	.L1659
+	movq	8(%rdi,%r14,8), %rcx
+	call	atof
+	pxor	%xmm1, %xmm1
+	cvtsd2ss	%xmm0, %xmm1
+	pxor	%xmm0, %xmm0
+	comiss	%xmm1, %xmm0
+	ja	.L388
+	movss	.LC137(%rip), %xmm2
+	movaps	%xmm2, %xmm0
+	cmpltss	%xmm1, %xmm0
+	andps	%xmm0, %xmm2
+	andnps	%xmm1, %xmm0
+	orps	%xmm2, %xmm0
+.L388:
+	movss	%xmm0, 1212(%rsp)
+	jmp	.L332
+.L386:
+	leaq	.LC142(%rip), %rdx
+	movq	%r12, %rcx
+	call	strcmp
+	testl	%eax, %eax
+	jne	.L389
+	cmpl	%ebx, %esi
+	jle	.L1659
+	movq	8(%rdi,%r14,8), %r13
+	leaq	.LC44(%rip), %rdx
+	movq	%r13, %rcx
+	call	fopen
+	testq	%rax, %rax
+	movq	%rax, %r12
+	je	.L1772
+	movl	$65536, %ecx
+	call	malloc
+	movq	%rax, 1232(%rsp)
+	xorl	%eax, %eax
+	movl	%eax, 1240(%rsp)
+.L392:
+	leaq	544(%rsp), %rcx
+	movq	%r12, %r8
+	movl	$256, %edx
+	call	fgets
+	testq	%rax, %rax
+	je	.L397
+	cmpl	$8191, 1240(%rsp)
+	jg	.L397
+	leaq	544(%rsp), %rcx
+	jmp	.L398
+.L393:
+	addq	$1, %rcx
+.L398:
+	movzbl	(%rcx), %eax
+	cmpb	$32, %al
+	je	.L393
+	cmpb	$9, %al
+	je	.L393
+	subl	$10, %eax
+	cmpb	$25, %al
+	ja	.L394
+	movl	$33554441, %edx
+	btq	%rax, %rdx
+	jc	.L392
+.L394:
+	leaq	348(%rsp), %r9
+	leaq	344(%rsp), %r8
+	leaq	.LC144(%rip), %rdx
+	call	sscanf
+	cmpl	$2, %eax
+	jne	.L392
+	movslq	1240(%rsp), %rcx
+	movq	1232(%rsp), %rdx
+	movss	348(%rsp), %xmm1
+	movss	344(%rsp), %xmm0
+	movq	%rcx, %rax
+	addl	$1, %eax
+	unpcklps	%xmm1, %xmm0
+	movlps	%xmm0, (%rdx,%rcx,8)
+	movl	%eax, 1240(%rsp)
+	jmp	.L392
+.L1772:
+	movl	$2, %ecx
+	call	*__imp___acrt_iob_func(%rip)
+	leaq	.LC143(%rip), %rdx
+	movq	%r13, %r8
+	movq	%rax, %rcx
+	call	fprintf
+	jmp	.L330
+.L389:
+	leaq	.LC145(%rip), %rdx
+	movq	%r12, %rcx
+	call	match_fi_arg
+	testl	%eax, %eax
+	movl	%eax, %r15d
+	je	.L399
+	cmpl	%ebx, %esi
+	jle	.L1659
+	movq	8(%rdi,%r14,8), %rcx
+	call	atof
+	leal	-1(%r15), %eax
+	cltq
+	cvtsd2ss	%xmm0, %xmm0
+	movl	$1, 448(%rsp,%rax,4)
+	movq	%rax, %rdx
+	salq	$5, %rdx
+	movss	%xmm0, 828(%rsp,%rdx)
+	jmp	.L332
+.L397:
+	movq	%r12, %rcx
+	call	fclose
+	jmp	.L332
+.L533:
+	leaq	8100(%rbx), %rsi
+	leaq	(%r9,%rsi), %r13
+	jmp	.L1016
+.L359:
 	movl	$2, %ecx
 	call	*__imp___acrt_iob_func(%rip)
 	leaq	.LC130(%rip), %rdx
 	movq	%r12, %r8
 	movq	%rax, %rcx
 	call	fprintf
-	jmp	.L282
-.L350:
+	jmp	.L330
+.L1677:
+	call	*__imp__errno(%rip)
+	movl	(%rax), %ecx
+	call	strerror
+	movq	__imp___acrt_iob_func(%rip), %rbx
+	movl	$2, %ecx
+	movq	%rax, %rbp
+	call	*%rbx
+	leaq	1312(%rsp), %r8
+	movq	%rbp, %r9
+	leaq	.LC217(%rip), %rdx
+	movq	%rax, %rcx
+	call	fprintf
+	jmp	.L1003
+.L399:
 	leaq	.LC146(%rip), %rdx
 	movq	%r12, %rcx
 	call	match_fi_arg
 	testl	%eax, %eax
 	movl	%eax, %r15d
-	je	.L352
+	je	.L401
 	cmpl	%ebx, %esi
-	jle	.L1245
+	jle	.L1659
 	movq	8(%rdi,%r14,8), %rcx
 	call	atof
 	leal	-1(%r15), %eax
 	cltq
 	cvtsd2ss	%xmm0, %xmm0
-	movl	$1, 416(%rsp,%rax,4)
+	movl	$1, 496(%rsp,%rax,4)
 	movq	%rax, %rdx
 	salq	$5, %rdx
-	movss	%xmm0, 752(%rsp,%rdx)
-	jmp	.L284
-.L352:
+	movss	%xmm0, 832(%rsp,%rdx)
+	jmp	.L332
+.L401:
 	leaq	.LC147(%rip), %rdx
 	movq	%r12, %rcx
 	call	match_fi_arg
 	testl	%eax, %eax
 	movl	%eax, %r15d
-	je	.L354
+	je	.L403
 	cmpl	%ebx, %esi
-	jle	.L1245
+	jle	.L1659
 	movq	8(%rdi,%r14,8), %rcx
 	call	atof
 	leal	-1(%r15), %eax
 	cltq
 	cvtsd2ss	%xmm0, %xmm0
-	movss	%xmm0, 1068(%rsp,%rax,4)
-	jmp	.L284
-.L354:
+	movss	%xmm0, 1148(%rsp,%rax,4)
+	jmp	.L332
+.L403:
 	leaq	.LC148(%rip), %rdx
 	movq	%r12, %rcx
 	call	strcmp
 	testl	%eax, %eax
-	je	.L1343
+	je	.L1773
 	leaq	.LC149(%rip), %rdx
 	movq	%r12, %rcx
 	call	strcmp
 	testl	%eax, %eax
-	jne	.L358
+	jne	.L409
 	cmpl	%ebx, %esi
-	jle	.L1245
+	jle	.L1659
 	movq	8(%rdi,%r14,8), %rcx
 	call	atof
-	cvtsd2ss	%xmm0, %xmm0
-	movss	%xmm0, 1136(%rsp)
-	jmp	.L284
-.L1343:
+	cvttsd2sil	%xmm0, %eax
+	movl	%eax, FORMANTS(%rip)
+	jmp	.L332
+.L1773:
 	cmpl	%ebx, %esi
-	jle	.L1245
+	jle	.L1659
 	movq	8(%rdi,%r14,8), %rcx
 	call	atof
+	movl	FORMANTS(%rip), %edx
+	movl	$5, %eax
 	cvtsd2ss	%xmm0, %xmm0
-	movss	%xmm0, 912(%rsp)
-	movss	%xmm0, 944(%rsp)
-	movss	%xmm0, 976(%rsp)
-	movss	%xmm0, 1008(%rsp)
-	movss	%xmm0, 1040(%rsp)
-	jmp	.L284
-.L358:
+	jmp	.L407
+.L408:
+	movq	%rax, %rcx
+	addq	$1, %rax
+	salq	$5, %rcx
+	movss	%xmm0, 832(%rsp,%rcx)
+.L407:
+	cmpl	%eax, %edx
+	jg	.L408
+	jmp	.L332
+.L409:
 	leaq	.LC150(%rip), %rdx
 	movq	%r12, %rcx
 	call	strcmp
 	testl	%eax, %eax
-	jne	.L360
+	jne	.L411
 	cmpl	%ebx, %esi
-	jle	.L1245
+	jle	.L1659
 	movq	8(%rdi,%r14,8), %rcx
 	call	atof
 	cvtsd2ss	%xmm0, %xmm0
-	movss	%xmm0, 1140(%rsp)
-	jmp	.L284
-.L360:
+	movss	%xmm0, 1216(%rsp)
+	jmp	.L332
+.L411:
 	leaq	.LC151(%rip), %rdx
 	movq	%r12, %rcx
 	call	strcmp
 	testl	%eax, %eax
-	jne	.L362
+	jne	.L413
 	cmpl	%ebx, %esi
-	jle	.L1245
+	jle	.L1659
 	movq	8(%rdi,%r14,8), %rcx
 	call	atof
 	cvtsd2ss	%xmm0, %xmm0
-	movss	%xmm0, 1144(%rsp)
-	jmp	.L284
-.L362:
+	movss	%xmm0, 1220(%rsp)
+	jmp	.L332
+.L413:
 	leaq	.LC152(%rip), %rdx
 	movq	%r12, %rcx
 	call	strcmp
 	testl	%eax, %eax
-	jne	.L364
+	jne	.L415
 	cmpl	%ebx, %esi
-	jle	.L1245
-	movq	8(%rdi,%r14,8), %rdx
-	leaq	1232(%rsp), %rcx
-	movl	$511, %r8d
-	call	strncpy
-	jmp	.L284
-.L364:
+	jle	.L1659
+	movq	8(%rdi,%r14,8), %rcx
+	call	atof
+	cvtsd2ss	%xmm0, %xmm0
+	movss	%xmm0, 1224(%rsp)
+	jmp	.L332
+.L415:
 	leaq	.LC153(%rip), %rdx
 	movq	%r12, %rcx
 	call	strcmp
 	testl	%eax, %eax
-	jne	.L366
+	jne	.L417
 	cmpl	%ebx, %esi
-	jle	.L1245
-	movq	8(%rdi,%r14,8), %r12
+	jle	.L1659
+	movq	8(%rdi,%r14,8), %rdx
+	leaq	1312(%rsp), %rcx
+	movl	$511, %r8d
+	call	strncpy
+	jmp	.L332
+.L417:
 	leaq	.LC154(%rip), %rdx
+	movq	%r12, %rcx
+	call	strcmp
+	testl	%eax, %eax
+	jne	.L419
+	cmpl	%ebx, %esi
+	jle	.L1659
+	movq	8(%rdi,%r14,8), %r12
+	leaq	.LC155(%rip), %rdx
 	movq	__imp__stricmp(%rip), %r13
 	movq	%r12, %rcx
 	call	*%r13
 	testl	%eax, %eax
-	jne	.L368
-	xorl	%r13d, %r13d
-	movl	%r13d, 2288(%rsp)
-	jmp	.L284
-.L366:
-	leaq	.LC159(%rip), %rdx
-	movq	%r12, %rcx
-	call	strcmp
-	testl	%eax, %eax
-	je	.L1344
+	jne	.L421
+	xorl	%eax, %eax
+	movl	%eax, 2368(%rsp)
+	jmp	.L332
+.L419:
 	leaq	.LC160(%rip), %rdx
 	movq	%r12, %rcx
 	call	strcmp
 	testl	%eax, %eax
-	je	.L1345
+	je	.L1774
 	leaq	.LC161(%rip), %rdx
 	movq	%r12, %rcx
 	call	strcmp
 	testl	%eax, %eax
-	je	.L1346
+	je	.L1775
 	leaq	.LC162(%rip), %rdx
 	movq	%r12, %rcx
 	call	strcmp
 	testl	%eax, %eax
-	je	.L1347
+	je	.L1776
+	leaq	.LC163(%rip), %rdx
+	movq	%r12, %rcx
+	call	strcmp
+	testl	%eax, %eax
+	je	.L1777
 	cmpb	$45, (%r12)
-	je	.L377
-	leaq	1232(%rsp), %rcx
+	je	.L430
+	leaq	1312(%rsp), %rcx
 	movl	$511, %r8d
 	movq	%r12, %rdx
 	call	strncpy
-.L373:
+.L426:
 	movl	%r13d, %ebx
-	jmp	.L284
-.L368:
-	leaq	.LC155(%rip), %rdx
-	movq	%r12, %rcx
-	call	*%r13
-	testl	%eax, %eax
-	jne	.L369
-	movl	$1, 2288(%rsp)
-	jmp	.L284
-.L377:
-	movl	$2, %ecx
-	call	*__imp___acrt_iob_func(%rip)
-	leaq	.LC163(%rip), %rdx
-	movq	%r12, %r8
-	movq	%rax, %rcx
-	call	fprintf
-	jmp	.L373
-.L369:
+	jmp	.L332
+.L421:
 	leaq	.LC156(%rip), %rdx
 	movq	%r12, %rcx
 	call	*%r13
 	testl	%eax, %eax
-	jne	.L370
-	movl	$2, 2288(%rsp)
-	jmp	.L284
-.L1347:
-	movl	$1, 2300(%rsp)
-	jmp	.L373
-.L1345:
-	xorl	%r12d, %r12d
-	movl	%r12d, 2292(%rsp)
-	jmp	.L373
-.L1344:
-	movl	$1, 2292(%rsp)
-	jmp	.L373
-.L1346:
-	xorl	%ebx, %ebx
-	movl	%ebx, 2296(%rsp)
-	jmp	.L373
-.L370:
+	jne	.L422
+	movl	$1, 2368(%rsp)
+	jmp	.L332
+.L430:
+	movl	$2, %ecx
+	call	*__imp___acrt_iob_func(%rip)
+	leaq	.LC164(%rip), %rdx
+	movq	%r12, %r8
+	movq	%rax, %rcx
+	call	fprintf
+	jmp	.L426
+.L422:
 	leaq	.LC157(%rip), %rdx
 	movq	%r12, %rcx
 	call	*%r13
 	testl	%eax, %eax
-	jne	.L371
-	movl	$3, 2288(%rsp)
-	jmp	.L284
-.L371:
+	jne	.L423
+	movl	$2, 2368(%rsp)
+	jmp	.L332
+.L1777:
+	movl	$1, 2380(%rsp)
+	jmp	.L426
+.L1775:
+	xorl	%eax, %eax
+	movl	%eax, 2372(%rsp)
+	jmp	.L426
+.L1774:
+	movl	$1, 2372(%rsp)
+	jmp	.L426
+.L1776:
+	xorl	%eax, %eax
+	movl	%eax, 2376(%rsp)
+	jmp	.L426
+.L423:
+	leaq	.LC158(%rip), %rdx
+	movq	%r12, %rcx
+	call	*%r13
+	testl	%eax, %eax
+	jne	.L424
+	movl	$3, 2368(%rsp)
+	jmp	.L332
+.L424:
 	movl	$2, %ecx
 	call	*__imp___acrt_iob_func(%rip)
-	leaq	.LC158(%rip), %rdx
+	leaq	.LC159(%rip), %rdx
 	movq	%r12, %r8
 	movq	%rax, %rcx
 	call	fprintf
-	jmp	.L282
+	jmp	.L330
 	.seh_endproc
 	.section .rdata,"dr"
 	.align 32
@@ -7097,7 +7825,7 @@ g_preset_impulsive:
 	.long	1056964608
 	.long	1065353216
 	.align 32
-g_preset_breathy:
+g_preset_whisper:
 	.long	1143930880
 	.long	1150844928
 	.long	1159888896
@@ -8161,148 +8889,141 @@ g_phoneme_db:
 	.align 4
 g_noise_state:
 	.long	-1412567295
-	.set	.LC0,.LC103+4
+	.globl	FORMANTS
+	.align 4
+FORMANTS:
+	.long	10
 	.section .rdata,"dr"
+	.align 4
+.LC0:
+	.long	1123024896
 	.align 4
 .LC2:
 	.long	1120403456
-	.set	.LC42,.LC55
+	.set	.LC43,.LC101+4
 	.align 8
-.LC45:
+.LC46:
 	.long	0
 	.long	22050
 	.align 4
-.LC50:
+.LC51:
 	.long	1148846080
-	.set	.LC54,.LC55
-	.align 16
-.LC55:
-	.long	1065353216
-	.long	1065353216
-	.long	1065353216
-	.long	1065353216
 	.align 4
 .LC58:
 	.long	897988541
-	.set	.LC60,.LC99+4
-	.set	.LC61,.LC79+8
+	.set	.LC60,.LC100+4
+	.set	.LC61,.LC81
 	.align 4
 .LC64:
 	.long	1082130432
 	.align 4
 .LC69:
 	.long	953267991
+	.align 8
+.LC76:
+	.long	1061997773
+	.long	1045220557
 	.align 16
-.LC77:
+.LC78:
 	.long	1143930880
 	.long	1150844928
 	.long	1159888896
 	.long	1163739136
 	.align 16
-.LC78:
+.LC79:
 	.long	1166843904
 	.long	1168891904
 	.long	1170939904
 	.long	1172987904
-	.align 16
-.LC79:
+	.align 8
+.LC80:
 	.long	1174720512
 	.long	1175744512
-	.long	1121714176
-	.long	1124204544
-	.align 16
-.LC80:
-	.long	1121714176
-	.long	1124204544
-	.long	1124859904
-	.long	1125515264
 	.align 16
 .LC81:
+	.long	1121714176
+	.long	1124204544
+	.long	1121714176
+	.long	1124204544
+	.align 16
+.LC82:
+	.long	1124859904
+	.long	1125515264
 	.long	1126170624
 	.long	1126825984
+	.align 8
+.LC83:
 	.long	1127481344
 	.long	1128136704
-	.align 8
-.LC82:
-	.long	1061997773
-	.long	1045220557
-	.align 4
-.LC83:
-	.long	1036831949
 	.align 4
 .LC84:
-	.long	1056964608
-	.set	.LC92,.LC100+12
-	.set	.LC93,.LC101+4
-	.set	.LC94,.LC101
-	.set	.LC95,.LC77
+	.long	1036831949
 	.align 4
-.LC96:
-	.long	1043878380
+.LC85:
+	.long	1056964608
+	.set	.LC93,.LC101+12
+	.set	.LC94,.LC102+4
+	.set	.LC95,.LC102
+	.set	.LC96,.LC78
 	.align 4
 .LC97:
-	.long	1109393408
+	.long	1043878380
 	.align 4
 .LC98:
+	.long	1109393408
+	.align 4
+.LC99:
 	.long	-1082130432
 	.align 8
-.LC99:
+.LC100:
 	.long	1060320051
 	.long	1048576000
 	.align 16
-.LC100:
+.LC101:
 	.long	1084227584
 	.long	1065353216
 	.long	1073741824
 	.long	1140457472
 	.align 8
-.LC101:
+.LC102:
 	.long	1165623296
 	.long	1157234688
 	.align 8
-.LC102:
-	.long	1
-	.long	1
-	.align 8
 .LC103:
-	.long	1073741824
-	.long	1123024896
+	.long	1
+	.long	1
 	.align 8
 .LC104:
+	.long	1143930880
+	.long	1121714176
+	.align 8
+.LC105:
 	.long	1150844928
 	.long	1124204544
 	.align 8
-.LC105:
+.LC106:
 	.long	1159888896
 	.long	1121714176
 	.align 8
-.LC106:
+.LC107:
 	.long	1163739136
 	.long	1124204544
 	.align 8
-.LC107:
+.LC108:
 	.long	1166843904
 	.long	1124859904
 	.align 8
-.LC108:
+.LC109:
 	.long	1168891904
 	.long	1125515264
 	.align 8
-.LC109:
+.LC110:
 	.long	1170939904
 	.long	1126170624
 	.align 8
-.LC110:
+.LC111:
 	.long	1172987904
 	.long	1126825984
-	.align 8
-.LC111:
-	.long	1174720512
-	.long	1127481344
-	.align 8
-.LC112:
-	.long	1175744512
-	.long	1128136704
 	.align 4
 .LC127:
 	.long	1106247680
@@ -8313,66 +9034,52 @@ g_noise_state:
 .LC139:
 	.long	1101004800
 	.align 4
-.LC164:
+.LC166:
 	.long	814313567
 	.align 4
-.LC180:
+.LC182:
 	.long	1028443341
 	.align 4
-.LC183:
+.LC185:
 	.long	-1068953637
 	.align 4
-.LC186:
+.LC188:
 	.long	1006834287
 	.align 4
-.LC187:
+.LC189:
 	.long	1078530011
 	.align 4
-.LC188:
+.LC190:
 	.long	1068827891
 	.align 4
-.LC189:
+.LC191:
 	.long	-1073741824
 	.align 4
-.LC190:
+.LC192:
 	.long	1086918619
 	.align 4
-.LC191:
+.LC193:
 	.long	1159533667
 	.align 4
-.LC192:
+.LC194:
 	.long	1002740646
 	.align 4
-.LC193:
-	.long	1011129254
-	.align 16
-.LC194:
-	.long	1143930880
-	.long	1143930880
-	.long	1143930880
-	.long	1143930880
-	.align 16
 .LC195:
-	.long	1121714176
-	.long	1121714176
-	.long	1121714176
-	.long	1121714176
-	.set	.LC196,.LC194
-	.set	.LC197,.LC195
+	.long	1011129254
 	.align 4
-.LC198:
+.LC196:
 	.long	1053609165
 	.align 4
-.LC199:
+.LC197:
 	.long	1057803469
 	.align 4
-.LC200:
+.LC198:
 	.long	1041865114
 	.align 4
-.LC201:
+.LC199:
 	.long	1068708659
 	.align 4
-.LC202:
+.LC200:
 	.long	1055286886
 	.align 4
 .LC203:
@@ -8380,19 +9087,20 @@ g_noise_state:
 	.align 4
 .LC204:
 	.long	981668463
-	.align 4
+	.align 8
 .LC205:
-	.long	925353388
+	.long	1065353216
+	.long	1065353216
 	.align 4
 .LC206:
-	.long	1025758986
-	.set	.LC207,.LC99
+	.long	925353388
 	.align 4
-.LC208:
-	.long	1050253722
+.LC207:
+	.long	1025758986
+	.set	.LC208,.LC100
 	.align 4
 .LC209:
-	.long	1059481190
+	.long	1050253722
 	.align 4
 .LC210:
 	.long	1051931443
@@ -8411,13 +9119,14 @@ g_noise_state:
 	.align 4
 .LC214:
 	.long	1060437492
-	.set	.LC222,.LC102
+	.set	.LC222,.LC103
 	.align 4
 .LC226:
 	.long	1191181824
 	.def	__main;	.scl	2;	.type	32;	.endef
 	.ident	"GCC: (x86_64-posix-seh-rev0, Built by MinGW-Builds project) 15.2.0"
 	.def	puts;	.scl	2;	.type	32;	.endef
+	.def	printf;	.scl	2;	.type	32;	.endef
 	.def	strlen;	.scl	2;	.type	32;	.endef
 	.def	strncmp;	.scl	2;	.type	32;	.endef
 	.def	atoi;	.scl	2;	.type	32;	.endef
@@ -8433,9 +9142,9 @@ g_noise_state:
 	.def	strncpy;	.scl	2;	.type	32;	.endef
 	.def	strchr;	.scl	2;	.type	32;	.endef
 	.def	sscanf;	.scl	2;	.type	32;	.endef
+	.def	memcpy;	.scl	2;	.type	32;	.endef
 	.def	strcmp;	.scl	2;	.type	32;	.endef
 	.def	exit;	.scl	2;	.type	32;	.endef
-	.def	printf;	.scl	2;	.type	32;	.endef
 	.def	fwrite;	.scl	2;	.type	32;	.endef
 	.def	expf;	.scl	2;	.type	32;	.endef
 	.def	tanf;	.scl	2;	.type	32;	.endef
