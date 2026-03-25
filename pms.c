@@ -8,21 +8,23 @@
 #include <errno.h>
 
 
-#define VERSION_STR         "1.0.0"
-#define MAX_FORMANTS        10
+#define VERSION_STR         "2.~.5-23032026"
+#define VERSION_FMT         "R.I.B-DDMMYYYY (R meaning Release, I meaning 1 character version identification, and B meaning bugfix, DD meaning 2 digit day, MM meaning 2 digit month and YYYY meaning 4 digit year.)"
 #define MAX_SPEC_FRAMES     8192
 #define MAX_PHONEMES        1024
 #define MAX_PITCH_POINTS    32
 #define MAX_ANCHORS         64
 #define MAX_CONTOUR_PTS     8192
-#define MAX_SAMPLES         (48000 * 120)                          
+#define MAX_SAMPLES         (48000 * 120)
+#define MAX_FORMANTS        10                          
+int FORMANTS              = 10;
 
 #define PI_F                3.14159265358979323846f
 #define TWO_PI_F            (2.0f * PI_F)
 
 
 typedef enum { MODE_DEMO = 0, MODE_SPEC = 1, MODE_PHONEME = 2 } SynthMode;
-typedef enum { VOICE_NATURAL = 0, VOICE_BREATHY = 1, VOICE_IMPULSIVE = 2 } VoiceType;
+typedef enum { VOICE_NATURAL = 0, VOICE_WHISPER = 1, VOICE_IMPULSIVE = 2 } VoiceType;
 typedef enum { FILTER_CASCADE = 0, FILTER_PARALLEL = 1 } FilterMode;
 typedef enum { FMT_WAV16 = 0, FMT_WAV32 = 1, FMT_RAW16 = 2, FMT_RAW32 = 3 } OutFormat;
 
@@ -326,7 +328,7 @@ static const VoicePreset g_preset_natural = {
     {110, 130, 110, 130, 140, 150, 160, 170, 180, 190},
     2.5f, 0.12f, 0.00f, 120.0f, 1.5f, 5.5f, 1.0f, 2.0f
 };
-static const VoicePreset g_preset_breathy = {
+static const VoicePreset g_preset_whisper = {
     {700,1220,2600,3540,4500,5500,6500,7500,8500,9500},
     {150, 200, 150, 180, 200, 200, 200, 200, 200, 220},
     0.45f, 0.65f, 0.05f,  95.0f, 0.5f, 4.5f, 4.0f, 4.0f
@@ -501,7 +503,7 @@ static int spec_parse(const char *path, SpecData *sd)
 
         SpecFrame *fr = &sd->frames[sd->nframes];
         memset(fr,0,sizeof(*fr));
-        for(int k=0;k<MAX_FORMANTS;k++) fr->fgain[k]=1.0f;
+        for(int k=0;k<FORMANTS;k++) fr->fgain[k]=1.0f;
         fr->gain_mult = 1.0f;
 
         char *ptr = p;
@@ -512,7 +514,7 @@ static int spec_parse(const char *path, SpecData *sd)
 
         NEED(skip) fr->time_ms = (float)atof(tok);
         int ok = 1;
-        for(int k=0;k<MAX_FORMANTS&&ok;k++){
+        for(int k=0;k<FORMANTS&&ok;k++){
             tok=nxtok(&ptr); if(!tok){ok=0;break;} fr->freq[k]=(float)atof(tok);
             tok=nxtok(&ptr); if(!tok){ok=0;break;} fr->bw  [k]=(float)atof(tok);
         }
@@ -527,7 +529,7 @@ static int spec_parse(const char *path, SpecData *sd)
 
         {
             int ng = 0;
-            for(int k=0;k<MAX_FORMANTS;k++){
+            for(int k=0;k<FORMANTS;k++){
                 tok=nxtok(&ptr); if(!tok) break;
                 fr->fgain[k]=(float)atof(tok); ng++;
             }
@@ -571,7 +573,7 @@ static void spec_at(const SpecData *sd, float t_ms,
     const SpecFrame *B = &sd->frames[hi];
     float t0 = A->time_ms, t1 = B->time_ms;
 
-    for (int k=0;k<MAX_FORMANTS;k++){
+    for (int k=0;k<FORMANTS;k++){
         freq [k] = interp(A->freq[k], B->freq[k], t0,t1,t_ms);
         bw   [k] = interp(A->bw  [k], B->bw  [k], t0,t1,t_ms);
         float ga = A->has_fgain ? A->fgain[k] : 1.0f;
@@ -655,7 +657,7 @@ static int phoneme_parse(const char *path, PhonemeData *pd)
 
         const PhonemeDBEntry *dbe = find_phoneme_db(ph->name);
         if (dbe) {
-            for(int k=0;k<MAX_FORMANTS;k++){
+            for(int k=0;k<FORMANTS;k++){
                 ph->target_freq[k]=dbe->freq[k];
                 ph->target_bw  [k]=dbe->bw  [k];
             }
@@ -674,7 +676,7 @@ static int phoneme_parse(const char *path, PhonemeData *pd)
         } else {
             float df[]={700,1220,2600,3540,4500,5500,6500,7500,8500,9500};
             float db[]={110, 130, 110, 130, 140, 150, 160, 170, 180, 190};
-            for(int k=0;k<MAX_FORMANTS;k++){ph->target_freq[k]=df[k];ph->target_bw[k]=db[k];}
+            for(int k=0;k<FORMANTS;k++){ph->target_freq[k]=df[k];ph->target_bw[k]=db[k];}
             ph->voicing_amp=0.8f; ph->aspiration_amp=0.2f;
         }
 
@@ -684,7 +686,7 @@ static int phoneme_parse(const char *path, PhonemeData *pd)
                 if (ph->n_pitch < MAX_PITCH_POINTS)
                     parse_pitch_pt(tok, &ph->pitch_points[ph->n_pitch++]);
             } else if (strchr(tok,'/')) {
-                if (fi < MAX_FORMANTS) {
+                if (fi < FORMANTS) {
                     parse_formant_pair(tok,
                         &ph->target_freq[fi], &ph->target_bw[fi]);
                     fi++;
@@ -758,8 +760,8 @@ static float glottal_wave(float phase, VoiceType vt)
         else
             v = 1.0f - (phase - 0.7f) / 0.3f;
         v = 2.0f * v - 1.0f;
-        if (vt == VOICE_BREATHY)
-            v = v * 0.65f + white_noise() * 0.35f;                                 
+        if (vt == VOICE_WHISPER)
+            v = white_noise() * 0.45f;                                 
     }
     return v;
 }
@@ -804,7 +806,7 @@ static int synthesize(SynthState *st, float **out, int *out_n)
                   (float)sr);
     make_highpass(&burst_filt, 800.0f, (float)sr);
 
-    for (int k=0;k<MAX_FORMANTS;k++) formant_reset(&st->formants[k]);
+    for (int k=0;k<FORMANTS;k++) formant_reset(&st->formants[k]);
     st->pitch_phase   = 0.0f;
     st->vibrato_phase = 0.0f;
     st->lip_rad_z1    = 0.0f;
@@ -822,7 +824,7 @@ static int synthesize(SynthState *st, float **out, int *out_n)
         phon_t0[0] = 0.0f;
         for (int i=0;i<np;i++) phon_t0[i+1]=phon_t0[i]+st->phon.phonemes[i].duration_ms;
 
-        for (int k=0;k<MAX_FORMANTS;k++){
+        for (int k=0;k<FORMANTS;k++){
             phon_sf[0][k] = st->formants[k].freq > 0 ? st->formants[k].freq : 700.0f;
             phon_sb[0][k] = st->formants[k].bw   > 0 ? st->formants[k].bw  : 110.0f;
         }
@@ -830,7 +832,7 @@ static int synthesize(SynthState *st, float **out, int *out_n)
             const char *prev_name = st->phon.phonemes[i-1].name;
             int prev_is_sil = (strcasecmp(prev_name,"sil")==0 ||
                                strcmp(prev_name,"_")==0);
-            for(int k=0;k<MAX_FORMANTS;k++){
+            for(int k=0;k<FORMANTS;k++){
                 if (prev_is_sil) {
                     phon_sf[i][k] = st->phon.phonemes[i].target_freq[k];
                     phon_sb[i][k] = st->phon.phonemes[i].target_bw  [k];
@@ -860,7 +862,7 @@ static int synthesize(SynthState *st, float **out, int *out_n)
         float fr_amp    = st->frication_amp;
         float gain_mult = 1.0f;
         float freq[MAX_FORMANTS], bw[MAX_FORMANTS], fgain[MAX_FORMANTS];
-        for(int k=0;k<MAX_FORMANTS;k++){
+        for(int k=0;k<FORMANTS;k++){
             freq [k] = st->formants[k].freq;
             bw   [k] = st->formants[k].bw;
             fgain[k] = st->formant_gains[k];
@@ -941,7 +943,7 @@ static int synthesize(SynthState *st, float **out, int *out_n)
                     is_burst = 0;
                 }
 
-                for (int k=0;k<MAX_FORMANTS;k++){
+                for (int k=0;k<FORMANTS;k++){
                     freq [k] = lerpf(phon_sf[pi][k], ph->target_freq[k], pct);
                     bw   [k] = lerpf(phon_sb[pi][k], ph->target_bw  [k], pct);
                     fgain[k] = 1.0f;
@@ -952,7 +954,7 @@ static int synthesize(SynthState *st, float **out, int *out_n)
 
             } else {
                 v_amp = 0.0f; a_amp = 0.0f; fr_amp = 0.0f; f0 = 0.0f;
-                for(int k=0;k<MAX_FORMANTS;k++){freq[k]=700.f;bw[k]=110.f;fgain[k]=1.f;}
+                for(int k=0;k<FORMANTS;k++){freq[k]=700.f;bw[k]=110.f;fgain[k]=1.f;}
             }
         }
 
@@ -972,7 +974,7 @@ static int synthesize(SynthState *st, float **out, int *out_n)
         if (f0 > 0.0f) f0 = clampf(f0, 40.0f, 500.0f);
 
         int cascade = (st->filter_mode == FILTER_CASCADE);
-        for(int k=0;k<MAX_FORMANTS;k++){
+        for(int k=0;k<FORMANTS;k++){
             formant_update(&st->formants[k], freq[k], bw[k],
                            fgain[k] > 0.0f ? fgain[k] : 1.0f,
                            (float)sr, cascade);
@@ -1004,13 +1006,13 @@ static int synthesize(SynthState *st, float **out, int *out_n)
         float samp;
         if (cascade) {
             samp = excitation;
-            for(int k=0;k<MAX_FORMANTS;k++)
+            for(int k=0;k<FORMANTS;k++)
                 if(st->formants[k].freq > 0.0f)
                     samp = formant_process(&st->formants[k], samp);
             samp += fr_sig * 0.25f;                                    
         } else {
             samp = 0.0f;
-            for(int k=0;k<MAX_FORMANTS;k++)
+            for(int k=0;k<FORMANTS;k++)
                 if(st->formants[k].freq > 0.0f)
                     samp += formant_process(&st->formants[k], excitation);
             samp += fr_sig * 0.35f;
@@ -1050,20 +1052,21 @@ static int synthesize(SynthState *st, float **out, int *out_n)
 static void print_help(void)
 {
     puts("Klatt-Style Formant Speech Synthesizer\n");
-    puts("Usage: formant_synth [OPTIONS] [OUTPUT_FILE]\n");
+    puts("Usage: pms [OPTIONS] [OUTPUT_FILE]\n");
     puts("Mode Selection (mutually exclusive):");
     puts("  --spec FILE              Load specification frames from file");
     puts("  --phon-spec FILE         Load detailed phoneme specifications from file");
     puts("  --phoneme FILE           Load simple phoneme sequence from file");
-    puts("  --demo VOICE_TYPE        Demo mode (natural|breathy|impulsive)\n");
+    puts("  --demo VOICE_TYPE        Demo mode (natural|whisper|impulsive)\n");
     puts("Global Parameters:");
-    puts("  --sample-rate SR         Sample rate (16000|22050|44100|48000, default: 22050)");
+    puts("  --sample-rate SR         Sample rate (16000|22050|44100|48000|88200|96000|176400|192000, default: 22050)");
     puts("  --duration SEC           Duration in seconds (default: 2.0)");
     puts("  --f0 HZ                  Fundamental frequency (default: 120)");
     puts("  --synthesis MODE         Synthesis mode (cascade|parallel, default: cascade)");
-    puts("  --amplitude LEVEL        Output amplitude 0.0-1.0 (default: 0.8)\n");
+    puts("  --amplitude LEVEL        Output amplitude 0.0-1.0 (default: 0.8)");
+    printf("  --formants INT           Amount of formants to use, 1-%d\n\n", MAX_FORMANTS);
     puts("Voice Parameters:");
-    puts("  --voice TYPE             Voice type (natural|breathy|impulsive)");
+    puts("  --voice TYPE             Voice type (natural|whisper|impulsive)");
     puts("  --voicing-amp AMP        Voicing amplitude (default: 0.7)");
     puts("  --aspiration-amp AMP     Aspiration amplitude (default: 0.3)");
     puts("  --frication-amp AMP      Frication amplitude (default: 0.0)\n");
@@ -1091,20 +1094,20 @@ static void print_help(void)
 }
 
 static void print_version(void) {
-    printf("formant_synth version %s\n", VERSION_STR);
+    printf("poor man's synthesizer version %s version format %s\n", VERSION_STR, VERSION_FMT);
 }
 
 
 static int valid_sr(int sr)
 {
-    static const int ok[]={8000,16000,22050,44100,48000};
+    static const int ok[]={8000,16000,22050,44100,48000,88200,96000,176400,192000};
     for(int i=0;i<5;i++) if(sr==ok[i]) return 1;
     return 0;
 }
 
 static void apply_preset(SynthState *st, const VoicePreset *vp)
 {
-    for(int k=0;k<MAX_FORMANTS;k++){
+    for(int k=0;k<FORMANTS;k++){
         st->formants[k].freq = vp->freq[k];
         st->formants[k].bw   = vp->bw  [k];
     }
@@ -1124,7 +1127,7 @@ static int match_fi_arg(const char *arg, const char *prefix)
     const char *p = arg + strlen(prefix);
     if (!*p || !isdigit((unsigned char)*p)) return 0;
     int fi = atoi(p);
-    return (fi>=1 && fi<=10) ? fi : 0;
+    return (fi>=1 && fi<=FORMANTS) ? fi : 0;
 }
 
 static int parse_args(int argc, char **argv, SynthState *st)
@@ -1163,7 +1166,7 @@ static int parse_args(int argc, char **argv, SynthState *st)
             const char *vt=argv[++i];
             strncpy(st->demo_voice,vt,31);
             if(!strcasecmp(vt,"natural"))    st->voice_type=VOICE_NATURAL;
-            else if(!strcasecmp(vt,"breathy"))   st->voice_type=VOICE_BREATHY;
+            else if(!strcasecmp(vt,"whisper"))   st->voice_type=VOICE_WHISPER;
             else if(!strcasecmp(vt,"impulsive")) st->voice_type=VOICE_IMPULSIVE;
             else{fprintf(stderr,"Error: unknown voice type '%s'\n",vt);return -1;}
             mode_set=1; continue;
@@ -1182,7 +1185,7 @@ static int parse_args(int argc, char **argv, SynthState *st)
         }
         if (!strcmp(a,"--synthesis")){
             NEED_VAL(a); const char *m=argv[++i];
-            if(!strcasecmp(m,"cascade"))  st->filter_mode=FILTER_CASCADE;
+            if(!strcasecmp(m,"cascade"))       st->filter_mode=FILTER_CASCADE;
             else if(!strcasecmp(m,"parallel")) st->filter_mode=FILTER_PARALLEL;
             else{fprintf(stderr,"Error: unknown synthesis mode '%s'\n",m);return -1;}
             continue;
@@ -1194,7 +1197,7 @@ static int parse_args(int argc, char **argv, SynthState *st)
         if (!strcmp(a,"--voice")){
             NEED_VAL(a); const char *vt=argv[++i];
             if(!strcasecmp(vt,"natural"))    st->voice_type=VOICE_NATURAL;
-            else if(!strcasecmp(vt,"breathy"))   st->voice_type=VOICE_BREATHY;
+            else if(!strcasecmp(vt,"whisper"))   st->voice_type=VOICE_WHISPER;
             else if(!strcasecmp(vt,"impulsive")) st->voice_type=VOICE_IMPULSIVE;
             else{fprintf(stderr,"Error: unknown voice type '%s'\n",vt);return -1;}
             continue;
@@ -1250,9 +1253,11 @@ static int parse_args(int argc, char **argv, SynthState *st)
         }
         if (!strcmp(a,"--bw6-10")){
             NEED_VAL(a); float bw=(float)atof(argv[++i]);
-            for(int k=5;k<MAX_FORMANTS;k++) st->formants[k].bw=bw;
+            for(int k=5;k<FORMANTS;k++) st->formants[k].bw=bw;
             continue;
         }
+
+        if (!strcmp(a,"--formants")){ NEED_VAL(a); FORMANTS=(int)atof(argv[++i]); continue; }
 
         if (!strcmp(a,"--aspiration-cutoff")){ NEED_VAL(a); st->aspiration_cutoff=(float)atof(argv[++i]); continue; }
         if (!strcmp(a,"--frication-center")) { NEED_VAL(a); st->frication_center  =(float)atof(argv[++i]); continue; }
@@ -1284,10 +1289,10 @@ static int parse_args(int argc, char **argv, SynthState *st)
 
     if (mode_set || st->voice_type != VOICE_NATURAL) {
         const VoicePreset *vp = &g_preset_natural;
-        if (st->voice_type == VOICE_BREATHY)   vp = &g_preset_breathy;
+        if (st->voice_type == VOICE_WHISPER)   vp = &g_preset_whisper;
         if (st->voice_type == VOICE_IMPULSIVE) vp = &g_preset_impulsive;
         apply_preset(st, vp);
-        for(int k=0;k<MAX_FORMANTS;k++){
+        for(int k=0;k<FORMANTS;k++){
             if(!explicit_formant[k]) st->formants[k].freq = vp->freq[k];
             if(!explicit_bw     [k]) st->formants[k].bw   = vp->bw  [k];
         }
@@ -1307,11 +1312,11 @@ static int parse_args(int argc, char **argv, SynthState *st)
 
 static void verbose_print(const SynthState *st)
 {
-    printf("=== Formant Synthesizer v%s ===\n", VERSION_STR);
+    printf("Poor Man's Synthesizer v%s version format %s\n", VERSION_STR, VERSION_FMT);
     printf("Mode      : %s\n", st->mode==MODE_DEMO?"demo":st->mode==MODE_SPEC?"spec":"phoneme");
     printf("Filters   : %s\n", st->filter_mode==FILTER_CASCADE?"cascade":"parallel");
     printf("Voice     : %s\n", st->voice_type==VOICE_NATURAL?"natural":
-                               st->voice_type==VOICE_BREATHY?"breathy":"impulsive");
+                               st->voice_type==VOICE_WHISPER?"whisper":"impulsive");
     printf("Sample-rt : %d Hz\n", st->sample_rate);
     printf("Duration  : %.2f s\n", st->duration_sec);
     printf("F0        : %.1f Hz\n", st->f0_hz);
@@ -1322,7 +1327,7 @@ static void verbose_print(const SynthState *st)
     printf("Jitter    : %.1f%%  Shimmer: %.1f%%\n",
            st->jitter_percent, st->shimmer_percent);
     printf("Formants  :\n");
-    for(int k=0;k<MAX_FORMANTS;k++)
+    for(int k=0;k<FORMANTS;k++)
         printf("  F%2d : %6.0f Hz  BW %4.0f Hz  Gain %.2f\n",
                k+1, st->formants[k].freq, st->formants[k].bw, st->formant_gains[k]);
     printf("Output    : %s\n", st->output_filename);
@@ -1359,7 +1364,7 @@ int main(int argc, char **argv)
 
     float def_f[] = {700,1220,2600,3540,4500,5500,6500,7500,8500,9500};
     float def_b[] = {110, 130, 110, 130, 140, 150, 160, 170, 180, 190};
-    for(int k=0;k<MAX_FORMANTS;k++){
+    for(int k=0;k<FORMANTS;k++){
         st.formants[k].freq = def_f[k];
         st.formants[k].bw   = def_b[k];
         st.formants[k].gain = 1.0f;
@@ -1370,7 +1375,12 @@ int main(int argc, char **argv)
 
     if (parse_args(argc, argv, &st) < 0) return 1;
 
-    for(int k=0;k<MAX_FORMANTS;k++){
+    if (FORMANTS > MAX_FORMANTS || FORMANTS < 1) {
+        fprintf(stderr, "ERROR: FORMANTS (%d) must be between 1 and MAX_FORMANTS (%d)\n", FORMANTS, MAX_FORMANTS);
+        return 1;
+    }
+
+    for(int k=0;k<FORMANTS;k++){
         if (st.formant_gains[k] < 1e-9f) st.formant_gains[k] = 1.0f;
         st.formants[k].gain = st.formant_gains[k];
     }
