@@ -83,7 +83,7 @@ Once your script is ready, run the engine in phoneme mode using the `--phoneme` 
 ./pms --phoneme speech.txt output.wav
 
 # Customize the voice character
-./pms --phoneme speech.txt --voice breathy --f0 90 --jitter 2.0 --shimmer 3.0 output.wav
+./pms --phoneme speech.txt --voice whisper --f0 90 --jitter 2.0 --shimmer 3.0 output.wav
 
 # High fidelity output
 ./pms --phoneme speech.txt --sample-rate 44100 --output-format wav32 output.wav
@@ -95,7 +95,7 @@ When using phoneme mode, these flags change how the physics are simulated:
 
 *   `--voice TYPE`: Selects the glottal wave shape.
     *   `natural`: Standard triangular-ish pulse.
-    *   `breathy`: Adds significant white noise to the glottal pulse (simulates air leakage).
+    *   `whisper`: Shapes white noise for a whisper-like sound.
     *   `impulsive`: Sharp, click-like pulses (good for robotic effects).
 *   `--synthesis MODE`: Choose how formant filters are arranged.
     *   `cascade` (Default): Formants are in series. More natural for vowels, standard Klatt model.
@@ -107,9 +107,11 @@ When using phoneme mode, these flags change how the physics are simulated:
 Check out the `examples/` directory to hear the difference between the voice types:
 
 *   [`examples/example_natural.wav`](examples/example_natural.wav) - Standard, clear voice.
-*   [`examples/example_breathy.wav`](examples/example_breathy.wav) - Soft, airy voice with added noise.
+*   [`examples/example_whisper.wav`](examples/example_whisper.wav) - Soft, airy whisper voice.
 *   [`examples/example_impulsive.wav`](examples/example_impulsive.wav) - Robotic, sharp, clicky voice.
 
 ## License
 
 MIT License. Do whatever you want with it. Just credit me if you can, though it's not required.
+
+Project Name: Poor Man's Synthesizer (PMS)
