@@ -1,14 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <math.h>
+#include <string.h> 
 #include <time.h>
 #include <stdint.h>
 #include <ctype.h>
 #include <errno.h>
+#include <math.h>
 
-
-#define VERSION_STR         "2.~.5-23032026"
+#define VERSION_STR         "2.|.5-26032026"
 #define VERSION_FMT         "R.I.B-DDMMYYYY (R meaning Release, I meaning 1 character version identification, and B meaning bugfix, DD meaning 2 digit day, MM meaning 2 digit month and YYYY meaning 4 digit year.)"
 #define MAX_SPEC_FRAMES     8192
 #define MAX_PHONEMES        1024
