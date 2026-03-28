@@ -287,6 +287,16 @@ typedef struct {
     float aspiration_amp;
     float frication_amp;
     int   plosive_type;                                                    
+
+    /* Coarticulation parameters */
+    float coart_strength;      /* 0.0 = none, 1.0 = full coarticulation */
+    float onset_duration_pct;  /* Percentage of phoneme for onset transition */
+    float offset_duration_pct; /* Percentage of phoneme for offset transition */
+
+    /* GCI (Glottal Closure Instant) parameters */
+    float gci_position;        /* Position within glottal cycle (0.0-1.0) where closure occurs */
+    float gci_skew;            /* Skew factor for asymmetric glottal pulse */
+    int   use_gci_timing;      /* Enable GCI-based timing for voice quality */
 } PhonemeInst;
 
 typedef struct {
@@ -673,7 +683,22 @@ static int phoneme_parse(const char *path, PhonemeData *pd)
                 else
                     ph->plosive_type = 0;
             }
+            /* Initialize coarticulation and GCI parameters with defaults */
+            ph->coart_strength      = 0.5f;  /* Moderate coarticulation by default */
+            ph->onset_duration_pct  = 20.0f; /* 20% onset transition */
+            ph->offset_duration_pct = 20.0f; /* 20% offset transition */
+            ph->gci_position        = 0.7f;  /* Typical glottal closure position */
+            ph->gci_skew            = 1.0f;  /* No skew by default */
+            ph->use_gci_timing      = 0;     /* Disabled by default */
         } else {
+            /* Initialize coarticulation and GCI parameters with defaults for unknown phonemes */
+            ph->coart_strength      = 0.3f;  /* Less coarticulation for unknown sounds */
+            ph->onset_duration_pct  = 15.0f; 
+            ph->offset_duration_pct = 15.0f; 
+            ph->gci_position        = 0.7f;  
+            ph->gci_skew            = 1.0f;  
+            ph->use_gci_timing      = 0;     
+
             float df[]={700,1220,2600,3540,4500,5500,6500,7500,8500,9500};
             float db[]={110, 130, 110, 130, 140, 150, 160, 170, 180, 190};
             for(int k=0;k<FORMANTS;k++){ph->target_freq[k]=df[k];ph->target_bw[k]=db[k];}
