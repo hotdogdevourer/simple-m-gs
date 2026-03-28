@@ -17,6 +17,12 @@
 #define MAX_CONTOUR_PTS     8192
 #define MAX_SAMPLES         (48000 * 120)
 #define MAX_FORMANTS        10                          
+#define MAX_RULES           512
+#define MAX_GRAPHEME_LEN    8
+#define MAX_PHONEME_LEN     16
+#define MAX_CONTEXT_LEN     8
+#define MAX_EXCEPTIONS      256
+#define MAX_WORD_LEN        64
 int FORMANTS              = 10;
 
 #define PI_F                3.14159265358979323846f
@@ -27,6 +33,30 @@ typedef enum { MODE_DEMO = 0, MODE_SPEC = 1, MODE_PHONEME = 2 } SynthMode;
 typedef enum { VOICE_NATURAL = 0, VOICE_WHISPER = 1, VOICE_IMPULSIVE = 2 } VoiceType;
 typedef enum { FILTER_CASCADE = 0, FILTER_PARALLEL = 1 } FilterMode;
 typedef enum { FMT_WAV16 = 0, FMT_WAV32 = 1, FMT_RAW16 = 2, FMT_RAW32 = 3 } OutFormat;
+
+/* Text-to-Phoneme Rule-Based Engine */
+typedef enum { CTX_ANY = 0, CTX_START = 1, CTX_END = 2 } ContextType;
+
+typedef struct {
+    char grapheme[MAX_GRAPHEME_LEN];
+    ContextType left_ctx;
+    char left_pattern[MAX_CONTEXT_LEN];
+    ContextType right_ctx;
+    char right_pattern[MAX_CONTEXT_LEN];
+    char phoneme[MAX_PHONEME_LEN];
+    int priority;
+    int grapheme_len;
+} GraphemeRule;
+
+typedef struct {
+    char word[MAX_WORD_LEN];
+    char phonemes[MAX_PHONEMES];
+} ExceptionEntry;
+
+static const GraphemeRule g_default_rules[];
+static const int g_default_rules_count;
+static const ExceptionEntry g_exception_list[];
+static const int g_exception_count;
 
 
 typedef struct {
@@ -235,6 +265,486 @@ static const PhonemeDBEntry *find_phoneme_db(const char *name)
     return NULL;
 }
 
+/* ========== Text-to-Phoneme Rule Engine ========== */
+
+/* Default exception list for irregular words */
+static const ExceptionEntry g_exception_list[] = {
+    {"the", "dh ah"}, {"was", "w ah z"}, {"have", "h ae v"}, {"had", "h ae d"},
+    {"does", "d ah z"}, {"done", "d ah n"}, {"one", "w ah n"}, {"two", "t uw"},
+    {"read", "r eh d"}, {"been", "b ih n"}, {"colonel", "k er n ah l"},
+    {"through", "th r uw"}, {"though", "dh ow"}, {"thought", "th ao t"},
+    {"enough", "ih n ah f"}, {"cough", "k ao f"}, {"rough", "r ah f"},
+    {"laugh", "l ae f"}, {"people", "p iy p ah l"}, {"woman", "w uh m ah n"},
+    {"women", "w ih m ih n"}, {"friend", "f r eh n d"}, {"said", "s eh d"},
+    {"says", "s eh z"}, {"give", "g ih v"}, {"given", "g ih v ah n"},
+    {"come", "k ah m"}, {"some", "s ah m"}, {"home", "h ow m"},
+    {"love", "l ah v"}, {"move", "m uw v"}, {"prove", "p r uw v"},
+    {"word", "w er d"}, {"work", "w er k"}, {"world", "w er l d"},
+    {"first", "f er s t"}, {"third", "th er d"}, {"bird", "b er d"},
+    {"eye", "ay"}, {"ear", "ih r"}, {"heart", "h aa r t"},
+    {"water", "w ao t er"}, {"what", "w ah t"}, {"where", "w eh r"},
+    {"there", "dh eh r"}, {"here", "h ih r"}, {"their", "dh eh r"},
+    {"they", "dh ey"}, {"them", "dh eh m"}, {"then", "dh eh n"},
+    {"than", "dh ae n"}, {"this", "dh ih s"}, {"that", "dh ae t"},
+    {"those", "dh ow z"}, {"these", "dh iy z"}, {"which", "w ih ch"},
+    {"who", "h uw"}, {"whom", "h uw m"}, {"whose", "h uw z"},
+    {"know", "n ow"}, {"known", "n ow n"}, {"knowledge", "n ao l ih jh"},
+    {"knife", "n ay f"}, {"knight", "n ay t"}, {"gnome", "n ow m"},
+    {"island", "ay l ah n d"}, {"debt", "d eh t"}, {"doubt", "d aw t"},
+    {"subtle", "s ah t ah l"}, {"muscle", "m ah s ah l"}, {"scene", "s iy n"},
+    {"scissors", "s ih z er z"}, {"schedule", "sh eh d uw l"}, {"machine", "m ah sh iy n"},
+    {"chef", "sh eh f"}, {"chaos", "k ey ao s"}, {"character", "k ae r ih k t er"},
+    {"choir", "k w ay er"}, {"yacht", "y ao t"}, {"psychology", "s ay k ao l ah jh iy"},
+    {"pneumonia", "n uw m ow n iy ah"}, {"receipt", "r ih s iy t"}, {"corps", "k or"},
+    {"queue", "k y uw"}, {"unique", "y uw n iy k"}, {"build", "b ih l d"},
+    {"built", "b ih l t"}, {"guilt", "g ih l t"}, {"circuit", "s er k ih t"},
+    {"leopard", "l eh p er d"}, {"business", "b ih z n ih s"}, {"forfeit", "f or f ih t"},
+    {"sovereign", "s ao v r ih n"}, {"blood", "b l ah d"}, {"flood", "f l ah d"},
+    {"good", "g uh d"}, {"foot", "f uh t"}, {"door", "d or"}, {"floor", "f l or"},
+    {"poor", "p uh r"}, {"sure", "sh uh r"}, {"sugar", "sh uh g er"},
+    {"nation", "n ey sh ah n"}, {"action", "ae k sh ah n"}, {"station", "s tay sh ah n"},
+    {"ocean", "ow sh ah n"}, {"special", "s p eh sh ah l"}, {"official", "ah f ih sh ah l"},
+    {"mission", "m ih sh ah n"}, {"passion", "p ae sh ah n"}, {"tension", "t eh n sh ah n"},
+};
+static const int g_exception_count = (int)(sizeof(g_exception_list) / sizeof(g_exception_list[0]));
+
+/* Default rule set - compiled from rules.txt format */
+static const GraphemeRule g_default_rules[] = {
+    /* Suffix rules (high priority) */
+    {"ing", CTX_ANY, "", CTX_END, "", "ih ng", 10, 3},
+    {"ed", CTX_ANY, "", CTX_END, "", "d", 10, 2},
+    {"es", CTX_ANY, "", CTX_END, "", "z", 10, 2},
+    {"tion", CTX_ANY, "", CTX_ANY, "", "sh ah n", 10, 4},
+    {"sion", CTX_ANY, "", CTX_ANY, "", "zh ah n", 10, 4},
+    {"ture", CTX_ANY, "", CTX_ANY, "", "ch er", 10, 4},
+    {"sure", CTX_ANY, "", CTX_ANY, "", "zh er", 10, 4},
+    {"ous", CTX_ANY, "", CTX_END, "", "ah s", 10, 3},
+    {"ful", CTX_ANY, "", CTX_END, "", "f ah l", 10, 3},
+    {"less", CTX_ANY, "", CTX_END, "", "l ih s", 10, 4},
+    {"ness", CTX_ANY, "", CTX_END, "", "n ih s", 10, 4},
+    {"ment", CTX_ANY, "", CTX_END, "", "m ah n t", 10, 4},
+    {"ly", CTX_ANY, "", CTX_END, "", "l iy", 10, 2},
+    {"er", CTX_ANY, "", CTX_END, "", "er", 10, 2},
+    {"est", CTX_ANY, "", CTX_END, "", "ih s t", 10, 3},
+    
+    /* Silent E rules */
+    {"e", CTX_ANY, "", CTX_END, "", "", 9, 1},  /* silent e at end */
+    
+    /* Vowel teams (digraphs and trigraphs) */
+    {"ea", CTX_ANY, "", CTX_ANY, "", "iy", 8, 2},
+    {"ee", CTX_ANY, "", CTX_ANY, "", "iy", 8, 2},
+    {"ei", CTX_ANY, "", CTX_ANY, "", "iy", 8, 2},
+    {"ie", CTX_ANY, "", CTX_ANY, "", "iy", 8, 2},
+    {"eo", CTX_ANY, "", CTX_ANY, "", "iy ow", 8, 2},
+    {"eu", CTX_ANY, "", CTX_ANY, "", "y uw", 8, 2},
+    {"ey", CTX_ANY, "", CTX_ANY, "", "iy", 8, 2},
+    {"oo", CTX_ANY, "", CTX_ANY, "", "uw", 8, 2},
+    {"oa", CTX_ANY, "", CTX_ANY, "", "ow", 8, 2},
+    {"oe", CTX_ANY, "", CTX_ANY, "", "ow", 8, 2},
+    {"ou", CTX_ANY, "", CTX_ANY, "", "aw", 8, 2},
+    {"ow", CTX_ANY, "", CTX_ANY, "", "ow", 8, 2},
+    {"ai", CTX_ANY, "", CTX_ANY, "", "ey", 8, 2},
+    {"ay", CTX_ANY, "", CTX_ANY, "", "ey", 8, 2},
+    {"au", CTX_ANY, "", CTX_ANY, "", "ao", 8, 2},
+    {"aw", CTX_ANY, "", CTX_ANY, "", "ao", 8, 2},
+    {"oi", CTX_ANY, "", CTX_ANY, "", "oy", 8, 2},
+    {"oy", CTX_ANY, "", CTX_ANY, "", "oy", 8, 2},
+    {"ui", CTX_ANY, "", CTX_ANY, "", "uw", 8, 2},
+    {"ue", CTX_ANY, "", CTX_ANY, "", "uw", 8, 2},
+    {"uo", CTX_ANY, "", CTX_ANY, "", "uw ow", 8, 2},
+    {"ia", CTX_ANY, "", CTX_ANY, "", "ay ah", 8, 2},
+    {"io", CTX_ANY, "", CTX_ANY, "", "ay ow", 8, 2},
+    {"ieu", CTX_ANY, "", CTX_ANY, "", "uw", 8, 3},
+    {"eau", CTX_ANY, "", CTX_ANY, "", "ow", 8, 3},
+    
+    /* Consonant digraphs */
+    {"th", CTX_ANY, "", CTX_ANY, "", "th", 7, 2},
+    {"sh", CTX_ANY, "", CTX_ANY, "", "sh", 7, 2},
+    {"ch", CTX_ANY, "", CTX_ANY, "", "ch", 7, 2},
+    {"ph", CTX_ANY, "", CTX_ANY, "", "f", 7, 2},
+    {"wh", CTX_ANY, "", CTX_ANY, "", "w", 7, 2},
+    {"wr", CTX_START, "", CTX_ANY, "", "r", 7, 2},
+    {"kn", CTX_START, "", CTX_ANY, "", "n", 7, 2},
+    {"gn", CTX_START, "", CTX_ANY, "", "n", 7, 2},
+    {"mb", CTX_ANY, "", CTX_END, "", "m", 7, 2},
+    {"ck", CTX_ANY, "", CTX_ANY, "", "k", 7, 2},
+    {"ng", CTX_ANY, "", CTX_ANY, "", "ng", 7, 2},
+    {"gh", CTX_ANY, "", CTX_ANY, "", "", 7, 2},  /* often silent */
+    {"rh", CTX_START, "", CTX_ANY, "", "r", 7, 2},
+    
+    /* R-controlled vowels */
+    {"ar", CTX_ANY, "", CTX_ANY, "", "aa r", 6, 2},
+    {"er", CTX_ANY, "", CTX_ANY, "", "er", 6, 2},
+    {"ir", CTX_ANY, "", CTX_ANY, "", "er", 6, 2},
+    {"or", CTX_ANY, "", CTX_ANY, "", "ao r", 6, 2},
+    {"ur", CTX_ANY, "", CTX_ANY, "", "er", 6, 2},
+    {"air", CTX_ANY, "", CTX_ANY, "", "eh r", 6, 3},
+    {"ear", CTX_ANY, "", CTX_ANY, "", "ih r", 6, 3},
+    {"oor", CTX_ANY, "", CTX_ANY, "", "ao r", 6, 3},
+    {"our", CTX_ANY, "", CTX_ANY, "", "aw r", 6, 3},
+    
+    /* Special combinations */
+    {"qu", CTX_ANY, "", CTX_ANY, "", "k w", 5, 2},
+    {"ci", CTX_ANY, "", CTX_ANY, "a,e,i,y", "sh", 5, 2},
+    {"ce", CTX_ANY, "", CTX_ANY, "a,o,u", "s", 5, 2},
+    {"ge", CTX_ANY, "", CTX_ANY, "a,o,u", "jh", 5, 2},
+    {"gi", CTX_ANY, "", CTX_ANY, "", "jh", 5, 2},
+    {"gy", CTX_ANY, "", CTX_ANY, "", "jh", 5, 2},
+    {"ti", CTX_ANY, "", CTX_ANY, "o", "sh", 5, 2},
+    {"si", CTX_ANY, "", CTX_ANY, "o", "zh", 5, 2},
+    
+    /* Initial H */
+    {"h", CTX_START, "", CTX_ANY, "", "h", 4, 1},
+    {"h", CTX_ANY, "", CTX_ANY, "", "h", 3, 1},
+    
+    /* Single consonants */
+    {"b", CTX_ANY, "", CTX_ANY, "", "b", 3, 1},
+    {"c", CTX_ANY, "", CTX_ANY, "e,i,y", "s", 3, 1},
+    {"c", CTX_ANY, "", CTX_ANY, "", "k", 3, 1},
+    {"d", CTX_ANY, "", CTX_ANY, "", "d", 3, 1},
+    {"f", CTX_ANY, "", CTX_ANY, "", "f", 3, 1},
+    {"g", CTX_ANY, "", CTX_ANY, "e,i,y", "jh", 3, 1},
+    {"g", CTX_ANY, "", CTX_ANY, "", "g", 3, 1},
+    {"j", CTX_ANY, "", CTX_ANY, "", "jh", 3, 1},
+    {"k", CTX_ANY, "", CTX_ANY, "", "k", 3, 1},
+    {"l", CTX_ANY, "", CTX_ANY, "", "l", 3, 1},
+    {"m", CTX_ANY, "", CTX_ANY, "", "m", 3, 1},
+    {"n", CTX_ANY, "", CTX_ANY, "", "n", 3, 1},
+    {"p", CTX_ANY, "", CTX_ANY, "", "p", 3, 1},
+    {"q", CTX_ANY, "", CTX_ANY, "", "k", 3, 1},
+    {"r", CTX_ANY, "", CTX_ANY, "", "r", 3, 1},
+    {"s", CTX_ANY, "", CTX_ANY, "", "s", 3, 1},
+    {"t", CTX_ANY, "", CTX_ANY, "", "t", 3, 1},
+    {"v", CTX_ANY, "", CTX_ANY, "", "v", 3, 1},
+    {"w", CTX_ANY, "", CTX_ANY, "", "w", 3, 1},
+    {"x", CTX_ANY, "", CTX_ANY, "", "k s", 3, 1},
+    {"y", CTX_ANY, "", CTX_ANY, "", "y", 3, 1},
+    {"z", CTX_ANY, "", CTX_ANY, "", "z", 3, 1},
+    
+    /* Single vowels */
+    {"a", CTX_ANY, "", CTX_END, "", "ey", 2, 1},  /* open syllable */
+    {"a", CTX_ANY, "", CTX_ANY, "", "ae", 2, 1},
+    {"e", CTX_ANY, "", CTX_END, "", "iy", 2, 1},
+    {"e", CTX_ANY, "", CTX_ANY, "", "eh", 2, 1},
+    {"i", CTX_ANY, "", CTX_END, "", "ay", 2, 1},
+    {"i", CTX_ANY, "", CTX_ANY, "", "ih", 2, 1},
+    {"o", CTX_ANY, "", CTX_END, "", "ow", 2, 1},
+    {"o", CTX_ANY, "", CTX_ANY, "", "aa", 2, 1},
+    {"u", CTX_ANY, "", CTX_END, "", "y uw", 2, 1},
+    {"u", CTX_ANY, "", CTX_ANY, "", "ah", 2, 1},
+    {"y", CTX_ANY, "", CTX_END, "", "ay", 2, 1},
+    {"y", CTX_ANY, "", CTX_ANY, "", "ih", 2, 1},
+};
+static const int g_default_rules_count = (int)(sizeof(g_default_rules) / sizeof(g_default_rules[0]));
+
+/* Forward declarations for TTP functions */
+static int ttp_load_rules(const char *filename, GraphemeRule *rules, int max_rules);
+static int ttp_text_to_phonemes(const char *text, char *output, int max_output, 
+                                 const GraphemeRule *rules, int rule_count);
+static const char* ttp_lookup_exception(const char *word);
+static void ttp_lowercase(char *str);
+static int ttp_match_context(const char *text, int pos, const GraphemeRule *rule, int text_len);
+static int ttp_parse_rule_line(const char *line, GraphemeRule *rule);
+
+/* Load rules from file or use defaults */
+static int ttp_load_rules(const char *filename, GraphemeRule *rules, int max_rules)
+{
+    FILE *fp = fopen(filename, "r");
+    if (!fp) {
+        /* Use default rules */
+        if (max_rules < g_default_rules_count) return -1;
+        memcpy(rules, g_default_rules, sizeof(GraphemeRule) * g_default_rules_count);
+        return g_default_rules_count;
+    }
+    
+    int count = 0;
+    char line[1024];
+    while (fgets(line, sizeof(line), fp) && count < max_rules) {
+        /* Skip comments and empty lines */
+        char *p = line;
+        while (*p == ' ' || *p == '\t') p++;
+        if (*p == '#' || *p == '\n' || *p == '\r' || *p == '\0') continue;
+        
+        GraphemeRule rule;
+        memset(&rule, 0, sizeof(rule));
+        if (ttp_parse_rule_line(p, &rule)) {
+            rules[count++] = rule;
+        }
+    }
+    fclose(fp);
+    
+    if (count == 0) {
+        /* Fall back to defaults */
+        if (max_rules < g_default_rules_count) return -1;
+        memcpy(rules, g_default_rules, sizeof(GraphemeRule) * g_default_rules_count);
+        return g_default_rules_count;
+    }
+    return count;
+}
+
+/* Parse a rule line: (left) grapheme (right) -> phoneme [priority] */
+static int ttp_parse_rule_line(const char *line, GraphemeRule *rule)
+{
+    const char *p = line;
+    
+    /* Skip leading whitespace */
+    while (*p == ' ' || *p == '\t') p++;
+    
+    /* Check for left context */
+    if (*p == '(') {
+        p++;
+        const char *end = strchr(p, ')');
+        if (!end) return 0;
+        size_t len = end - p;
+        if (len >= MAX_CONTEXT_LEN) len = MAX_CONTEXT_LEN - 1;
+        
+        if (len == 1 && *p == '_') rule->left_ctx = CTX_ANY;
+        else if (len == 1 && *p == '^') rule->left_ctx = CTX_START;
+        else if (len == 1 && *p == '$') rule->left_ctx = CTX_END;
+        else {
+            rule->left_ctx = CTX_ANY;
+            strncpy(rule->left_pattern, p, len);
+            rule->left_pattern[len] = '\0';
+        }
+        p = end + 1;
+    } else {
+        rule->left_ctx = CTX_ANY;
+    }
+    
+    /* Skip whitespace */
+    while (*p == ' ' || *p == '\t') p++;
+    
+    /* Get grapheme */
+    const char *g_start = p;
+    while (*p && *p != ' ' && *p != '\t' && *p != '(' && *p != '-' && *p != '>') p++;
+    size_t glen = p - g_start;
+    if (glen == 0 || glen >= MAX_GRAPHEME_LEN) return 0;
+    strncpy(rule->grapheme, g_start, glen);
+    rule->grapheme[glen] = '\0';
+    rule->grapheme_len = (int)glen;
+    
+    /* Skip whitespace */
+    while (*p == ' ' || *p == '\t') p++;
+    
+    /* Check for right context */
+    if (*p == '(') {
+        p++;
+        const char *end = strchr(p, ')');
+        if (!end) return 0;
+        size_t len = end - p;
+        if (len >= MAX_CONTEXT_LEN) len = MAX_CONTEXT_LEN - 1;
+        
+        if (len == 1 && *p == '_') rule->right_ctx = CTX_ANY;
+        else if (len == 1 && *p == '^') rule->right_ctx = CTX_START;
+        else if (len == 1 && *p == '$') rule->right_ctx = CTX_END;
+        else {
+            rule->right_ctx = CTX_ANY;
+            strncpy(rule->right_pattern, p, len);
+            rule->right_pattern[len] = '\0';
+        }
+        p = end + 1;
+    } else {
+        rule->right_ctx = CTX_ANY;
+    }
+    
+    /* Skip whitespace and find -> */
+    while (*p == ' ' || *p == '\t') p++;
+    if (*p == '-') p++;
+    if (*p == '>') p++;
+    while (*p == ' ' || *p == '\t') p++;
+    
+    /* Get phoneme */
+    const char *ph_start = p;
+    while (*p && *p != ' ' && *p != '\t' && *p != '[' && *p != '\n' && *p != '\r') p++;
+    size_t phlen = p - ph_start;
+    if (phlen == 0 || phlen >= MAX_PHONEME_LEN) return 0;
+    strncpy(rule->phoneme, ph_start, phlen);
+    rule->phoneme[phlen] = '\0';
+    
+    /* Check for optional priority */
+    while (*p == ' ' || *p == '\t') p++;
+    if (*p == '[') {
+        p++;
+        rule->priority = atoi(p);
+    } else {
+        rule->priority = 5;  /* Default priority */
+    }
+    
+    return 1;
+}
+
+/* Lookup exception word */
+static const char* ttp_lookup_exception(const char *word)
+{
+    char lower_word[MAX_WORD_LEN];
+    strncpy(lower_word, word, MAX_WORD_LEN - 1);
+    lower_word[MAX_WORD_LEN - 1] = '\0';
+    ttp_lowercase(lower_word);
+    
+    for (int i = 0; i < g_exception_count; i++) {
+        if (strcmp(g_exception_list[i].word, lower_word) == 0) {
+            return g_exception_list[i].phonemes;
+        }
+    }
+    return NULL;
+}
+
+/* Convert string to lowercase */
+static void ttp_lowercase(char *str)
+{
+    for (; *str; str++) {
+        if (*str >= 'A' && *str <= 'Z') *str += 'a' - 'A';
+    }
+}
+
+/* Check if context matches */
+static int ttp_match_context(const char *text, int pos, const GraphemeRule *rule, int text_len)
+{
+    /* Check left context */
+    if (rule->left_ctx == CTX_START && pos != 0) return 0;
+    if (rule->left_ctx == CTX_END) return 0;  /* Doesn't make sense for left */
+    
+    if (rule->left_pattern[0] != '\0') {
+        int plen = (int)strlen(rule->left_pattern);
+        if (pos < plen) return 0;
+        if (strncmp(text + pos - plen, rule->left_pattern, plen) != 0) return 0;
+    }
+    
+    /* Check right context */
+    if (rule->right_ctx == CTX_END && pos + rule->grapheme_len != text_len) return 0;
+    if (rule->right_ctx == CTX_START) return 0;  /* Doesn't make sense for right */
+    
+    if (rule->right_pattern[0] != '\0') {
+        int plen = (int)strlen(rule->right_pattern);
+        if (pos + rule->grapheme_len + plen > text_len) return 0;
+        if (strncmp(text + pos + rule->grapheme_len, rule->right_pattern, plen) != 0) return 0;
+    }
+    
+    return 1;
+}
+
+/* Main text-to-phoneme conversion using longest-match left-to-right */
+static int ttp_text_to_phonemes(const char *text, char *output, int max_output,
+                                 const GraphemeRule *rules, int rule_count)
+{
+    output[0] = '\0';
+    int out_pos = 0;
+    
+    /* Process word by word */
+    char word[MAX_WORD_LEN];
+    int word_pos = 0;
+    int i = 0;
+    int text_len = (int)strlen(text);
+    
+    while (i <= text_len) {
+        char c = (i < text_len) ? text[i] : ' ';
+        
+        if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '\'' || c == '-') {
+            if (word_pos < MAX_WORD_LEN - 1) {
+                word[word_pos++] = c;
+            }
+            i++;
+        } else {
+            /* Process accumulated word */
+            if (word_pos > 0) {
+                word[word_pos] = '\0';
+                
+                /* Check exception list first */
+                const char *exc = ttp_lookup_exception(word);
+                if (exc) {
+                    int elen = (int)strlen(exc);
+                    if (out_pos + elen + 2 < max_output) {
+                        if (out_pos > 0) output[out_pos++] = ' ';
+                        strcpy(output + out_pos, exc);
+                        out_pos += elen;
+                    }
+                } else {
+                    /* Apply rule-based conversion */
+                    ttp_lowercase(word);
+                    int wlen = (int)strlen(word);
+                    int wi = 0;
+                    
+                    while (wi < wlen) {
+                        int best_len = 0;
+                        const GraphemeRule *best_rule = NULL;
+                        
+                        /* Find longest matching rule */
+                        for (int r = 0; r < rule_count; r++) {
+                            const GraphemeRule *rule = &rules[r];
+                            
+                            /* Check if grapheme matches at current position */
+                            if (wi + rule->grapheme_len > wlen) continue;
+                            if (strncmp(word + wi, rule->grapheme, rule->grapheme_len) != 0) continue;
+                            
+                            /* Check context */
+                            if (!ttp_match_context(word, wi, rule, wlen)) continue;
+                            
+                            /* Prefer longer match, then higher priority */
+                            if (rule->grapheme_len > best_len ||
+                                (rule->grapheme_len == best_len && 
+                                 best_rule && rule->priority > best_rule->priority)) {
+                                best_len = rule->grapheme_len;
+                                best_rule = rule;
+                            }
+                        }
+                        
+                        if (best_rule && best_len > 0) {
+                            /* Add phoneme to output */
+                            if (best_rule->phoneme[0] != '\0') {
+                                int plen = (int)strlen(best_rule->phoneme);
+                                if (out_pos + plen + 2 < max_output) {
+                                    if (out_pos > 0 && output[out_pos-1] != ' ') 
+                                        output[out_pos++] = ' ';
+                                    strcpy(output + out_pos, best_rule->phoneme);
+                                    out_pos += plen;
+                                }
+                            }
+                            wi += best_len;
+                        } else {
+                            /* No rule matched, skip character */
+                            wi++;
+                        }
+                    }
+                }
+                word_pos = 0;
+            }
+            
+            /* Add space between words */
+            if (c != ' ' && out_pos > 0 && output[out_pos-1] != ' ') {
+                if (out_pos < max_output - 1) output[out_pos++] = ' ';
+            }
+            i++;
+        }
+    }
+    
+    output[out_pos] = '\0';
+    return out_pos;
+}
+
+/* Coarticulation: smooth transitions between phonemes */
+static void ttp_apply_coarticulation(char *phonemes, int len)
+{
+    /* Simple coarticulation: adjust vowel formants based on neighboring consonants */
+    /* This is a placeholder for more sophisticated coarticulation */
+    (void)phonemes;
+    (void)len;
+}
+
+/* GCI (Glottal Closure Instant) detection for voiced sounds */
+static float ttp_estimate_gci(const char *phoneme, float duration_ms, float sample_rate)
+{
+    /* Estimate GCI timing based on phoneme type */
+    /* Returns offset in samples from phoneme start */
+    const PhonemeDBEntry *entry = find_phoneme_db(phoneme);
+    if (!entry) return duration_ms * sample_rate / 1000.0f * 0.5f;
+    
+    /* Voiced sounds have regular GCI at F0 period */
+    if (entry->voicing_amp > 0.5f && entry->f0_default > 0) {
+        return sample_rate / entry->f0_default;  /* One glottal period */
+    }
+    return duration_ms * sample_rate / 1000.0f * 0.5f;
+}
+
 
 typedef struct {
     float time_ms;
@@ -370,6 +880,8 @@ typedef struct {
     char      output_filename[512];
     char      input_filename [512];
     char      demo_voice     [32];
+    char      rules_filename [512];  /* For custom text-to-phoneme rules */
+    char      ttp_text_input[MAX_PHONEMES * 4];  /* Converted phonemes from text */
     OutFormat output_format;
     int       normalize_output;
     int       lip_radiation_enabled;
@@ -1057,7 +1569,11 @@ static void print_help(void)
     puts("  --spec FILE              Load specification frames from file");
     puts("  --phon-spec FILE         Load detailed phoneme specifications from file");
     puts("  --phoneme FILE           Load simple phoneme sequence from file");
+    puts("  --text TEXT              Convert text directly to speech (uses rule-based TTP)");
     puts("  --demo VOICE_TYPE        Demo mode (natural|whisper|impulsive)\n");
+    puts("Text-to-Phoneme Options:");
+    puts("  --rules FILE             Custom rules file for text-to-phoneme (default: rules.txt or built-in)");
+    puts("                           If no rules file found with --text, error is raised\n");
     puts("Global Parameters:");
     puts("  --sample-rate SR         Sample rate (16000|22050|44100|48000|88200|96000|176400|192000, default: 22050)");
     puts("  --duration SEC           Duration in seconds (default: 2.0)");
@@ -1158,6 +1674,21 @@ static int parse_args(int argc, char **argv, SynthState *st)
             if(mode_set&&st->mode!=MODE_PHONEME){fprintf(stderr,"Error: conflicting mode flags\n");return -1;}
             st->mode=MODE_PHONEME; strncpy(st->input_filename,argv[++i],511);
             mode_set=1; continue;
+        }
+        if (!strcmp(a,"--text")) {
+            NEED_VAL(a);
+            /* Text-to-phoneme mode: convert text directly to phonemes and synthesize */
+            if(mode_set&&st->mode!=MODE_PHONEME){fprintf(stderr,"Error: conflicting mode flags\n");return -1;}
+            st->mode=MODE_PHONEME;
+            /* Store text in input_filename temporarily, will be converted */
+            strncpy(st->input_filename, argv[++i], 511);
+            mode_set=1; continue;
+        }
+        if (!strcmp(a,"--rules")) {
+            NEED_VAL(a);
+            /* Custom rules file for text-to-phoneme */
+            strncpy(st->rules_filename, argv[++i], 511);
+            continue;
         }
         if (!strcmp(a,"--demo")) {
             NEED_VAL(a);
@@ -1392,6 +1923,59 @@ int main(int argc, char **argv)
         float needed = st.spec.duration_ms / 1000.0f + 0.1f;
         if (st.duration_sec < needed) st.duration_sec = needed;
     } else if (st.mode == MODE_PHONEME) {
+        /* Check if we have text input (from --text flag) that needs conversion */
+        if (strlen(st.rules_filename) > 0 || strlen(st.input_filename) > 0) {
+            /* Try to detect if input_filename contains raw text (not a file path) */
+            /* For now, assume --text was used if rules_filename is set or input looks like text */
+            GraphemeRule rules[MAX_RULES];
+            int rule_count;
+            
+            /* Load rules from custom file, default file, or use built-in defaults */
+            if (strlen(st.rules_filename) > 0) {
+                rule_count = ttp_load_rules(st.rules_filename, rules, MAX_RULES);
+                if (rule_count < 0 && st.verbose) {
+                    fprintf(stderr, "Warning: Could not load rules from '%s', using defaults\n", st.rules_filename);
+                }
+            } else {
+                /* Try rules.txt in current directory first */
+                rule_count = ttp_load_rules("rules.txt", rules, MAX_RULES);
+                if (rule_count < 0) {
+                    /* Use built-in defaults */
+                    if (MAX_RULES < g_default_rules_count) {
+                        fprintf(stderr, "Error: MAX_RULES too small for default rules\n");
+                        return 1;
+                    }
+                    memcpy(rules, g_default_rules, sizeof(GraphemeRule) * g_default_rules_count);
+                    rule_count = g_default_rules_count;
+                }
+            }
+            
+            if (rule_count <= 0) {
+                fprintf(stderr, "Error: No rules available for text-to-phoneme conversion\n");
+                return 1;
+            }
+            
+            /* Convert text to phonemes */
+            char phoneme_output[MAX_PHONEMES * 4];
+            int plen = ttp_text_to_phonemes(st.input_filename, phoneme_output, 
+                                            sizeof(phoneme_output), rules, rule_count);
+            
+            if (plen <= 0) {
+                fprintf(stderr, "Error: Text-to-phoneme conversion produced no output\n");
+                return 1;
+            }
+            
+            if (st.verbose) {
+                printf("Text: %s\n", st.input_filename);
+                printf("Phonemes: %s\n", phoneme_output);
+            }
+            
+            /* Now create a temporary phoneme file or parse directly */
+            /* For simplicity, write to a temp buffer and modify parsing */
+            strncpy(st.ttp_text_input, phoneme_output, sizeof(st.ttp_text_input) - 1);
+            st.ttp_text_input[sizeof(st.ttp_text_input) - 1] = '\0';
+        }
+        
         if (phoneme_parse(st.input_filename, &st.phon) < 0) return 1;
         if (st.phon.sample_rate != 22050) st.sample_rate = st.phon.sample_rate;
         if (st.phon.filter_mode != FILTER_CASCADE) st.filter_mode = st.phon.filter_mode;

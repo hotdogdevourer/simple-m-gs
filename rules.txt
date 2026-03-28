@@ -1,0 +1,65 @@
+# Text-to-Phoneme Rules File
+# Format: (Left Context) Grapheme (Right Context) -> Phoneme [Priority]
+# Context symbols: _ = any, ^ = start of word, $ = end of word
+
+# Comments start with #
+
+# Suffix rules (high priority)
+(_)        ing      ($)      -> ih ng [10]
+(_)        ed       ($)      -> d [10]
+(_)        es       ($)      -> z [10]
+(_)        tion     (_)      -> sh ah n [10]
+(_)        sion     (_)      -> zh ah n [10]
+
+# Silent E rule
+(_)        e        ($)      ->  [9]
+
+# Vowel teams
+(_)        ea       (_)      -> iy [8]
+(_)        ee       (_)      -> iy [8]
+(_)        oo       (_)      -> uw [8]
+(_)        oa       (_)      -> ow [8]
+(_)        ai       (_)      -> ey [8]
+(_)        ay       (_)      -> ey [8]
+(_)        ou       (_)      -> aw [8]
+(_)        ow       (_)      -> ow [8]
+
+# Consonant digraphs
+(_)        th       (_)      -> th [7]
+(_)        sh       (_)      -> sh [7]
+(_)        ch       (_)      -> ch [7]
+(_)        ph       (_)      -> f [7]
+(_)        wh       (_)      -> w [7]
+(_)        ng       (_)      -> ng [7]
+(^)        wr       (_)      -> r [7]
+(^)        kn       (_)      -> n [7]
+
+# Single consonants
+(_)        b        (_)      -> b [3]
+(_)        c        (_)      -> k [3]
+(_)        d        (_)      -> d [3]
+(_)        f        (_)      -> f [3]
+(_)        g        (_)      -> g [3]
+(_)        h        (_)      -> h [3]
+(_)        j        (_)      -> jh [3]
+(_)        k        (_)      -> k [3]
+(_)        l        (_)      -> l [3]
+(_)        m        (_)      -> m [3]
+(_)        n        (_)      -> n [3]
+(_)        p        (_)      -> p [3]
+(_)        q        (_)      -> k [3]
+(_)        r        (_)      -> r [3]
+(_)        s        (_)      -> s [3]
+(_)        t        (_)      -> t [3]
+(_)        v        (_)      -> v [3]
+(_)        w        (_)      -> w [3]
+(_)        x        (_)      -> k s [3]
+(_)        y        (_)      -> y [3]
+(_)        z        (_)      -> z [3]
+
+# Single vowels
+(_)        a        (_)      -> ae [2]
+(_)        e        (_)      -> eh [2]
+(_)        i        (_)      -> ih [2]
+(_)        o        (_)      -> aa [2]
+(_)        u        (_)      -> ah [2]
